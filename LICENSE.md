@@ -1,4 +1,4 @@
-Copyright (c) 2025 Max Liebscher
+Copyright (c) 2025 Maximilian Georg Liebscher
 
 This software is free to use, copy, modify, and distribute under the following conditions:
 
@@ -24,4 +24,4 @@ I’m open to collaboration, licensing, and commercial agreements.
 
 ## 📎 Summary:
 
-**Free to use for indie creators. Ask for commercial use beyond that. Attribution appreciated.**
+**Free to use for indie creators. Ask for commercial use beyond that. Attribution much appreciated.**
