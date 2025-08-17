@@ -3,29 +3,40 @@
 > 🗺️ A visual tool for planning story structure on maps – runs directly in your browser
 > 🗺️ Ein visuelles Tool zur Story-Planung auf Karten – läuft direkt im Browser
 
-📍 **Language: English version first – scroll down for German 🇩🇪**
+📍 **This README is bilingual: English first, scroll down for German 🇩🇪**
 
 ---
+
+# 🇬🇧 English
 
 ## 🌍 What is PlotMapper?
 
 PlotMapper is a lightweight, browser-based tool to map your story's path using spatial logic.
 Place points, label events, export everything as Markdown – and develop your world without drowning in chaos.
 
-Also helpful for gamemasters, worldbuilders and narrative designers working with maps and timelines.
+Also helpful for gamemasters, worldbuilders, and narrative designers working with maps and timelines.
+As well as for art historians and educators using various types of maps or paintings.
+Might be useful for route planning too.
 
 ---
 
 ## ✨ Features
 
 * Place points for **locations**, **characters**, **items** and **events**
-* Numbered route points with **duration** field
+* Numbered **route points** with auto-conncection 
+* **Chapter numbering**: start numbering at any chapter
+* **Helper points**: skip a number for branches and curves
 * Add **notes** and **labels** via right-click context menu
-* Connected route-points with auto-numbering
-* Filter by type (route, char, item, event, etc.)
-* Export and import as `.md` (Markdown)
-* Adjustable zoom, opacity and PNG export
-* Works on desktop (Win/Linux/Mac) – currently experimental on touch devices
+* Optional **duration field** ⌛
+* **Undo/Redo** stack for safe editing
+* Adjustable **line color**, **zoom**, **opacity** and **font size**
+* **Themes** (Deep, Bright, Contrast, Burgund, Herbstholz) – switch via 🎨 button or `T` key
+* **Bilingual UI** (EN/DE) with live language toggle
+* Integrated **tutorial modal** and **info panel**
+* Export and import as `.md` (Markdown), including duration + helper flags
+* Exports Markdown with route points in correct order and groups other point types by proximity to the nearest route point.
+* Export as **PNG** with labels and notes rendered
+* Works on desktop (Win/Linux/Mac) – touch devices now much improved (double-tap menus, drag & drop)
 
 ---
 
@@ -35,7 +46,7 @@ Also helpful for gamemasters, worldbuilders and narrative designers working with
 2. Load a background map image
 3. Add points, assign type, write notes
 4. Export your route and story structure as Markdown
-5. To continue on another device, **re-import your ****`.md`**** file and the map image**
+5. To continue on another device, re-import your `.md` file **and** the map image
 
 ---
 
@@ -50,8 +61,8 @@ Also ideal for gamemasters and narrative designers working with complex timeline
 
 ## 🧪 Demo & Download
 
-🔗 [Live version](https://maxliebscher.com/tools/plotmapper)
-📦 [Download ](https://github.com/maxliebscher/PlotMapper/raw/main/index.html)[`index.html`](https://github.com/maxliebscher/PlotMapper/raw/main/index.html)
+🔗 [Live version](https://maxliebscher.com/tools/plotmappertool)
+📦 [Download via Releases](https://github.com/maxliebscher/PlotMapper/releases)
 
 ---
 
@@ -63,11 +74,10 @@ Commercial use by larger companies (10+ employees) requires permission.
 
 ---
 
-## 🔗 Related Tools
+## 🔗 Related Tools (Soon)
 
-* **GDocs Regex Exporter** → Extract chapters, tags and term blocks from large Documents in GoogleDocs via smart regex in Google Apps Script (runs fast even on huge docs). Coming August 2025.
-* **Markdown Table Viewer** (coming soon) → Clean tabular rendering of exported PlotMapper `.md` files
-* **Custom PlotMapper variants** (in development): tools for art historians, educators, and gamemasters
+* **GDocs Regex Exporter** → Extract chapters, tags and term blocks from large Google Docs via smart regex in Apps Script (fast even on 1000+ pages).
+* **Markdown Table Viewer** → Clean tabular rendering of exported PlotMapper `.md` files
 
 ---
 
@@ -79,29 +89,37 @@ PlotMapper ist ein leichtgewichtiges Tool zur Visualisierung von Handlungsverlä
 Setze Punkte für Orte, Charaktere, Items und Ereignisse – exportiere alles als Markdown und bring Struktur in dein Worldbuilding.
 
 Auch ideal für Spielleiter, Worldbuilder oder Autoren komplexer Story-Logiken mit Ortsbezug.
+Sowie für Kunsthistoriker zur Nutzung mit verschiedenen Arten von Karten oder Gemälden.
 
 ---
 
 ## ✨ Funktionen
 
 * Punkte für **Orte**, **Charaktere**, **Items** und **Ereignisse**
-* Routenpunkte mit Nummerierung und **Dauer**
-* Kontextmenüs mit **Notizen** und **Kapitelnamen**
-* Automatische Verbindung von Routenpunkten
-* Filterbare Anzeige nach Punktart (Route, Ort, etc.)
-* Export und Import als `.md` (Markdown)
-* Zoom & Deckkraft steuerbar, PNG-Export
-* Funktioniert stabil auf Desktop-Browsern (Win/Linux/Mac), Touchgeräte derzeit experimentell
+* Nummerierte **Routenpunkte** mit automatischer Verbindung
+* **Kapitel-Nummerierung**: Startnummer frei wählbar
+* **Hilfspunkte**: Nummer überspringen für Kurven oder Verzweigungen
+* Kontextmenüs mit **Notizen** und **Labels**
+* Optionales **Dauer-Feld** ⌛
+* **Undo/Redo** zum sicheren Bearbeiten
+* Einstellbare **Linienfarbe**, **Zoom**, **Deckkraft** und **Schriftgröße**
+* **Themes** (Deep, Bright, Contrast, Burgund, Herbstholz) – umschalten per 🎨 oder Taste `T`
+* **Bilinguale Oberfläche** (EN/DE) mit Live-Umschalter
+* Integriertes **Anleitungs-Fenster** und **Info-Menü**  
+* Export und Import als `.md` (Markdown) inkl. Dauer und Hilfspunkte
+* Exportiert Markdown mit Routenpunkten in korrekter Reihenfolge und ordnet andere Punktarten zu nach Abstand dem nächstgelegenen Routenpunkt.
+* PNG-Export mit Labels und Notizen
+* Funktioniert stabil auf Desktop-Browsern (Win/Linux/Mac), Touchgeräte deutlich verbessert (Doppeltap-Menüs, Drag&Drop)
 
 ---
 
 ## 🚀 Nutzung
 
 1. `index.html` im Browser öffnen
-2. Bildkarte laden
+2. Hintergrundkarte laden
 3. Punkte setzen, Typ wählen, Notizen schreiben
 4. Als Markdown exportieren
-5. Auf anderen Geräten: `.md` **und Karte erneut laden**
+5. Auf anderen Geräten: `.md` **und** Karte erneut laden
 
 ---
 
@@ -111,13 +129,15 @@ PlotMapper ist Teil einer modularen Toolchain gegen die „Worldbuilding-Krankhe
 Zu viele Ideen, kein roter Faden? Dieses Tool hilft, erst die Struktur zu schaffen – und danach zu schreiben.
 
 Auch ideal für Spielleiter, historische Kartenanalysen, Kunstforschung oder PnP-Planung.
+Ebenso für Kunsthistoriker sowie Pädagogen mit verschiedenen Arten von Karten oder Gemälden.  
+Kann auch für Routenplanung nützlich sein.
 
 ---
 
 ## 🧪 Demo & Download
 
-🔗 [Live-Version](https://maxliebscher.com/tools/plotmapper)
-📦 [index.html herunterladen](https://github.com/maxliebscher/PlotMapper/raw/main/index.html)
+🔗 [Live-Version](https://maxliebscher.com/tools/plotmappertool)
+📦 [Download über Releases](https://github.com/maxliebscher/PlotMapper/releases)
 
 ---
 
@@ -129,12 +149,11 @@ Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeiter nur mit Geneh
 
 ---
 
-## 🔗 Weitere Tools
+## 🔗 Weitere Tools (Bald)
 
-* **GDocs Regex Exporter** → Extrahiert Kapitel, Tags & Textstellen aus großen Documenten in GoogleDocs via Google Apps Script – läuft auch mit 1000+ Seiten (kommt August 2025)
-* **Markdown Table Viewer** (bald) → hübsche, tabellarische Darstellung von PlotMapper-Exporten
-* **Spezialversionen von PlotMapper** in Arbeit: für Kunstgeschichte, Historiker, PnP u. a.
+* **GDocs Regex Exporter** → Extrahiert Kapitel, Tags & Textstellen aus großen Google Docs via Apps Script – läuft auch mit 1000+ Seiten
+* **Markdown Table Viewer** → tabellarische Darstellung von PlotMapper-Exporten
 
 ---
 
-\*\*Max Liebscher – \*\***[maxliebscher.com](https://maxliebscher.com)**
+**Maximilian Georg Liebscher – [maxliebscher.com](https://maxliebscher.com)**  

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Interaktive Weltkarte – Editor v2 Debug</title>
+<style>
+ body{margin:0;background:#333;font-family:sans-serif;overflow:hidden}
+ #canvas{position:absolute;top:0;left:0;touch-action:none;z-index:0;background:#111;cursor:grab}
+ .point{position:absolute;width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;transform:translate(-50%,-50%);border:2px solid #000;user-select:none;z-index:10}
+ .label{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);background:rgba(0,0,0,.6);color:#fff;padding:0 4px;border-radius:4px;font-size:11px;white-space:nowrap;pointer-events:none}
+ .mid{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(160,160,160,.8);transform:translate(-50%,-50%);cursor:pointer;z-index:5}
+ .btn{position:absolute;right:-6px;top:-6px;width:14px;height:14px;font-size:11px;border-radius:50%;background:#444;color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+ .menu{position:absolute;background:#222;color:#fff;padding:6px;border-radius:6px;font-size:13px;display:flex;flex-direction:column;gap:4px;z-index:30}
+ .menu button{background:#444;border:none;color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px}
+ .menu button:hover{background:#666}
+ #ui{position:fixed;top:8px;left:8px;background:rgba(0,0,0,.85);color:#fff;padding:10px;border-radius:8px;z-index:50;font-size:14px;line-height:1.4}
+ #ui input[type=range]{width:120px}
+ #ui label{user-select:none;margin-right:4px}
+ #ui button{margin:2px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="ui">
+ <input type="file" id="imgInp" accept="image/*"><br>
+ <label><input type="checkbox" id="chkLines" checked> Linien</label>
+ <label><input type="checkbox" id="chkLabels" checked> Labels</label>
+ <label><input type="checkbox" id="chkEdit" checked> Edit‑Buttons</label><br>
+ Zoom <input type="range" id="zoom" min="1" max="5" step="0.01" value="1"><br>
+ Deckkraft <input type="range" id="opacity" min="0.1" max="1" step="0.01" value="1"><br>
+ <button id="undo">↺ Undo</button><button id="redo">↻ Redo</button>
+ <button id="exportMd">Export MD</button><button id="importMd">Import MD</button>
+ <button id="exportImg">PNG</button><button id="clearAll">Alle löschen</button>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+const cvs=document.getElementById('canvas'),ctx=cvs.getContext('2d');
+let img=new Image(),imgLoaded=false,zoomValue=1,opacityValue=1,panX=0,panY=0;
+let draggingMap=false,startPan;
+const points=[],midEls=[];let showLines=true,showLabels=true,showEdit=true;
+const undoStack=[],redoStack=[];
+function push(){undoStack.push(JSON.stringify(points.map(stripElm)));redoStack.length=0}
+function stripElm(p){const{el,txt,lbl,btn,...rest}=p;return rest}
+function restore(arr){clearDOM();points.length=0;arr.forEach(d=>createPoint({...d},true));draw()}
+function clearDOM(){points.forEach(p=>p.el.remove());midEls.forEach(m=>m.remove());midEls.length=0}
+function resize(){cvs.width=innerWidth;cvs.height=innerHeight;draw();updateDOM()}
+window.addEventListener('resize',resize);
+function imgRect(){
+    const r=Math.min(cvs.width/img.width,cvs.height/img.height)*zoomValue;
+    const w=img.width*r,h=img.height*r;
+    const x=(cvs.width-w)/2+panX,y=(cvs.height-h)/2+panY;
+    return{x,y,w,h}
+}
+function draw(){
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    if(!imgLoaded)return;
+    const r=imgRect();
+    ctx.globalAlpha=opacityValue;
+    ctx.drawImage(img,r.x,r.y,r.w,r.h);
+    ctx.globalAlpha=1;
+    if(showLines){drawLines()}else midEls.forEach(m=>m.style.display='none')
+}
+function drawLines(){midEls.forEach(m=>m.remove());midEls.length=0;if(points.length<2)return;const r=imgRect();const sorted=[...points].sort((a,b)=>a.num-b.num);
+ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();sorted.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.stroke();
+ctx.strokeStyle='red';ctx.lineWidth=2;ctx.beginPath();sorted.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.stroke();
+sorted.forEach((p,i)=>{if(i)addMid(sorted[i-1],p)})}
+function addMid(a,b){
+  const r = imgRect();
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const el = document.createElement('div');
+  el.className = 'mid';
+  document.body.appendChild(el);
+  midEls.push(el);
+  pos(el, mx, my);
+  el.onclick = () => {
+    push();
+    const newNum = b.num;
+    points.filter(pt => pt.num >= newNum).sort((p1,p2)=>p2.num-p1.num).forEach(pt => {
+      pt.num++;
+      pt.txt.textContent = pt.num;
+    });
+    createPoint({ x: mx, y: my, num: newNum, label: '', note: '' });
+    draw();
+  }
+}
+function createPoint(d,fromLoad=false){const {x,y,num,label='',note=''}=d;const el=document.createElement('div');el.className='point';const txt=document.createElement('span');txt.textContent=num;el.appendChild(txt);
+const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+const p={x,y,num,label,note,el,txt,lbl,btn};points.push(p);document.body.appendChild(el);pos(el,x,y);updateVis();
+btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+let dragId=null,startD;
+el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+el.onpointermove=e=>{if(e.pointerId!==dragId)return;const r=imgRect();p.x=startD.px+(e.clientX-startD.x)/r.w;p.y=startD.py+(e.clientY-startD.y)/r.h;pos(el,p.x,p.y);draw()};
+el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+if(!fromLoad)push()}
+function pos(el,nx,ny){const r=imgRect();el.style.left=r.x+nx*r.w+'px';el.style.top=r.y+ny*r.h+'px'}
+function updateDOM(){points.forEach(p=>pos(p.el,p.x,p.y));updateVis()}
+function updateVis(){points.forEach(p=>{p.lbl.style.display=showLabels&&p.label?"block":"none";p.btn.style.display=showEdit?"flex":"none"})}
+// UI binding
+document.getElementById('imgInp').onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    img.src=URL.createObjectURL(f);
+    img.onload=()=>{imgLoaded=true;zoomValue=1;opacityValue=1;panX=panY=0;document.getElementById('zoom').value=1;document.getElementById('opacity').value=1;resize()}
+};
+document.getElementById('zoom').oninput=e=>{
+    zoomValue=parseFloat(e.target.value); draw(); updateDOM();
+};
+document.getElementById('opacity').oninput=e=>{
+    opacityValue=parseFloat(e.target.value); draw();
+};
+document.getElementById('chkLines').onchange=e=>{showLines=e.target.checked;draw()};
+document.getElementById('chkLabels').onchange=e=>{showLabels=e.target.checked;updateVis()};
+document.getElementById('chkEdit').onchange=e=>{showEdit=e.target.checked;updateVis()};
+document.getElementById('undo').onclick=()=>{if(undoStack.length){redoStack.push(JSON.stringify(points.map(stripElm)));restore(JSON.parse(undoStack.pop()))}};
+document.getElementById('redo').onclick=()=>{if(redoStack.length){undoStack.push(JSON.stringify(points.map(stripElm)));restore(JSON.parse(redoStack.pop()))}};
+document.getElementById('clearAll').onclick=()=>{if(confirm('Alle Punkte löschen?')){push();clearDOM();points.length=0;draw()}};
+// map pan
+cvs.onpointerdown=e=>{
+    if(!imgLoaded)return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className&&el.className.includes('point'))) return;
+    draggingMap=true;startPan={x:e.clientX,y:e.clientY,px:panX,py:panY};cvs.setPointerCapture(e.pointerId)
+};
+cvs.onpointermove=e=>{if(!draggingMap)return;panX=startPan.px+(e.clientX-startPan.x);panY=startPan.py+(e.clientY-startPan.y);draw();updateDOM()};
+cvs.onpointerup=e=>draggingMap=false;
+// double click add
+cvs.ondblclick=e=>{
+    if(!imgLoaded)return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className&&el.className.includes('point'))) return;
+    const r=imgRect();const nx=(e.clientX-r.x)/r.w,ny=(e.clientY-r.y)/r.h;createPoint({x:nx,y:ny,num:points.length+1,label:'',note:''});draw()
+}
+// context menu
+let menu=null;
+function showMenu(x,y,p){
+    menu&&menu.remove();
+    menu=document.createElement('div');
+    menu.className='menu';
+    menu.style.left=x+'px';
+    menu.style.top=y+'px';
+    menu.innerHTML=`<button id=n>Nummer</button><button id=l>Label</button><button id=t>Notiz</button><button id=d>Löschen</button>`;
+    document.body.appendChild(menu);
+    menu.querySelector('#n').onclick=()=>{const v=prompt('Nr',p.num);if(v){push();p.num=parseInt(v);p.txt.textContent=p.num;draw()}menu.remove()};
+    menu.querySelector('#l').onclick=()=>{const v=prompt('Label',p.label);push();p.label=v||'';p.lbl.textContent=p.label;updateVis();menu.remove()};
+    menu.querySelector('#t').onclick=()=>{const v=prompt('Notiz',p.note);push();p.note=v||'';menu.remove()};
+    menu.querySelector('#d').onclick=()=>{if(confirm('Punkt löschen?')){push();p.el.remove();points.splice(points.indexOf(p),1);draw()}menu.remove()};
+}
+document.body.addEventListener('mousedown',e=>{
+  if(menu && !menu.contains(e.target)) menu.remove();
+});
+
+// ---- NEUE EXPORTFUNKTIONEN (MD & PNG) ----
+function exportMD() {
+    let md = "# Map Points\n";
+    points
+      .slice()
+      .sort((a,b)=>a.num-b.num)
+      .forEach(p=>{
+        md += `- ${p.num}|${(p.label||'').replace(/\|/g,'\\|')}|${(p.note||'').replace(/\|/g,'\\|')}|${p.x},${p.y}\n`;
+      });
+    const blob = new Blob([md],{type:'text/markdown'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'map.md';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function importMD() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.md,.txt';
+    inp.onchange = e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        f.text().then(t => {
+            push(); clearDOM(); points.length = 0;
+            t.split('\n').forEach(l=>{
+                if(!l.startsWith('-'))return;
+                const [num,label,note,xy] = l.slice(2).split('|');
+                if(!xy)return;
+                const [x,y] = xy.split(',');
+                createPoint({
+                    x:parseFloat(x),y:parseFloat(y),
+                    num:parseInt(num),
+                    label:label?label.replace(/\\\|/g,'|'):'',
+                    note:note?note.replace(/\\\|/g,'|'):''
+                },true)
+            });
+            draw()
+        });
+    };
+    inp.click();
+}
+document.getElementById('exportMd').onclick = exportMD;
+document.getElementById('importMd').onclick = importMD;
+
+// PNG Export über Canvas
+document.getElementById('exportImg').onclick = () => {
+    // Handles ausblenden für Export
+    midEls.forEach(m=>m.style.display='none');
+    draw();
+    // Punkte in Canvas einzeichnen (inkl. Label)
+    const r = imgRect();
+    ctx.save();
+    points.forEach(p => {
+        const px = r.x + p.x * r.w, py = r.y + p.y * r.h;
+        // Kreis
+        ctx.beginPath();
+        ctx.arc(px, py, 16, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(0,0,0,0.9)";
+        ctx.stroke();
+        // Nummer
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.num, px, py);
+        // Label falls vorhanden
+        if (p.label && showLabels) {
+            ctx.font = "11px sans-serif";
+            const text = p.label;
+            const tw = ctx.measureText(text).width;
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(px - tw/2 - 4, py + 18, tw + 8, 18);
+            ctx.fillStyle = "#fff";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, px, py + 27);
+        }
+    });
+    ctx.restore();
+    setTimeout(()=>{
+        const url = cvs.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'map.png';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        draw(); updateDOM();
+    }, 100);
+};
+
+resize();
+</script>
+</body>
+</html>

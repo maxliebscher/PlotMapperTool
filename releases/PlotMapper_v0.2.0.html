@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Interaktive Weltkarte – Editor v3 Kapitelmodus</title>
+<style>
+ body{margin:0;background:#333;font-family:sans-serif;overflow:hidden}
+ #canvas{position:absolute;top:0;left:0;touch-action:none;z-index:0;background:#111;cursor:grab}
+ .point{position:absolute;width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;transform:translate(-50%,-50%);border:2px solid #000;user-select:none;z-index:10}
+ .label{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);background:rgba(0,0,0,.6);color:#fff;padding:0 4px;border-radius:4px;font-size:11px;white-space:nowrap;pointer-events:none}
+ .mid{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(160,160,160,.8);transform:translate(-50%,-50%);cursor:pointer;z-index:5}
+ .btn{position:absolute;right:-6px;top:-6px;width:14px;height:14px;font-size:11px;border-radius:50%;background:#444;color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+ .menu{position:absolute;background:#222;color:#fff;padding:6px 8px 6px 8px;border-radius:6px;font-size:13px;display:flex;flex-direction:column;gap:4px;z-index:30;align-items:flex-start;min-width:120px}
+ .menu button{background:#444;border:none;color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;text-align:left;width:100%;}
+ .menu button:hover{background:#666}
+ .menu b{margin-bottom:2px;}
+ #ui{position:fixed;top:8px;left:8px;background:rgba(0,0,0,.85);color:#fff;padding:10px;border-radius:8px;z-index:50;font-size:14px;line-height:1.4}
+ #ui input[type=range]{width:120px}
+ #ui label{user-select:none;margin-right:4px}
+ #ui button{margin:2px;font-size:13px}
+ #kapitelHinweis{color:#8df;margin-left:8px}
+ .icon {font-size:16px;margin-right:2px;}
+ .hide{display:none!important;}
+</style>
+</head>
+<body>
+<div id="ui">
+ <input type="file" id="imgInp" accept="image/*"><br>
+ <label><input type="checkbox" id="kapitelMode"> Kapitel-Nummerierung</label>
+ <span id="kapitelHinweis"></span><br>
+ <label><input type="checkbox" id="chkLabels" checked> Kapitel</label>
+ <label><input type="checkbox" id="chkNotes" checked> Notizen anzeigen</label>
+ <label><input type="checkbox" id="chkLines" checked> Linien</label>
+ <label><input type="checkbox" id="chkEdit" checked> Edit‑Buttons</label><br>
+ <!-- Punktarten Filter -->
+ <label><input type="checkbox" id="filterRoute" checked> Route</label>
+ <label><input type="checkbox" id="filterOrt" checked> Ort</label>
+ <label><input type="checkbox" id="filterChar" checked> Charakter</label>
+ <label><input type="checkbox" id="filterEvent" checked> Event</label>
+ <label><input type="checkbox" id="filterItem" checked> Item</label><br>
+ Zoom <input type="range" id="zoom" min="1" max="5" step="0.01" value="1"><br>
+ Deckkraft <input type="range" id="opacity" min="0.1" max="1" step="0.01" value="1"><br>
+ <button id="undo">↺ Undo</button><button id="redo">↻ Redo</button>
+ <button id="exportMd">Export MD</button><button id="importMd">Import MD</button>
+ <button id="exportImg">PNG</button><button id="clearAll">Alle löschen</button>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+const POINT_TYPES = [
+  {type: 'route', icon: '', name: 'Routen-Punkt', label: 'Kapitel', filter: 'filterRoute'},
+  {type: 'ort', icon: '📍', name: 'Ort', label: 'Ort', filter: 'filterOrt'},
+  {type: 'char', icon: '👤', name: 'Charakter', label: 'Charakter', filter: 'filterChar'},
+  {type: 'event', icon: '★', name: 'Event', label: 'Event', filter: 'filterEvent'},
+  {type: 'item', icon: '🔑', name: 'Item', label: 'Item', filter: 'filterItem'}
+];
+function getIcon(ptype) {
+    const pt=POINT_TYPES.find(t=>t.type===ptype); return pt?pt.icon:'';
+}
+function getTypeMeta(ptype) {
+    return POINT_TYPES.find(t=>t.type===ptype) || POINT_TYPES[0];
+}
+function isVisibleType(ptype){
+    let meta=getTypeMeta(ptype);
+    let box=document.getElementById(meta.filter);
+    return box && box.checked;
+}
+
+// --- Hilfsfunktionen ---
+function compareNum(a, b) {
+    const an = parseInt(a), bn = parseInt(b);
+    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+    return (a+"").localeCompare(b+"", undefined, {numeric:true,sensitivity:'base'});
+}
+const cvs=document.getElementById('canvas'),ctx=cvs.getContext('2d');
+let img=new Image(),imgLoaded=false,zoomValue=1,opacityValue=1,panX=0,panY=0;
+let draggingMap=false,startPan;
+const points=[],midEls=[];
+let showLines=true,showLabels=true,showEdit=true,showNotes=true;
+const undoStack=[],redoStack=[];
+let kapitelMode=false, kapitelStartNum=1;
+
+// --- Undo/Redo ---
+function push(){undoStack.push(JSON.stringify(points.map(stripElm)));redoStack.length=0}
+function stripElm(p){const{el,txt,lbl,btn,noteEl,icon,...rest}=p;return rest}
+function restore(arr){clearDOM();points.length=0;arr.forEach(d=>createPoint({...d},true));updateNumbers();draw();}
+function clearDOM(){points.forEach(p=>{p.el.remove(); if(p.noteEl) p.noteEl.remove();});midEls.forEach(m=>m.remove());midEls.length=0}
+
+// --- Resize ---
+function resize(){cvs.width=innerWidth;cvs.height=innerHeight;draw();updateDOM()}
+window.addEventListener('resize',resize);
+
+// --- Bild-Position ---
+function imgRect(){
+    const r=Math.min(cvs.width/img.width,cvs.height/img.height)*zoomValue;
+    const w=img.width*r,h=img.height*r;
+    const x=(cvs.width-w)/2+panX,y=(cvs.height-h)/2+panY;
+    return{x,y,w,h}
+}
+
+// --- Hauptzeichner ---
+function draw(){
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    if(!imgLoaded)return;
+    const r=imgRect();
+    ctx.globalAlpha=opacityValue;
+    ctx.drawImage(img,r.x,r.y,r.w,r.h);
+    ctx.globalAlpha=1;
+    if(showLines){drawLines();}
+    else midEls.forEach(m=>m.style.display='none');
+}
+
+// --- Linien zeichnen ---
+function drawLines(){
+    midEls.forEach(m=>m.remove());midEls.length=0;
+    // Nur Route-Punkte, die sichtbar sind
+    const routePts = points.filter(p => (p.ptype||'route') === 'route' && isVisibleType('route'));
+    if(routePts.length<2)return;
+    const r=imgRect();
+    ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    ctx.strokeStyle='red';ctx.lineWidth=2;ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    routePts.forEach((p,i)=>{if(i)addMid(routePts[i-1],p)});
+}
+
+// --- Zwischenpunkt-Hinzufügen (nur Route) ---
+function addMid(a,b){
+  if ((a.ptype||'route') !== 'route' || (b.ptype||'route') !== 'route') return;
+  const r = imgRect();
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const el = document.createElement('div');el.className = 'mid';document.body.appendChild(el);
+  midEls.push(el);pos(el, mx, my);
+  el.onclick = () => {push();
+    let idxA = points.indexOf(a), idxB = points.indexOf(b);
+    let idx = Math.max(idxA, idxB);
+    let neu = {x:mx, y:my, label:'', note:'', ptype:'route'};
+    points.splice(idx, 0, neu);
+    createPointMid(neu, idx);
+    updateNumbers(); draw();
+  }
+}
+function createPointMid(d, idx){
+    const {x,y,label='',note='',ptype='route'}=d;
+    const el=document.createElement('div');el.className='point';
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,el,txt,lbl,btn,icon};points[idx]=p;
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+    el.onpointermove=e=>{if(e.pointerId!==dragId)return;const r=imgRect();p.x=startD.px+(e.clientX-startD.x)/r.w; p.y=startD.py+(e.clientY-startD.y)/r.h;pos(el,p.x,p.y);draw(); if(p.noteEl) posNote(p);};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+}
+
+// --- Punkt erstellen ---
+function createPoint(d,fromLoad=false){
+    const {x,y,label='',note='',ptype='route'}=d;
+    const el=document.createElement('div');el.className='point';
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,el,txt,lbl,btn,icon};points.push(p);
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+    el.onpointermove=e=>{if(e.pointerId!==dragId)return;const r=imgRect();p.x=startD.px+(e.clientX-startD.x)/r.w; p.y=startD.py+(e.clientY-startD.y)/r.h;pos(el,p.x,p.y);draw(); if(p.noteEl) posNote(p);};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+    if(!fromLoad)push();
+}
+function pos(el,nx,ny){const r=imgRect();el.style.left=r.x+nx*r.w+'px';el.style.top=r.y+ny*r.h+'px'}
+
+// Notiz Position: etwas mehr Abstand!
+function posNote(p) {
+    const r=imgRect();
+    p.noteEl.style.left = r.x+p.x*r.w+'px';
+    p.noteEl.style.top = r.y+p.y*r.h+32+'px';
+}
+
+function updateVis() {
+  points.forEach(p => {
+    // Sichtbarkeit je nach Typ-Filter
+    if(isVisibleType(p.ptype||'route')) {
+      p.el.classList.remove('hide');
+      if (p.noteEl) p.noteEl.classList.remove('hide');
+    } else {
+      p.el.classList.add('hide');
+      if (p.noteEl) p.noteEl.classList.add('hide');
+      return;
+    }
+    p.lbl.style.display = showLabels && p.label ? "block" : "none";
+    p.btn.style.display = showEdit ? "flex" : "none";
+    if(p.icon) p.icon.textContent = (p.ptype!=='route') ? getIcon(p.ptype) : '';
+    if (showNotes && p.note) {
+      if (!p.noteEl) {
+        p.noteEl = document.createElement('div');
+        p.noteEl.style.position = 'absolute';
+        p.noteEl.style.whiteSpace = 'pre-wrap';
+        p.noteEl.style.background = 'rgba(0,0,0,0.7)';
+        p.noteEl.style.color = '#fff';
+        p.noteEl.style.padding = '4px 6px';
+        p.noteEl.style.fontSize = '12px';
+        p.noteEl.style.borderRadius = '6px';
+        p.noteEl.style.maxWidth = '200px';
+        p.noteEl.style.zIndex = '15';
+        document.body.appendChild(p.noteEl);
+      }
+      p.noteEl.textContent = p.note;
+      p.noteEl.style.display = "block";
+      posNote(p);
+    } else if (p.noteEl) {
+      p.noteEl.style.display = "none";
+    }
+  });
+}
+
+function updateNumbers() {
+    let cnt = 1;
+    points.forEach((p,i)=>{
+      if ((p.ptype||'route') === 'route' && isVisibleType('route')) {
+        p.txt.textContent = kapitelMode ? (kapitelStartNum + cnt - 1) : cnt;
+        cnt++;
+      } else {
+        p.txt.textContent = "";
+      }
+    } );
+    document.getElementById('kapitelHinweis').textContent = kapitelMode ? `Kapitelmodus aktiv (Start: ${kapitelStartNum})` : "";
+}
+
+function updateDOM() {
+  points.forEach(p => {
+    pos(p.el,p.x,p.y);
+    if (p.noteEl) posNote(p);
+  });
+  updateVis();
+}
+
+// --- UI Binding ---
+document.getElementById('imgInp').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    img.src = URL.createObjectURL(f);
+    img.onload = () => { imgLoaded=true; zoomValue=1; opacityValue=1; panX=panY=0; document.getElementById('zoom').value=1; document.getElementById('opacity').value=1; resize(); }
+};
+document.getElementById('zoom').oninput = e => { zoomValue = parseFloat(e.target.value); draw(); updateDOM(); };
+document.getElementById('opacity').oninput = e => { opacityValue = parseFloat(e.target.value); draw(); };
+document.getElementById('chkLines').onchange = e => { showLines = e.target.checked; draw(); };
+document.getElementById('chkLabels').onchange = e => { showLabels = e.target.checked; updateVis(); };
+document.getElementById('chkNotes').onchange = e => { showNotes = e.target.checked; updateVis(); };
+document.getElementById('chkEdit').onchange = e => { showEdit = e.target.checked; updateVis(); };
+document.getElementById('undo').onclick = () => { if(undoStack.length){ redoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(undoStack.pop())); }};
+document.getElementById('redo').onclick = () => { if(redoStack.length){ undoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(redoStack.pop())); }};
+document.getElementById('clearAll').onclick = () => { if(confirm('Alle Punkte löschen?')){ push(); clearDOM(); points.length=0; draw(); updateNumbers(); }};
+document.getElementById('kapitelMode').onchange = e => {
+   kapitelMode = e.target.checked;
+   if (kapitelMode) {
+       let neu = prompt("Ab welcher Kapitelnummer starten?", kapitelStartNum);
+       if (!neu || isNaN(parseInt(neu))) neu = kapitelStartNum;
+       kapitelStartNum = parseInt(neu);
+   }
+   updateNumbers(); draw();
+};
+// Filter für Punktarten
+['filterRoute','filterOrt','filterChar','filterEvent','filterItem'].forEach(id=>{
+  document.getElementById(id).onchange=()=>{updateVis();draw();}
+});
+
+// --- Map pan ---
+cvs.onpointerdown = e => {
+    if(!imgLoaded) return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className && el.className.includes('point'))) return;
+    draggingMap=true; startPan={x:e.clientX,y:e.clientY,px:panX,py:panY}; cvs.setPointerCapture(e.pointerId);
+};
+cvs.onpointermove = e => { if(!draggingMap) return; panX=startPan.px+(e.clientX-startPan.x); panY=startPan.py+(e.clientY-startPan.y); draw(); updateDOM(); };
+cvs.onpointerup = e => draggingMap=false;
+
+// --- Punkt hinzufügen (Doppelklick) ---
+cvs.ondblclick = e => {
+    if(!imgLoaded) return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className && el.className.includes('point'))) return;
+    showTypeSelect(e.clientX, e.clientY, type => {
+      const r = imgRect(); const nx=(e.clientX-r.x)/r.w, ny=(e.clientY-r.y)/r.h;
+      createPoint({x:nx,y:ny,label:'',note:'',ptype:type});
+      updateNumbers(); draw();
+    });
+};
+function showTypeSelect(x, y, cb) {
+    let menu = document.createElement('div');
+    menu.className = 'menu';
+    menu.style.left = x+'px';
+    menu.style.top = y+'px';
+    menu.innerHTML = '<b>Art wählen:</b>';
+    POINT_TYPES.forEach(t=>{
+      let btn = document.createElement('button');
+      btn.innerHTML = (t.icon?`<span class="icon">${t.icon}</span>`:"") + t.name;
+      btn.onclick = ()=>{ cb(t.type); menu.remove(); };
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    setTimeout(()=>{ // Auto-close wenn woanders geklickt
+      document.addEventListener('mousedown', function h(ev){
+        if(!menu.contains(ev.target)){ menu.remove();document.removeEventListener('mousedown',h);}
+      });
+    });
+}
+
+// --- Kontextmenü ---
+let menu=null;
+function showMenu(x,y,p){
+    menu&&menu.remove(); menu=document.createElement('div'); menu.className='menu'; menu.style.left=x+'px'; menu.style.top=y+'px';
+    // Meta für aktuellen Typ
+    const meta = getTypeMeta(p.ptype||'route');
+    menu.innerHTML = `
+      <button id="e">${meta.label} bearbeiten</button>
+      <button id="n">Notiz bearbeiten</button>
+      <button id="v">Notiz anzeigen</button>
+      <button id="typ">Punktart ändern</button>
+      <button id="d">Löschen</button>
+    `;
+    document.body.appendChild(menu);
+
+    menu.querySelector('#e').onclick = ()=>{
+        const v = prompt(meta.label,p.label);
+        if(v!==null){ push(); p.label=v||''; p.lbl.textContent=p.label; updateVis(); }
+        menu.remove();
+    };
+    menu.querySelector('#n').onclick = ()=>{
+        const v = prompt('Notiz',p.note);
+        if(v!==null){ push(); p.note=v||''; }
+        menu.remove();
+    };
+    menu.querySelector('#v').onclick = ()=>{
+        if(!p.noteEl) {
+            p.noteEl=document.createElement('div');
+            p.noteEl.style.position='absolute'; p.noteEl.style.whiteSpace='pre-wrap'; p.noteEl.style.background='rgba(0,0,0,0.7)';
+            p.noteEl.style.color='#fff'; p.noteEl.style.padding='4px 6px'; p.noteEl.style.fontSize='12px';
+            p.noteEl.style.borderRadius='6px'; p.noteEl.style.maxWidth='200px'; p.noteEl.style.zIndex='15';
+            document.body.appendChild(p.noteEl);
+        }
+        p.noteEl.textContent = p.note;
+        posNote(p);
+        p.noteEl.style.display='block';
+        menu.remove();
+    };
+    menu.querySelector('#typ').onclick = ()=>{
+        let mm = document.createElement('div');
+        mm.className = 'menu';
+        mm.style.left = (x+150)+'px';
+        mm.style.top = y+'px';
+        POINT_TYPES.forEach(t=>{
+          let btn = document.createElement('button');
+          btn.innerHTML = (t.icon?`<span class="icon">${t.icon}</span>`:"") + t.name;
+          btn.onclick = ()=>{ push(); p.ptype = t.type; updateVis(); updateNumbers(); draw(); mm.remove(); menu.remove(); };
+          mm.appendChild(btn);
+        });
+        document.body.appendChild(mm);
+    };
+    menu.querySelector('#d').onclick = ()=>{
+        if(confirm('Punkt löschen?')){ push(); p.el.remove(); if(p.noteEl) p.noteEl.remove(); points.splice(points.indexOf(p),1); updateNumbers(); draw(); }
+        menu.remove();
+    };
+}
+document.body.addEventListener('mousedown',e=>{ if(menu && !menu.contains(e.target)) menu.remove(); });
+
+// --- Export/Import/PNG ---
+
+// Exportiere Punkte als Markdown-Tabelle
+document.getElementById('exportMd').onclick = () => {
+    let md = `| Typ | Label | Notiz | X | Y |\n|---|---|---|---|---|\n`;
+    points.forEach(p => {
+        md += `| ${getTypeMeta(p.ptype||'route').name} | ${p.label?.replace(/\|/g,'/')} | ${p.note?.replace(/\|/g,'/')} | ${(p.x||0).toFixed(4)} | ${(p.y||0).toFixed(4)} |\n`;
+    });
+    const blob = new Blob([md], {type:'text/markdown'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'PlotMap.md';
+    a.click();
+};
+
+// Importiere Punkte aus Markdown-Tabelle
+document.getElementById('importMd').onclick = () => {
+    let inp = document.createElement('input');
+    inp.type = 'file'; inp.accept='.md,text/markdown';
+    inp.onchange = e=>{
+        const file = inp.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev){
+            let text = ev.target.result;
+            let lines = text.split('\n').filter(l=>l.trim() && !l.startsWith('|---'));
+            let newPoints = [];
+            for(let i=1;i<lines.length;i++){
+                let cols = lines[i].split('|').map(x=>x.trim());
+                if(cols.length<6) continue;
+                let [typ, label, note, x, y] = [cols[1],cols[2],cols[3],cols[4],cols[5]];
+                let meta = POINT_TYPES.find(t=>t.name===typ) || POINT_TYPES[0];
+                newPoints.push({ptype:meta.type, label, note, x:parseFloat(x), y:parseFloat(y)});
+            }
+            if (newPoints.length) {
+                push(); clearDOM(); points.length=0;
+                newPoints.forEach(d=>createPoint(d,true));
+                updateNumbers(); draw();
+            }
+        }
+        reader.readAsText(file);
+    };
+    inp.click();
+};
+
+// --- PNG Export mit sichtbaren Punkten, Icons & Labels/Notizen ---
+document.getElementById('exportImg').onclick = () => {
+    midEls.forEach(m=>m.style.display='none'); // Handles ausblenden
+    draw();
+
+    const r = imgRect();
+    ctx.save();
+    // Linien (nur Routepunkte & falls aktiviert)
+    if (showLines) {
+        const routePts = points.filter(p => (p.ptype||'route') === 'route' && isVisibleType('route'));
+        if(routePts.length>1){
+            ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();
+            routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+            ctx.stroke();
+            ctx.strokeStyle='red';ctx.lineWidth=2;ctx.beginPath();
+            routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+            ctx.stroke();
+        }
+    }
+
+    // Alle sichtbaren Punkte & Notizen rendern
+    let cnt = 1;
+    points.forEach((p,i) => {
+        if(!isVisibleType(p.ptype||'route')) return;
+
+        const px = r.x + p.x * r.w, py = r.y + p.y * r.h;
+        // Punkt: Kreis
+        ctx.beginPath();
+        ctx.arc(px, py, 16, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(255,255,255,0.96)";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(0,0,0,0.95)";
+        ctx.stroke();
+
+        // Icon oder Nummer:
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        if ((p.ptype||'route') === 'route') {
+            ctx.fillText(kapitelMode ? (kapitelStartNum+cnt-1) : cnt, px, py);
+            cnt++;
+        } else {
+            ctx.font = "22px sans-serif";
+            ctx.fillText(getIcon(p.ptype), px, py+1); // Icon in die Mitte
+        }
+
+        // Label darunter, falls aktiviert
+        if (p.label && showLabels) {
+            ctx.font = "11px sans-serif";
+            const text = p.label;
+            const tw = ctx.measureText(text).width;
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(px - tw/2 - 4, py + 18, tw + 8, 18);
+            ctx.fillStyle = "#fff";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, px, py + 27);
+        }
+
+        // Notiz darunter, falls aktiviert & vorhanden
+        if (showNotes && p.note) {
+            ctx.font = "12px sans-serif";
+            const note = p.note;
+            const noteY = py + 46; // weiter unter das Label, anpassen falls nötig
+            const tw = ctx.measureText(note).width;
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(px - tw/2 - 4, noteY - 9, tw + 8, 18);
+            ctx.fillStyle = "#fff";
+            ctx.fillText(note, px, noteY);
+        }
+    });
+    ctx.restore();
+
+    setTimeout(()=>{
+        const url = cvs.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'PlotMap.png';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        draw(); updateDOM();
+    }, 80);
+};
+
+
+resize();
+</script>
+</body>
+</html>

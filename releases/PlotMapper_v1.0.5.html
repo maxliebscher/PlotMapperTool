@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<!-- SIMPLE_MODE_PATCH -->
+<meta charset="utf-8"/>
+<title>Interactive World Map – Editor v4 Touch</title>
+<style>
+ body{margin:0;background:#333;font-family:sans-serif;overflow:hidden}
+ #canvas{position:absolute;top:0;left:0;touch-action:none;z-index:0;background:#111;cursor:grab}
+ .point{position:absolute;width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;transform:translate(-50%,-50%);border:2px solid #000;user-select:none;z-index:10}
+ .label{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);background:rgba(0,0,0,.6);color:#fff;padding:0 4px;border-radius:4px;font-size:11px;white-space:nowrap;pointer-events:none}
+ .mid{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(160,160,160,.8);transform:translate(-50%,-50%);cursor:pointer;z-index:5}
+ .btn{position:absolute;right:-6px;top:-6px;width:14px;height:14px;font-size:11px;border-radius:50%;background:#444;color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+ .menu{position:absolute;background:#222;color:#fff;padding:6px 8px 6px 8px;border-radius:6px;font-size:13px;display:flex;flex-direction:column;gap:4px;z-index:30;align-items:flex-start;min-width:120px}
+ .menu button{background:#444;border:none;color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;text-align:left;width:100%;}
+ .menu button:hover{background:#666}
+ .menu b{margin-bottom:2px;}
+ #ui{position:fixed;top:8px;left:8px;background:rgba(0,0,0,.85);color:#fff;padding:10px;border-radius:8px;z-index:50;font-size:14px;line-height:1.4}
+ #ui input[type=range]{width:120px}
+ #ui label{user-select:none;margin-right:4px}
+ #ui button{margin:2px;font-size:13px}
+ #kapitelHinweis{color:#8df;margin-left:8px}
+ .icon {font-size:16px;margin-right:2px;}
+ .hide{display:none!important;}
+
+/* ----------- Shared touch optimization: smartphones & tablets ----------- */
+
+
+/* ----------- Small smartphones (portrait <=500px) ----------- */
+
+
+/* ----------- iPad mini/tablets: landscape (adjusted, not oversized) ----------- */
+
+
+/* ----------- Make invisible touch area on .btn always active ----------- */
+.btn {
+  position: absolute;
+  z-index: 22;
+  /* Visible, but without being too dominant */
+}
+
+
+/* ----------- Optional: .mid und .btn dezenter ----------- */
+
+
+
+  /* Duration label */
+  .dauer {
+    position:absolute;
+    font-size:11px;
+    background:rgba(0,0,0,0.6);
+    color:#fff;
+    padding:0 4px;
+    border-radius:4px;
+    white-space:nowrap;
+    pointer-events:none;
+    z-index:15;
+  }
+
+</style>
+<!-- SIMPLE_MODE_FULL_PATCH -->
+<!-- SIMPLEMODE_FINAL2_PATCH -->
+<style>
+  /* versteckt alle advanced-Elemente im Simple-Mode */
+  .simple-mode .advanced { display: none !important; }
+</style>
+<script>
+function addRoutePoint(px, py) {
+    const r = imgRect();
+    const nx = (px - r.x) / r.w;
+    const ny = (py - r.y) / r.h;
+    createPoint({ x: nx, y: ny, label: "", note: "", ptype: "route" });
+    updateNumbers();
+    draw();
+}
+</script>
+</head>
+<body>
+<div id="ui"><button data-i18n-key="LANG_TOGGLE" id="langToggle">DE</button><button id="modeToggle"><span data-i18n-key="TOGGLE_MODE_1">Toggle Mode</span></button>
+<input accept="image/*" id="imgInp" type="file"/><br/>
+<label><input id="kapitelMode" type="checkbox"/><span data-i18n-key="CHAPTER_NUMBERING_2">Chapter Numbering</span></label>
+<span id="kapitelHinweis"></span><br/>
+<label><input checked="" id="chkLabels" type="checkbox"/><span data-i18n-key="CHAPTER_3">Chapter</span></label>
+<label><input checked="" id="chkNotes" type="checkbox"/><span data-i18n-key="SHOW_NOTES_4">Show Notes</span></label>
+<label><input checked="" id="chkLines" type="checkbox"/><span data-i18n-key="LINES_5">Lines</span></label>
+<label><input checked="" id="chkEdit" type="checkbox"/><span data-i18n-key="EDIT_BUTTONS_6">Edit‑Buttons</span></label><br/>
+<span data-i18n-key="POINT_TYPES_FILTER_7">Point Types Filter</span>
+<label><input checked="" id="filterRoute" type="checkbox"/><span data-i18n-key="ROUTE_8">Route</span></label>
+<label class="advanced advanced"><input checked="" id="filterPlace" type="checkbox"/><span data-i18n-key="PLACE_9">Place</span></label>
+<label class="advanced advanced"><input checked="" id="filterChar" type="checkbox"/><span data-i18n-key="CHARACTER_10">Character</span></label>
+<label class="advanced advanced"><input checked="" id="filterEvent" type="checkbox"/><span data-i18n-key="EVENT_11">Event</span></label>
+<label class="advanced advanced"><input checked="" id="filterItem" type="checkbox"/><span data-i18n-key="ITEM_12">Item</span></label>
+<label class="advanced advanced"><input checked="" id="chkDauer" type="checkbox"/><span data-i18n-key="_SHOW_DURATION_13">⌛ Show Duration</span></label><br/><span data-i18n-key="ZOOM_14">Zoom</span><input id="zoom" max="5" min="1" step="0.01" type="range" value="1"/><br/><span data-i18n-key="OPACITY_15">Opacity</span><input id="opacity" max="1" min="0.1" step="0.01" type="range" value="1"/><br/>
+<button id="undo"><span data-i18n-key="_UNDO_16">↺ Undo</span></button><button id="redo"><span data-i18n-key="_REDO_17">↻ Redo</span></button>
+<button id="exportMd"><span data-i18n-key="EXPORT_MD_18">Export MD</span></button><button id="importMd"><span data-i18n-key="IMPORT_MD_19">Import MD</span></button>
+<button id="exportImg"><span data-i18n-key="PNG_20">PNG</span></button><button id="clearAll"><span data-i18n-key="CLEAR_ALL_21">Clear All</span></button>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let mdExportCount = 1;
+let imgExportCount = 1;
+
+// --- Unified translations & point types ---
+const translations = {
+  de: {
+    pointTypes: {
+      route: { icon: '🗺️', name: 'Routen-Punkt', label: 'Kapitel', filter: 'filterRoute' },
+      place: { icon: '📍', name: 'Ort',           label: 'Ort',     filter: 'filterPlace' },
+      char:  { icon: '👤', name: 'Charakter',     label: 'Charakter', filter: 'filterChar' },
+      event: { icon: '★', name: 'Event',         label: 'Event',   filter: 'filterEvent' },
+      item:  { icon: '🔑', name: 'Item',          label: 'Item',    filter: 'filterItem' }
+    }
+  },
+  en: {
+    pointTypes: {
+      route: { icon: '🗺️', name: 'Route Point',  label: 'Chapter', filter: 'filterRoute' },
+      place: { icon: '📍', name: 'Place',        label: 'Place',   filter: 'filterPlace' },
+      char:  { icon: '👤', name: 'Character',    label: 'Character', filter: 'filterChar' },
+      event: { icon: '★', name: 'Event',        label: 'Event',   filter: 'filterEvent' },
+      item:  { icon: '🔑', name: 'Item',         label: 'Item',    filter: 'filterItem' }
+    }
+  }
+};
+
+function getLocale() {
+  const urlLang = new URLSearchParams(window.location.search).get('lang');
+  if (urlLang && translations[urlLang]) return urlLang;
+  const docLang = document.documentElement.lang;
+  if (translations[docLang]) return docLang;
+  return navigator.language.startsWith('de') ? 'de' : 'en';
+}
+
+const locale = getLocale();
+const BASE_POINT_TYPES = ['route', 'place', 'char', 'event', 'item'];
+const POINT_TYPES = BASE_POINT_TYPES.map(type => {
+  const t = translations[locale].pointTypes[type];
+  return {
+    type:   type,
+    icon:   t.icon,
+    name:   t.name,
+    label:  t.label,
+    filter: t.filter
+  };
+});
+// --- end unified block ---
+
+function getIcon(ptype) {
+    const pt=POINT_TYPES.find(t=>t.type===ptype); return pt?pt.icon:'';
+}
+function getTypeMeta(ptype) {
+    return POINT_TYPES.find(t=>t.type===ptype) || POINT_TYPES[0];
+}
+function isVisibleType(ptype){
+    let meta=getTypeMeta(ptype);
+    let box=document.getElementById(meta.filter);
+    return box && box.checked;
+}
+
+// --- Helper functions ---
+function compareNum(a, b) {
+    const an = parseInt(a), bn = parseInt(b);
+    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+    return (a+"").localeCompare(b+"", undefined, {numeric:true,sensitivity:'base'});
+}
+const cvs=document.getElementById('canvas'),ctx=cvs.getContext('2d');
+let img=new Image(),imgLoaded=false,zoomValue=1,opacityValue=1,panX=0,panY=0;
+let draggingMap=false,startPan;
+const points=[],midEls=[];
+let showLines=true,showLabels=true,showEdit=true,showNotes=true;
+let showDauer = true;
+const undoStack=[],redoStack=[];
+let kapitelMode=false, kapitelStartNum=1;
+
+// --- Undo/Redo ---
+function push(){undoStack.push(JSON.stringify(points.map(stripElm)));redoStack.length=0}
+function stripElm(p){const{el,txt,lbl,btn,noteEl,icon,...rest}=p;return rest}
+function restore(arr){clearDOM();points.length=0;arr.forEach(d=>createPoint({...d},true));updateNumbers();draw();}
+function clearDOM(){points.forEach(p=>{p.el.remove(); if(p.noteEl) p.noteEl.remove();});midEls.forEach(m=>m.remove());midEls.length=0}
+
+// --- Resize ---
+function resize(){cvs.width=innerWidth;cvs.height=innerHeight;draw();updateDOM()}
+window.addEventListener('resize',resize);
+
+// --- Image Positioning ---
+function imgRect(){
+    const r=Math.min(cvs.width/img.width,cvs.height/img.height)*zoomValue;
+    const w=img.width*r,h=img.height*r;
+    const x=(cvs.width-w)/2+panX,y=(cvs.height-h)/2+panY;
+    return{x,y,w,h}
+}
+
+// --- Main Renderer ---
+function draw(){
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    if(!imgLoaded)return;
+    const r=imgRect();
+    ctx.globalAlpha=opacityValue;
+    ctx.drawImage(img,r.x,r.y,r.w,r.h);
+    ctx.globalAlpha=1;
+    if(showLines){drawLines();}
+    else midEls.forEach(m=>m.style.display='none');
+}
+
+// --- Draw Lines ---
+function drawLines(){
+    midEls.forEach(m=>m.remove());midEls.length=0;
+    // Nur Route-Punkte, die sichtbar sind
+    const routePts = points.filter(p => (p.ptype||'route') === 'route' && isVisibleType('route'));
+    if(routePts.length<2)return;
+    const r=imgRect();
+    ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    ctx.strokeStyle='red';ctx.lineWidth=2;ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    routePts.forEach((p,i)=>{if(i)addMid(routePts[i-1],p)});
+}
+
+// --- Add Midpoints (route only) ---
+function addMid(a,b){
+  if ((a.ptype||'route') !== 'route' || (b.ptype||'route') !== 'route') return;
+  const r = imgRect();
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const el = document.createElement('div');el.className = 'mid';document.body.appendChild(el);
+  midEls.push(el);pos(el, mx, my);
+  el.onclick = () => {push();
+    let idxA = points.indexOf(a), idxB = points.indexOf(b);
+    let idx = Math.max(idxA, idxB);
+    let neu = {x:mx, y:my, label:'', note:'', ptype:'route'};
+    points.splice(idx, 0, neu);
+    createPointMid(neu, idx);
+    updateNumbers(); draw();
+  }
+}
+function createPointMid(d, idx){
+    const {x,y,label='',note='',ptype='route'}=d;
+    const el=document.createElement('div');el.className='point';
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,el,txt,lbl,btn,icon};points[idx]=p;
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+    el.onpointermove=e=>{if(e.pointerId!==dragId)return;const r=imgRect();p.x=startD.px+(e.clientX-startD.x)/r.w; p.y=startD.py+(e.clientY-startD.y)/r.h;pos(el,p.x,p.y);draw(); if(p.noteEl) posNote(p);};
+    el.onpointermove = e => {
+  if (e.pointerId !== dragId) return;
+  const r = imgRect();
+  p.x = startD.px + (e.clientX - startD.x) / r.w;
+  p.y = startD.py + (e.clientY - startD.y) / r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if (p.noteEl)  posNote(p);
+  if (p.dauerEl) posDauer(p);
+};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+}
+
+// --- Create Point ---
+function createPoint(d,fromLoad=false){
+    const {x,y,label='',note='',ptype='route'}=d;
+    const el=document.createElement('div');el.className='point';
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,el,txt,lbl,btn,icon};points.push(p);
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+    el.onpointermove=e=>{if(e.pointerId!==dragId)return;const r=imgRect();p.x=startD.px+(e.clientX-startD.x)/r.w; p.y=startD.py+(e.clientY-startD.y)/r.h;pos(el,p.x,p.y);draw(); if(p.noteEl) posNote(p);};
+el.onpointermove = e => {
+  if (e.pointerId !== dragId) return;
+  const r = imgRect();
+  p.x = startD.px + (e.clientX - startD.x) / r.w;
+  p.y = startD.py + (e.clientY - startD.y) / r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if (p.noteEl)  posNote(p);
+  if (p.dauerEl) posDauer(p);
+};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+
+// --- Touch Drag for Point Divs ---
+el.ontouchstart = function(e){
+  if(e.target===btn)return;
+  const touch = e.touches[0];
+  dragId = "touch";
+  startD = {x: touch.clientX, y: touch.clientY, px: p.x, py: p.y};
+  e.preventDefault();
+};
+el.ontouchmove = function(e){
+  if(dragId !== "touch") return;
+  const touch = e.touches[0];
+  const r = imgRect();
+  p.x = startD.px + (touch.clientX - startD.x)/r.w;
+  p.y = startD.py + (touch.clientY - startD.y)/r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if(p.noteEl) posNote(p);
+  if (p.dauerEl) posDauer(p);
+    if (p.dauerEl) {
+      const r2 = imgRect();
+      p.dauerEl.style.left = (r2.x + p.x * r2.w) + 'px';
+      p.dauerEl.style.top  = (r2.y + p.y * r2.h + 38) + 'px';
+    }
+  e.preventDefault();
+};
+el.ontouchend = function(e){
+    // Klicks auf den Menü-Button nicht blockieren
+    if (e.target === btn) return;
+    // Nur beim echten Touch-Drag verhindern & push auslösen
+    if (dragId === "touch") {
+        dragId = null;
+        push();
+        e.preventDefault();
+    }
+};
+
+    if(!fromLoad)push();
+}
+function pos(el,nx,ny){const r=imgRect();el.style.left=r.x+nx*r.w+'px';el.style.top=r.y+ny*r.h+'px'}
+
+// Note Position: directly under the label or duration
+function posNote(p) {
+  const r = imgRect();
+  // Abstände in px
+  const labelOff = 20;   // Label sitzt 20px unter dem Punkt
+  const dauerOff = 38;   // Dauer sitzt 38px unter dem Punkt
+  // Wenn Dauer angezeigt ist, rücke Notiz darunter, sonst unter Label
+  const off = (showDauer && p.dauer && p.dauerEl && p.dauerEl.style.display==='block')
+              ? (dauerOff + 12)  // z.B. 18px Abstand zwischen Dauer und Notiz
+              : (labelOff + 12); // oder 18px unter dem Label
+
+  if (!p.noteEl) return; // keine Notiz, nichts zu tun
+  p.noteEl.style.left = (r.x + p.x * r.w) + 'px';
+  p.noteEl.style.top  = (r.y + p.y * r.h + off) + 'px';
+}
+
+  // Duration Position: directly under the point
+  function posDauer(p) {
+    const r = imgRect();
+    p.dauerEl.style.left = (r.x + p.x * r.w) + 'px';
+    p.dauerEl.style.top  = (r.y + p.y * r.h + 32) + 'px';
+  }
+
+
+function updateVis() {
+  // ——— updateVis with duration display ———
+  points.forEach(p => {
+    // Typ-Filter
+    if (!isVisibleType(p.ptype||'route')) {
+      p.el.classList.add('hide');
+      if(p.noteEl) p.noteEl.classList.add('hide');
+      if(p.dauerEl) p.dauerEl.style.display='none';
+      return;
+    }
+    p.el.classList.remove('hide');
+    if(p.noteEl) p.noteEl.classList.remove('hide');
+    // Label
+    p.lbl.style.display = showLabels && p.label ? 'block' : 'none';
+    // Edit-Button
+    p.btn.style.display = showEdit ? 'flex' : 'none';
+    // Icon
+    p.icon.textContent = p.ptype!=='route' ? getIcon(p.ptype) : '';
+    // Notiz
+    if (showNotes && p.note) {
+      if (!p.noteEl) {
+        p.noteEl = document.createElement('div');
+        Object.assign(p.noteEl.style, {
+          position:'absolute',whiteSpace:'pre-wrap',
+          background:'rgba(0,0,0,0.7)',color:'#fff',
+          padding:'4px 6px',fontSize:'12px',borderRadius:'6px',
+          maxWidth:'200px',zIndex:15
+        });
+        document.body.appendChild(p.noteEl);
+      }
+      p.noteEl.textContent = p.note;
+      posNote(p);
+      p.noteEl.style.display = 'block';
+    } else if (p.noteEl) {
+      p.noteEl.style.display = 'none';
+    }
+    // Dauer
+    if (showDauer && p.dauer) {
+      if (!p.dauerEl) {
+        p.dauerEl = document.createElement('div');
+        p.dauerEl.className = 'dauer';
+        document.body.appendChild(p.dauerEl);
+      }
+      p.dauerEl.textContent = '⌛ ' + p.dauer;
+      const r = imgRect();
+      p.dauerEl.style.left = (r.x + p.x * r.w) + 'px';
+      p.dauerEl.style.top  = (r.y + p.y * r.h + 32) + 'px';
+      p.dauerEl.style.display = 'block';
+    } else if (p.dauerEl) {
+      p.dauerEl.style.display = 'none';
+    }
+  });
+}
+
+function updateNumbers() {
+    let cnt = 1;
+    points.forEach((p,i)=>{
+      if ((p.ptype||'route') === 'route' && isVisibleType('route')) {
+        p.txt.textContent = kapitelMode ? (kapitelStartNum + cnt - 1) : cnt;
+        cnt++;
+      } else {
+        p.txt.textContent = "";
+      }
+    } );
+    document.getElementById('kapitelHinweis').textContent = kapitelMode ? `Chapter mode active (Start: ${kapitelStartNum})` : "";
+}
+
+function updateDOM() {
+  points.forEach(p => {
+    pos(p.el,p.x,p.y);
+    if (p.noteEl) posNote(p);
+    if (p.dauerEl) posDauer(p);
+    if (p.dauerEl) {
+      const r2 = imgRect();
+      p.dauerEl.style.left = (r2.x + p.x * r2.w) + 'px';
+      p.dauerEl.style.top  = (r2.y + p.y * r2.h + 38) + 'px';
+    }
+  });
+  updateVis();
+}
+
+// --- UI Binding ---
+document.getElementById('imgInp').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    img.src = URL.createObjectURL(f);
+    img.onload = () => { imgLoaded=true; zoomValue=1; opacityValue=1; panX=panY=0; document.getElementById('zoom').value=1; document.getElementById('opacity').value=1; resize(); }
+};
+document.getElementById('zoom').oninput = e => { zoomValue = parseFloat(e.target.value); draw(); updateDOM(); };
+document.getElementById('opacity').oninput = e => { opacityValue = parseFloat(e.target.value); draw(); };
+document.getElementById('chkLines').onchange = e => { showLines = e.target.checked; draw(); };
+document.getElementById('chkLabels').onchange = e => { showLabels = e.target.checked; updateVis(); };
+document.getElementById('chkNotes').onchange = e => { showNotes = e.target.checked; updateVis(); };
+    document.getElementById('chkEdit').onchange  = e => { showEdit  = e.target.checked; updateVis(); };
+    document.getElementById('chkDauer').onchange = e => { showDauer = e.target.checked; updateVis(); };
+document.getElementById('undo').onclick = () => { if(undoStack.length){ redoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(undoStack.pop())); }};
+document.getElementById('redo').onclick = () => { if(redoStack.length){ undoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(redoStack.pop())); }};
+document.getElementById('clearAll').onclick = () => { if(confirm('Delete all points?')){ push(); clearDOM(); points.length=0; draw(); updateNumbers(); }};
+document.getElementById('kapitelMode').onchange = e => {
+   kapitelMode = e.target.checked;
+   if (kapitelMode) {
+       let neu = prompt("Start at which chapter number?", kapitelStartNum);
+       if (!neu || isNaN(parseInt(neu))) neu = kapitelStartNum;
+       kapitelStartNum = parseInt(neu);
+   }
+   updateNumbers(); draw();
+};
+// Filter für Punktarten
+['filterRoute','filterPlace','filterChar','filterEvent','filterItem'].forEach(id=>{
+  document.getElementById(id).onchange=()=>{updateVis();draw();}
+});
+
+// --- Map Pan ---
+cvs.onpointerdown = e => {
+    if(!imgLoaded) return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className && el.className.includes('point'))) return;
+    draggingMap=true; startPan={x:e.clientX,y:e.clientY,px:panX,py:panY}; cvs.setPointerCapture(e.pointerId);
+};
+cvs.onpointermove = e => { if(!draggingMap) return; panX=startPan.px+(e.clientX-startPan.x); panY=startPan.py+(e.clientY-startPan.y); draw(); updateDOM(); };
+cvs.onpointerup = e => draggingMap=false;
+
+// --- Touch Fallback for Canvas (iPad/iOS) ---
+cvs.addEventListener("touchstart", handleTouchStart, { passive: false });
+cvs.addEventListener("touchmove", handleTouchMove, { passive: false });
+cvs.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+function getTouchPos(evt) {
+  const rect = cvs.getBoundingClientRect();
+  const touch = evt.touches[0] || evt.changedTouches[0];
+  return {
+    x: touch.clientX,
+    y: touch.clientY
+  };
+}
+
+function handleTouchStart(e) {
+  e.preventDefault();
+  if(!imgLoaded) return;
+  const {x, y} = getTouchPos(e);
+  if([...document.elementsFromPoint(x, y)].some(el => el.className && el.className.includes('point'))) return;
+  draggingMap = true;
+  startPan = { x, y, px: panX, py: panY };
+}
+function handleTouchMove(e) {
+  if(!draggingMap) return;
+  e.preventDefault();
+  const {x, y} = getTouchPos(e);
+  panX = startPan.px + (x - startPan.x);
+  panY = startPan.py + (y - startPan.y);
+  draw(); updateDOM();
+}
+function handleTouchEnd(e) {
+  draggingMap = false;
+  e.preventDefault();
+}
+
+
+
+// --- Add point (Doppelklick) ---
+// --- Double-click/Desktop
+cvs.ondblclick = e => {
+    if (!imgLoaded) return;
+    if ([...document.elementsFromPoint(e.clientX, e.clientY)]
+        .some(el => el.classList && el.classList.contains("point"))) return;
+    if (document.documentElement.classList.contains("simple-mode")) {
+        e.preventDefault(); e.stopPropagation();
+        const rect = cvs.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        addRoutePoint(x, y);
+        updateNumbers(); draw();
+    } else {
+        openTypeMenuAt(e.clientX, e.clientY);
+    }
+};
+
+// --- Double-tap on Touch Devices (iOS/iPad etc.)
+let lastTap = 0;
+let lastTapPos = null;
+
+cvs.addEventListener('touchend', function(e){
+    // Tap-Position bestimmen (immer erstes Touch-Objekt)
+    const {x, y} = getTouchPos(e);
+
+    // Kein Doppeltap auf einem Punkt selbst
+    if([...document.elementsFromPoint(x, y)].some(el => el.className && el.className.includes('point'))) return;
+
+    const now = Date.now();
+    if(lastTap && lastTapPos) {
+        const dx = Math.abs(x - lastTapPos.x);
+        const dy = Math.abs(y - lastTapPos.y);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if((now - lastTap < 400) && dist < 15) { // max 300ms und max 15px Verschiebung
+            openTypeMenuAt(x, y);
+            lastTap = 0; lastTapPos = null; // zurücksetzen
+            return;
+        }
+    }
+    lastTap = now;
+    lastTapPos = {x, y};
+}, {passive:false});
+
+
+function openTypeMenuAt(clientX, clientY) {
+    showTypeSelect(clientX, clientY, type => {
+        const r = imgRect();
+        const nx = (clientX - r.x)/r.w, ny = (clientY - r.y)/r.h;
+        createPoint({x:nx, y:ny, label:'', note:'', ptype:type});
+        updateNumbers(); draw();
+    });
+}
+
+function showTypeSelect(x, y, cb) {
+    let menu = document.createElement('div');
+    menu.className = 'menu';
+    menu.style.left = x+'px';
+    menu.style.top = y+'px';
+    menu.innerHTML = '<b><span data-i18n-key="CHOOSE_TYPE">' + uiTranslations['CHOOSE_TYPE'][uiLocale] + '</span></b>';
+    POINT_TYPES.forEach(t=>{
+      let btn = document.createElement('button');
+      btn.innerHTML = (t.icon?`<span class="icon">${t.icon}</span>`:"") + t.name;
+      btn.onclick = ()=>{ cb(t.type); menu.remove(); };
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    setTimeout(()=>{ // Auto-close wenn woanders geklickt
+      document.addEventListener('pointerdown', function h(ev){
+        if(!menu.contains(ev.target)){ menu.remove();document.removeEventListener('pointerdown',h);}
+      });
+    });
+}
+
+// --- Context menu ---
+let menu=null;
+function showMenu(x,y,p){
+  // ——— showMenu komplett neu ———
+  menu&&menu.remove();
+  menu=document.createElement('div'); menu.className='menu';
+  menu.style.left = x+'px'; menu.style.top = y+'px';
+  const meta = getTypeMeta(p.ptype||'route');
+  menu.innerHTML = `
+  <button id="e" data-i18n-key="CTX_CHAPTER_EDIT">${uiTranslations['CTX_CHAPTER_EDIT'][uiLocale]}</button>
+  <button id="n" data-i18n-key="CTX_NOTE_EDIT">${uiTranslations['CTX_NOTE_EDIT'][uiLocale]}</button>
+  <button id="toggleNote" data-i18n-key="${p.noteEl&&p.noteEl.style.display==='block'?'CTX_HIDE_NOTE':'CTX_SHOW_NOTE'}">${uiTranslations[p.noteEl&&p.noteEl.style.display==='block'?'CTX_HIDE_NOTE':'CTX_SHOW_NOTE'][uiLocale]}</button>
+  <button id="typ" data-i18n-key="CTX_CHANGE_TYPE">${uiTranslations['CTX_CHANGE_TYPE'][uiLocale]}</button>
+  <button id="dauer" data-i18n-key="CTX_SET_DURATION">${uiTranslations['CTX_SET_DURATION'][uiLocale]}</button>
+  <button id="d" data-i18n-key="CTX_DELETE">${uiTranslations['CTX_DELETE'][uiLocale]}</button>
+`;
+  document.body.appendChild(menu);
+  // Label-Update
+  const btnToggle = menu.querySelector('#toggleNote');
+  btnToggle.textContent = (p.noteEl && p.noteEl.style.display==='block') ? 'Hide Note' : 'Show Note';
+  // Edit
+  menu.querySelector('#e').onclick = ()=>{ const v=prompt(meta.label,p.label); if(v!==null){push();p.label=v; p.lbl.textContent=v; updateVis();} menu.remove(); };
+  // Note-Edit
+  menu.querySelector('#n').onclick = ()=>{ const v=prompt('Note',p.note); if(v!==null){push();p.note=v; updateVis();} menu.remove(); };
+  // Toggle Note
+  btnToggle.onclick = ()=>{
+    if (p.noteEl && p.noteEl.style.display==='block') p.noteEl.style.display='none';
+    else if(p.note){ p.noteEl=null; updateVis(); }
+    menu.remove();
+  };
+  // Typ
+    menu.querySelector('#typ').onclick = ()=>{
+      showTypeSelect(x,y,t=>{
+        push();
+        p.ptype = t;
+        updateVis();
+        menu.remove();
+      });
+    };
+  // Set Duration
+  menu.querySelector('#dauer').onclick = ()=>{ const v=prompt('Duration (e.g., 3 days)',p.dauer||''); if(v!==null){push();p.dauer=v; updateVis();} menu.remove(); };
+  // Delete
+  menu.querySelector('#d').onclick = ()=>{
+    if (confirm('Delete point?')) {
+        push();
+        const idx = points.indexOf(p);
+        if (idx !== -1) {
+            const removed = points.splice(idx, 1)[0];
+            // DOM-Elemente entfernen
+            removed.el.remove();
+            if (removed.noteEl) removed.noteEl.remove();
+            if (removed.dauerEl) removed.dauerEl.remove();
+            updateNumbers();
+            draw();
+        }
+    }
+    menu.remove();
+};
+}
+document.body.addEventListener('pointerdown',e=>{ if(menu && !menu.contains(e.target)) menu.remove(); });
+
+// --- Export/Import/PNG ---
+
+// Export points as Markdown table
+document.getElementById('exportMd').onclick = () => {
+    function distance(p1, p2) {
+        const dx = (p1.x || 0) - (p2.x || 0);
+        const dy = (p1.y || 0) - (p2.y || 0);
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    let routePoints = points.filter(p => (p.ptype || 'route') === 'route');
+    let otherPoints = points.filter(p => (p.ptype || 'route') !== 'route');
+
+    // Sortiere Routenpunkte nach ihrer Reihenfolge im Pfad
+    routePoints.sort((a, b) => {
+        if (a.pathId !== b.pathId) return 0;
+        return points.indexOf(a) - points.indexOf(b);
+    });
+
+    // route_step vergeben
+    routePoints.forEach((p, i) => p.route_step = i + 1);
+
+    // Bucket für alle Nicht-Routenpunkte anhand nächstgelegenem Routenpunkt
+    let bucketMap = new Map();
+    routePoints.forEach(p => bucketMap.set(p, []));
+
+    otherPoints.forEach(p => {
+        let nearest = routePoints[0];
+        let minDist = distance(p, nearest);
+        for (let i = 1; i < routePoints.length; i++) {
+            let d = distance(p, routePoints[i]);
+            if (d < minDist) {
+                minDist = d;
+                nearest = routePoints[i];
+            }
+        }
+        bucketMap.get(nearest).push(p);
+    });
+
+    // MD zusammenbauen
+    let md = `| Typ | Label | Notiz | X | Y | Route-Step |
+|---|---|---|---|---|---|
+`;
+
+    routePoints.forEach(p => {
+        const typeName = getTypeMeta(p.ptype || 'route').name;
+        md += `| ${typeName} | ${p.label?.replace(/\|/g, '/')} | ${p.note?.replace(/\|/g, '/')} | ${(p.x || 0).toFixed(4)} | ${(p.y || 0).toFixed(4)} | ${p.route_step} |
+`;
+        const others = bucketMap.get(p) || [];
+        others.forEach(op => {
+            const opName = getTypeMeta(op.ptype || 'ort').name;
+            md += `| ${opName} | ${op.label?.replace(/\|/g, '/')} | ${op.note?.replace(/\|/g, '/')} | ${(op.x || 0).toFixed(4)} | ${(op.y || 0).toFixed(4)} | |
+`;
+        });
+    });
+
+    const blob = new Blob([md], {type:'text/markdown'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+    a.download = `PlotMap_${dateStr}_${mdExportCount++}.md`;
+    a.click();
+};
+
+// Import points from Markdown table
+document.getElementById('importMd').onclick = () => {
+    let inp = document.createElement('input');
+    inp.type = 'file'; inp.accept='.md,text/markdown';
+    inp.onchange = e=>{
+        const file = inp.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev){
+            let text = ev.target.result;
+            let lines = text.split('\n').filter(l=>l.trim() && !l.startsWith('|---'));
+            let newPoints = [];
+            for(let i=1;i<lines.length;i++){
+                let cols = lines[i].split('|').map(x=>x.trim());
+                if(cols.length<6) continue;
+                let [typ, label, note, x, y] = [cols[1],cols[2],cols[3],cols[4],cols[5]];
+                let meta = POINT_TYPES.find(t=>t.name===typ) || POINT_TYPES[0];
+                newPoints.push({ptype:meta.type, label, note, x:parseFloat(x), y:parseFloat(y)});
+            }
+            if (newPoints.length) {
+                push(); clearDOM(); points.length=0;
+                newPoints.forEach(d=>createPoint(d,true));
+                updateNumbers(); draw();
+            }
+        }
+        reader.readAsText(file);
+    };
+    inp.click();
+};
+
+// --- PNG export with visible points, icons & labels/notes ---
+
+document.getElementById('exportImg').onclick = () => {
+    // hide mid-handles and duration divs
+    midEls.forEach(m=>m.style.display='none');
+    document.querySelectorAll('.dauer').forEach(d=>d.style.display='none');
+    // redraw base map and lines
+    draw();
+
+    // now draw all points, labels & notes onto the canvas
+    const r = imgRect();
+    ctx.save();
+
+    // draw route-lines
+    if (showLines) {
+        const routePts = points.filter(p => (p.ptype||'route')==='route' && isVisibleType('route'));
+        if (routePts.length > 1) {
+            ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath();
+            routePts.forEach((p,i)=> {
+              const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+              i>0 ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+            });
+            ctx.stroke();
+            ctx.strokeStyle = 'red'; ctx.lineWidth = 2; ctx.beginPath();
+            routePts.forEach((p,i)=> {
+              const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+              i>0 ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+            });
+            ctx.stroke();
+        }
+    }
+
+    // draw each point
+    let cnt = 1;
+    points.forEach(p => {
+        if (!isVisibleType(p.ptype||'route')) return;
+        const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+
+        // circle
+        ctx.beginPath();
+        ctx.arc(x,y,16,0,2*Math.PI);
+        ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.95)'; ctx.stroke();
+
+        // icon or number
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if ((p.ptype||'route') === 'route') {
+            ctx.fillText(kapitelMode ? (kapitelStartNum+cnt-1) : cnt, x, y);
+            cnt++;
+        } else {
+            ctx.font = '22px sans-serif';
+            ctx.fillText(getIcon(p.ptype), x, y+1);
+        }
+
+        // label under
+        if (p.label && showLabels) {
+            ctx.font = '11px sans-serif';
+            const w = ctx.measureText(p.label).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(x - w/2 - 4, y + 18, w + 8, 18);
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+            ctx.fillText(p.label, x, y + 27);
+        }
+
+        // note under
+        if (showNotes && p.note) {
+            ctx.font = '12px sans-serif';
+            const noteY = y + 46;
+            const w = ctx.measureText(p.note).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(x - w/2 - 4, noteY - 9, w + 8, 18);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(p.note, x, noteY);
+        }
+    });
+
+    ctx.restore();
+
+    // now export via toBlob (async!), then restore DOM overlays
+    requestAnimationFrame(() => {
+      cvs.toBlob(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        link.download = `PlotMap_${dateStr}_${imgExportCount++}.png`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        // put everything back
+        midEls.forEach(m=>m.style.display='flex');
+        document.querySelectorAll('.dauer').forEach(d=>d.style.display='block');
+        draw(); updateDOM();
+      }, 'image/png');
+    });
+};
+resize();
+</script>
+<script>
+(() => {
+  // Initial-Mode aus localStorage
+  let simpleMode = localStorage.getItem('mode') === 'base';
+  document.documentElement.classList.toggle('simple-mode', simpleMode);
+
+  // Button-Text & Handler
+  const btn = document.getElementById('modeToggle');
+  if (btn) {
+    btn.textContent = simpleMode ? 'To Full Mode' : 'To Simple Mode';
+    btn.addEventListener('click', () => {
+      simpleMode = !simpleMode;
+      document.documentElement.classList.toggle('simple-mode', simpleMode);
+      localStorage.setItem('mode', simpleMode ? 'base' : 'plus');
+      btn.textContent = simpleMode ? 'To Full Mode' : 'To Simple Mode';
+    });
+  }
+
+  // Doppelklick auf Canvas im Simple Mode -> addRoutePoint
+  const cvs = document.getElementById('canvas');
+  if (cvs) {
+    cvs.addEventListener('dblclick', function(e) {
+      if (!simpleMode || !window.imgLoaded) return;
+      // kein Klick auf bestehenden Punkt
+      if ([].some.call(document.elementsFromPoint(e.clientX, e.clientY),
+          el => el.classList && el.classList.contains('point'))) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (typeof addRoutePoint === 'function') {
+        addRoutePoint(x, y);
+        updateNumbers();
+        draw();
+      }
+    }, true);
+  }
+})();
+</script>
+<script>const uiTranslations = {"TOGGLE_MODE_1": {"en": "Toggle Mode", "de": "Toggle Mode"}, "CHAPTER_NUMBERING_2": {"en": "Chapter Numbering", "de": "Kapitel-Nummerierung"}, "CHAPTER_3": {"en": "Chapter", "de": "Kapitel"}, "SHOW_NOTES_4": {"en": "Show Notes", "de": "Notizen anzeigen"}, "LINES_5": {"en": "Lines", "de": "Linien"}, "EDIT_BUTTONS_6": {"en": "Edit‑Buttons", "de": "Edit‑Buttons"}, "POINT_TYPES_FILTER_7": {"en": "Point Types Filter", "de": "Punktarten Filter"}, "ROUTE_8": {"en": "Route", "de": "Route"}, "PLACE_9": {"en": "Place", "de": "Ort"}, "CHARACTER_10": {"en": "Character", "de": "Charakter"}, "EVENT_11": {"en": "Event", "de": "Event"}, "ITEM_12": {"en": "Item", "de": "Item"}, "_SHOW_DURATION_13": {"en": "⌛ Show Duration", "de": "⌛ Dauer anzeigen"}, "ZOOM_14": {"en": "Zoom", "de": "Zoom"}, "OPACITY_15": {"en": "Opacity", "de": "Deckkraft"}, "_UNDO_16": {"en": "↺ Undo", "de": "↺ Undo"}, "_REDO_17": {"en": "↻ Redo", "de": "↻ Redo"}, "EXPORT_MD_18": {"en": "Export MD", "de": "Export MD"}, "IMPORT_MD_19": {"en": "Import MD", "de": "Import MD"}, "PNG_20": {"en": "PNG", "de": "PNG"}, "CLEAR_ALL_21": {"en": "Clear All", "de": "Alle löschen"}, "LANG_TOGGLE": {"en": "DE", "de": "EN"}, "CHOOSE_TYPE": {"en": "Choose type:", "de": "Typ wählen:"}, "CTX_CHAPTER_EDIT": {"en": "Chapter Edit", "de": "Kapitel bearbeiten"}, "CTX_NOTE_EDIT": {"en": "Note Edit", "de": "Notiz bearbeiten"}, "CTX_SHOW_NOTE": {"en": "Show Note", "de": "Notiz anzeigen"}, "CTX_HIDE_NOTE": {"en": "Hide Note", "de": "Notiz verbergen"}, "CTX_CHANGE_TYPE": {"en": "Change Point Type", "de": "Punkttyp ändern"}, "CTX_SET_DURATION": {"en": "⌛ Set Duration", "de": "⌛ Dauer setzen"}, "CTX_DELETE": {"en": "Delete", "de": "Löschen"}};
+let uiLocale = (new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('de')?'de':'en')); 
+function applyUI() {
+  document.documentElement.lang = uiLocale;
+  document.querySelectorAll('[data-i18n-key]').forEach(el => { const k = el.getAttribute('data-i18n-key'); if(uiTranslations[k] && uiTranslations[k][uiLocale]) el.textContent = uiTranslations[k][uiLocale]; });
+}
+window.addEventListener('DOMContentLoaded', () => { applyUI(); 
+  const btn = document.getElementById('langToggle');
+  btn.addEventListener('click', () => { uiLocale = uiLocale === 'en' ? 'de' : 'en'; applyUI(); history.replaceState(null, '', '?lang=' + uiLocale); });
+});</script></body>
+</html>
