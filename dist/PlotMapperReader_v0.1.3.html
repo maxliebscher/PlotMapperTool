@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="app-version" content="v0.1.3"/>
+<title>PlotMapper Reader</title>
+<style>
+  :root{ --bg:#0f1320; --panel:#18223a; --text:#ecf1ff; --muted:#a9b6d3; --accent:#5cc2ff; --border:#2a3a5e; --shadow: 0 12px 38px rgba(0,0,0,.55); }
+  html,body{height:100%}
+  body{ margin:0; font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: radial-gradient(1000px 540px at 50% 12%, rgba(40,84,154,.22), transparent 60%), linear-gradient(180deg, #0a0f1a 0%, #0b1321 100%); color:var(--text) }
+  header{position:sticky; top:0; z-index:10; background:rgba(9,15,28,.9); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border);}
+  .bar{display:flex; gap:10px; align-items:center; padding:10px 14px; max-width:1080px; margin:0 auto;}
+  .title{margin:0; font-size:16px; letter-spacing:.2px; display:flex; align-items:center; gap:8px}
+  .title .badge{border:1px solid var(--border); border-radius:999px; padding:2px 8px; font-size:12px; color:var(--muted)}
+  .spacer{flex:1}
+  .btn{border:1px solid var(--border); background:#173150; color:#fff; padding:8px 12px; border-radius:12px; cursor:pointer; box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .btn:hover{background:#23436e}
+  input[type="file"]{display:none}
+  .file-name{font-size:12px; color:var(--muted); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .hint{color:var(--muted); margin:10px auto 4px; max-width:1080px; padding:0 14px}
+  main{max-width:1000px; margin: 12px auto 80px; padding:0 14px}
+  .cards{display:grid; gap:14px}
+  .card{background:rgba(15,24,42,.85); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:14px 16px; break-inside:avoid}
+  .step{display:flex; align-items:baseline; gap:10px; margin:0 0 6px}
+  .nr{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:999px; background:#fff; color:#000; font-weight:800}
+  .step h3{margin:0; font-size:18px}
+  .pill{border:1px solid var(--border); border-radius:999px; padding:2px 8px; font-size:12px}
+  .note{margin:8px 0 0; white-space:pre-wrap; line-height:1.35}
+  .extras{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:6px}
+  .extras li{display:flex; gap:8px; align-items:baseline; border-left:3px solid #2a3a5e; padding:2px 0 2px 10px}
+  .t{opacity:.85}
+  footer{opacity:.66; font-size:12px; text-align:center; margin:24px 0 40px}
+  .dropdown{position:relative}
+  .dropdown-menu{position:absolute; right:0; top:calc(100% + 6px); background:#111b2b; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); display:none; min-width:180px; padding:6px}
+  .dropdown.open .dropdown-menu{display:block}
+  .dropdown-menu button{display:block; width:100%; text-align:left; background:transparent; border:0; padding:10px 12px; color:#fff; border-radius:8px; cursor:pointer}
+  .dropdown-menu button:hover{background:#1a2a46}
+  .lang{font-size:13px; color:var(--muted)}
+  @media print{ @page { size: A4; margin: 14mm; } header, .hint { display:none !important; } body { background:#fff; color:#000; }
+    .card { page-break-inside: avoid; background:#fff; border:1px solid #ddd; box-shadow:none; } .pill { border-color:#ccc; } a::after { content:''; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1 class="title">PlotMapper Reader <span class="badge" id="versionBadge"></span></h1>
+    <div class="spacer"></div>
+    <span class="lang" id="langLabel">DE</span>
+    <button class="btn" id="langToggle" title="Sprache / Language">🌐</button>
+    <button class="btn" id="chooseBtn" type="button">MD laden</button>
+    <input id="mdFile" type="file" accept=".md,text/markdown"/>
+    <span class="file-name" id="fileName">Keine Datei gewählt</span>
+    <div class="dropdown" id="exportDD">
+      <button class="btn" id="exportBtn">Export</button>
+      <div class="dropdown-menu">
+        <button id="exportHtml">Als HTML speichern</button>
+        <button id="exportPdf">Als PDF drucken…</button>
+      </div>
+    </div>
+  </div>
+</header>
+<p class="hint" id="hint">Lade eine Markdown-Datei (Export MD aus PlotMapper). Nicht-Routenpunkte werden dem nächstliegenden Routenpunkt zugeordnet.</p>
+<main><div class="cards" id="cards"></div></main>
+<footer>PlotMapper Reader <span id="versionFooter"></span></footer>
+
+<script>
+(function(){
+  // --- Single source of truth for version ---
+  const VERSION = document.querySelector('meta[name="app-version"]')?.content || "v0.0.0";
+  document.getElementById('versionBadge').textContent = VERSION;
+  document.getElementById('versionFooter').textContent = VERSION;
+  document.title = `PlotMapper Reader ${VERSION}`;
+
+  const T = {
+    de: { load: "MD laden", none:"Keine Datei gewählt", hint:"Lade eine Markdown-Datei (Export MD aus PlotMapper). Nicht-Routenpunkte werden dem nächstliegenden Routenpunkt zugeordnet.",
+          step:"Schritt", chapter:"Kapitel", duration:"Dauer", export:"Export", html:"Als HTML speichern", pdf:"Als PDF drucken…", filename:"PlotReader_Export" },
+    en: { load: "Load MD", none:"No file selected", hint:"Load a Markdown file (Export MD from PlotMapper). Non-route points are assigned to the nearest route point.",
+          step:"Step", chapter:"Chapter", duration:"Duration", export:"Export", html:"Save as HTML", pdf:"Print to PDF…", filename:"PlotReader_Export" }
+  };
+  let L = "de";
+  const $ = sel => document.querySelector(sel);
+  function t(k){ return (T[L] && T[L][k]) || T.en[k] || k; }
+  function applyUI(){ $("#chooseBtn").textContent = t("load"); $("#fileName").textContent = t("none"); $("#hint").textContent = t("hint");
+    $("#exportBtn").textContent = t("export"); $("#exportHtml").textContent = t("html"); $("#exportPdf").textContent = t("pdf"); $("#langLabel").textContent = L.toUpperCase(); }
+
+  function parseMDTable(text){
+    const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
+    const rows = []; let start = lines.findIndex(l=>/\|\s*Typ\s*\|/i.test(l)); if(start < 0) start = 0;
+    for(let i=start+1;i<lines.length;i++){ const line = lines[i].trim(); if(!line.startsWith('|')) continue; if(/^-+\|/.test(line) || line.startsWith('|---')) continue;
+      const cols = line.split('|').map(c=>c.trim()); if(cols.length < 8) continue;
+      rows.push({ typ: cols[1], label: cols[2]||"", note: cols[3]||"", x: parseFloat(cols[4]||"0"), y: parseFloat(cols[5]||"0"),
+                  step: (cols[6]&&/^\d+$/.test(cols[6]))?parseInt(cols[6],10):null, dauer: (cols[7]||"").trim() });
+    } return rows;
+  }
+
+  function groupIntoChapters(rows){
+    const route = rows.filter(r => /Route Point|Routen.?Punkt|^Route$/i.test(r.typ) && Number.isInteger(r.step)).sort((a,b)=>a.step-b.step);
+    const others = rows.filter(r => !route.includes(r));
+    const chapters = route.map(r => ({ step:r.step, label:r.label||"", note:r.note||"", dauer:r.dauer||"", extras:[] }));
+    function dist(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+    others.forEach(o => { let best = 0, bestD = Infinity; for(let i=0;i<route.length;i++){ const d = dist(o, route[i]); if(d < bestD){ bestD = d; best = i; } }
+      chapters[best] && chapters[best].extras.push({ type:o.typ, label:o.label||"", note:o.note||"", dauer:o.dauer||"" }); });
+    return chapters;
+  }
+
+  function render(chapters){
+    const cards = $("#cards"); cards.innerHTML = "";
+    chapters.forEach(ch => { const sec = document.createElement("section"); sec.className = "card"; sec.id = "step-"+ch.step;
+      const h = document.createElement("div"); h.className = "step";
+      h.innerHTML = '<span class="nr">'+ch.step+'</span><h3>'+ (ch.label ? escapeHtml(ch.label) : t("chapter")+" "+ch.step) +'</h3>' + (ch.dauer ? ' <span class="pill">⏳ '+escapeHtml(ch.dauer)+'</span>' : '');
+      sec.appendChild(h);
+      if(ch.note){ const p = document.createElement("div"); p.className = "note"; p.textContent = ch.note; sec.appendChild(p); }
+      if(ch.extras.length){ const ul = document.createElement("ul"); ul.className = "extras";
+        ch.extras.forEach(e => { const li = document.createElement("li"); const type = document.createElement("span"); type.className = "t pill"; type.textContent = e.type;
+          const text = document.createElement("div"); text.innerHTML = (e.label? "<strong>"+escapeHtml(e.label)+"</strong>" : "") + (e.note? (e.label?" — ":"") + escapeHtml(e.note) : "") + (e.dauer? ' <span class="pill" style="border-color:#384b72">⏳ '+escapeHtml(e.dauer)+'</span>' : "");
+          li.appendChild(type); li.appendChild(text); ul.appendChild(li); }); sec.appendChild(ul); }
+      cards.appendChild(sec); });
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt'}[c])); }
+
+  async function handleFile(file){
+    const txt = await file.text(); $("#fileName").textContent = file.name;
+    const rows = parseMDTable(txt); const chapters = groupIntoChapters(rows); render(chapters);
+    currentExportName = (file.name.replace(/\.[^.]+$/,'') || t('filename'));
+  }
+
+  let currentExportName = t('filename');
+  function exportHTML(){
+    const content = document.getElementById('cards').innerHTML; const css = document.querySelector('style').innerHTML; const title = (currentExportName || 'PlotReader_Export');
+    const doc = `<!DOCTYPE html><html lang="${L}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="source-app" content="PlotMapper Reader"/><meta name="source-version" content="${VERSION}"/>
+<title>${escapeHtml(title)} – Reader Export</title><style>${css}
+header, .hint, footer, .dropdown, .file-name, #langToggle, #chooseBtn { display:none !important; } body { background:#fff; color:#111; }
+.card { background:#fff; border:1px solid #ddd; box-shadow:none; }</style></head><body><main><div class="cards">${content}</div></main></body></html>`;
+    const blob = new Blob([doc], {type:'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = title + ".html";
+    document.body.appendChild(a); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000); a.remove();
+  }
+  function exportPDF(){ window.print(); }
+
+  // Events
+  $("#mdFile").addEventListener("change", (e)=>{ const f=e.target.files&&e.target.files[0]; if(f) handleFile(f); });
+  $("#chooseBtn").addEventListener("click", ()=> $("#mdFile").click());
+  $("#langToggle").addEventListener("click", ()=>{ L = (L === "de") ? "en" : "de"; applyUI(); });
+  $("#exportBtn").addEventListener("click", ()=>{ $("#exportDD").classList.toggle("open"); });
+  document.addEventListener("click", e=>{ const dd=$("#exportDD"); if(!dd.contains(e.target) && e.target.id!=="exportBtn") dd.classList.remove("open"); });
+  $("#exportHtml").addEventListener("click", exportHTML);
+  $("#exportPdf").addEventListener("click", exportPDF);
+
+  applyUI();
+})();
+</script>
+</body>
+</html>
