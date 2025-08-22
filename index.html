@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+
+<html data-version="1.1.4" lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>PlotMapper – Story Path Mapping Tool</title>
+<meta content="PlotMapper is a lightweight tool to visually plan your story on a map. Runs in any browser – made by Max Liebscher." name="description"/>
+<meta content="Maximilian Georg Liebscher" name="author"/>
+<meta content="PlotMapper – Story Planning Tool" property="og:title"/>
+<meta content="Visually plan routes, characters and events on a map. Open-source and browser-based." property="og:description"/>
+<meta content="website" property="og:type"/>
+<meta content="https://maxliebscher.com/tools/plotmapper/preview.png" property="og:image"/>
+<meta content="https://maxliebscher.com/tools/plotmapper" property="og:url"/>
+<meta content="https://github.com/maxliebscher/PlotMapperTool" property="og:see_also"/>
+<style>
+ body{margin:0;background:#333;font-family:sans-serif;overflow:hidden}
+ #canvas{position:absolute;top:0;left:0;touch-action:none;z-index:0;background:#111;cursor:grab}
+ .point{position:absolute;width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;transform:translate(-50%,-50%);border:2px solid #000;user-select:none;z-index:10}
+ .label{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);background:rgba(0,0,0,.6);color:#fff;padding:0 4px;border-radius:4px;font-size:11px;white-space: normal;pointer-events:none}
+ .mid{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(160,160,160,.8);transform:translate(-50%,-50%);cursor:pointer;z-index:5}
+ .point .btn{position:absolute;right:-6px;top:-6px;width:14px;height:14px;font-size:11px;border-radius:50%;background:#444;color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+ .menu{position:absolute;background:#222;color:#fff;padding:6px 8px 6px 8px;border-radius:6px;font-size:13px;display:flex;flex-direction:column;gap:4px;z-index:30;align-items:flex-start;min-width:120px}
+ .menu button{background:#444;border:none;color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;text-align:left;width:100%;}
+ .menu button:hover{background:#666}
+ .menu b{margin-bottom:2px;}
+ #ui{position:fixed;top:8px;left:8px;background:rgba(0,0,0,.85);color:#fff;padding:10px;border-radius:8px;z-index:50;font-size:14px;line-height:1.4}
+ #ui input[type=range]{width:120px}
+ #ui label{user-select:none;margin-right:4px}
+ #ui button{margin:2px;font-size:13px}
+ #kapitelHinweis{color:#8df;margin-left:8px}
+ .icon {font-size:16px;margin-right:2px;}
+ .hide{display:none!important;}
+
+ .label.note {
+    max-width: 320px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.2;
+    padding: 4px 8px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    font-size: 0.7em;
+  }
+  
+  .dauer {
+    position:absolute;
+    font-size:11px;
+    background:rgba(0,0,0,0.6);
+    color:#fff;
+    padding:0 4px;
+    border-radius:4px;
+    white-space:nowrap;
+    pointer-events:none;
+    z-index:15;
+  }
+.dauer::before {
+  content: '⌛';
+  margin-right: 4px;
+}
+
+/* gentle layout tidy for checkbox cluster */
+#ui .controls label{ margin-right:10px; }
+#ui .controls{ row-gap:6px; }
+
+</style>
+<script>
+  const userLang = new URLSearchParams(window.location.search).get('lang');
+  if (userLang) {
+    document.documentElement.setAttribute('lang', userLang);
+  }
+</script>
+<script>
+function addRoutePoint(px, py) {
+    const r = imgRect();
+    const nx = (px - r.x) / r.w;
+    const ny = (py - r.y) / r.h;
+    createPoint({ x: nx, y: ny, label: "", note: "", ptype: "route" });
+    updateNumbers();
+    draw();
+}
+function ensureChildren(p){
+  if(p.noteEl && p.noteEl.parentNode !== p.el){ p.el.appendChild(p.noteEl); }
+  if(p.dauerEl && p.dauerEl.parentNode !== p.el){ p.el.appendChild(p.dauerEl); }
+}
+function setStackVars(p){
+  const el = p.el;
+  const lblVisible  = (p.lbl && p.lbl.style.display !== 'none' && (p.label||'').trim()!=='');
+  const noteVisible = (p.noteEl && p.noteEl.style.display !== 'none');
+  const lblH  = lblVisible  ? p.lbl.offsetHeight   : 0;
+  const noteH = noteVisible ? p.noteEl.offsetHeight: 0;
+  el.style.setProperty('--lbl-h',  lblH  + 'px');
+  el.style.setProperty('--note-h', noteH + 'px');
+}
+function posNote(p){
+  if(!p.noteEl) return;
+  if(p.noteEl.parentNode === p.el){
+    // absvar: CSS erledigt das Stacking
+    p.noteEl.style.left = '50%';
+    p.noteEl.style.top  = '';
+    p.noteEl.style.transform = 'translateX(-50%)';
+  }else{
+    // Fallback (grid/flex): globale Pixelposition
+    const r = imgRect();
+    p.noteEl.style.left = (r.x + p.x * r.w + 8) + 'px';
+    p.noteEl.style.top  = (r.y + p.y * r.h + 8) + 'px';
+    p.noteEl.style.transform = '';
+  }
+}
+function posDauer(p){
+  if(!p.dauerEl) return;
+  if(p.dauerEl.parentNode === p.el){
+    p.dauerEl.style.left = '50%';
+    p.dauerEl.style.top  = '';
+    p.dauerEl.style.transform = 'translateX(-50%)';
+  }else{
+    const r = imgRect();
+    p.dauerEl.style.left = (r.x + p.x * r.w + 8) + 'px';
+    p.dauerEl.style.top  = (r.y + p.y * r.h + 24) + 'px';
+    p.dauerEl.style.transform = '';
+  }
+}
+</script>
+<style>
+  
+  .simple-mode #ui span[data-i18n-key="POINT_TYPES_FILTER_7"] {
+    display: none !important;
+  }
+  
+  .simple-mode #ui label[for^="filter-"],
+  .simple-mode #ui input[id^="filter-"],
+  
+  .simple-mode #ui input#filterRoute,
+  .simple-mode #ui input#filterRoute + span {
+    display: none !important;
+  }
+  
+  .simple-mode #ui label.advanced {
+    display: none !important;
+  }
+    .simple-mode .point:not(.route) {
+    display: none !important;
+  }
+</style>
+<style id="pm-styles-clean">
+/* Clean absvar: Label (Kapitel) → Notiz → Dauer */
+.point {
+  --gap: 3px;    /* globaler Abstand */
+  --lbl-h: 0px;         /* JS setzt echte Höhe */
+  --note-h: 0px;        /* JS setzt echte Höhe */
+}
+
+/* Kapitel-Label (nicht .label.note) */
+.point .label:not(.note), .point > .label {
+  position:absolute; left:50%; transform:translateX(-50%);
+  top: calc(100% + var(--gap));
+  max-width:240px;
+  white-space:normal; word-break:break-word; line-height:1.2; padding:2px 6px;
+}
+
+/* Notiz */
+.point .note {
+  position:absolute; left:50%; transform:translateX(-50%);
+  top: calc(100% + var(--gap) + var(--lbl-h) + var(--gap));
+  max-width:320px; line-height:1.25; padding:4px 8px;
+  white-space:pre-wrap; word-wrap:break-word;
+}
+
+/* Dauer */
+.point .dauer {
+  position:absolute; left:50%; transform:translateX(-50%);
+  top: calc(100% + var(--gap) + var(--lbl-h) + var(--gap) + var(--note-h) + var(--gap));
+}
+.dauer::before { content:'\231B'; margin-right:4px; }
+
+/* --- ABSVAR Breite/Überlauf fix --- */
+.point{ overflow: visible; }  /* darf über 32px hinausragen */
+
+.point .label,
+.point .note,
+.point .dauer{
+  width: max-content;        /* eigene Breite, nicht auf 32px schrumpfen */
+}
+
+@supports not (width: max-content){
+  /* Fallback für alte Browser */
+  .point .label,
+  .point .note,
+  .point .dauer{ display:inline-block; }
+}
+
+</style><style id="pm-fontscale-css">
+:root {
+  --font-scale: 1; /* 1.00 = 100% */
+}
+/* Map-Labels */
+.point .label:not(.note), .point > .label {
+  font-size: calc(11px * var(--font-scale)) !important;
+  line-height: calc(1.2 * var(--font-scale));
+}
+
+.point .note {
+  font-size: calc(9px * var(--font-scale)) !important;   /* vorher 0.em war ein Tippfehler */
+  line-height: calc(1.25 * var(--font-scale));
+}
+
+.point .dauer {
+  font-size: calc(10px * var(--font-scale)) !important;
+  line-height: calc(1.2 * var(--font-scale));
+}
+
+</style><style id="pm-emptyhint-css">
+    .pm-empty-hint{pointer-events:none}
+    .pm-empty-hint .card{border:1px dashed currentColor !important}
+    </style><style id="pm-theme-root">
+:root{--bg1:#07131f;--bg2:#0b1f33;--bg3:#050c14;--txt:#e8f1ff;--txt-dim:#94b1d1;--accent:#5cc2ff;--accent2:#1a6ddc;--panel:#0d2033cc;--border:#1c3b5a;--shadow:0 10px 35px rgba(0,0,0,.45)}
+html,body{height:100%} body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--txt);background:#111} #canvas{background:#111}</style><style id="pm-theme-ui">
+#ui{position:fixed;left:12px;top:12px;background:var(--panel);color:var(--txt);padding:12px 14px 14px;border-radius:18px;z-index:50;font-size:14px;line-height:1.5;border:1px solid var(--border);box-shadow:var(--shadow);backdrop-filter:blur(6px);min-width:780px}
+#ui .ui-head{display:flex;gap:12px;align-items:center;margin-bottom: 6px}
+#ui .brand-chip{display:flex;align-items:center;gap:10px;background:rgba(10,27,46,.7);border:1px solid var(--border);padding:8px 12px;border-radius:999px;font-weight:700}
+#ui .brand-chip .ver{opacity:.9;font-variant-numeric:tabular-nums}
+#ui .head-actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+#ui .btn{margin:0;border:1px solid var(--border);background:#173150;color:var(--txt);padding:6px 10px;border-radius:12px;cursor:pointer}
+#ui .btn:hover{background:#1f3c60}
+#ui input[type=range]{width:180px}
+#ui label{user-select:none;margin-right:10px}
+#ui input[type=checkbox]{transform:translateY(1px)}</style>
+<style id="pm-hotfix-v4">
+/* --- header layout fixes --- */
+#ui .ui-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+#ui .head-actions{margin-left:auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#ui .head-actions .btn{white-space:nowrap}
+#ui .brand-chip{display:flex;align-items:center;gap:10px;background:rgba(10,27,46,.7);
+  border:1px solid var(--border);padding:8px 12px;border-radius:999px;font-weight:700}
+#ui .brand-chip .ver{opacity:.9;font-variant-numeric:tabular-nums}
+/* sichtbarer i-Button im Chip */
+#ui .brand-chip .info-dot{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  padding:0;margin-left:8px;border-radius:999px;background:#123153;border:1px solid var(--border)}
+#ui .brand-chip .info-dot:hover{background:#1f3c60}
+
+/* --- Anleitung Modal --- */
+.pm-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:9998;display:none}
+.pm-modal{position:fixed;inset:auto auto  auto auto;left:50%;top:50%;transform:translate(-50%,-50%);
+  max-width:min(720px,92vw);background:var(--panel);color:var(--txt);border:1px solid var(--border);
+  border-radius:16px;box-shadow:var(--shadow);padding:16px 18px;z-index:9999;display:none}
+.pm-modal header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 0 10px}
+.pm-modal h3{margin:0;font-size:18px}
+.pm-modal .close{border:1px solid var(--border);background:#173150;color:var(--txt);padding:6px 10px;border-radius:10px;cursor:pointer}
+.pm-modal .close:hover{background:#1f3c60}
+.pm-modal .content{display:grid;gap:10px;margin-top:10px}
+.pm-modal ul{margin:0 0 0 18px}
+.pm-modal a{color:var(--txt)}
+</style>
+<style id="pm-brandchip-info">
+#ui .brand-chip .info-dot{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  padding:0;margin-left:8px;border-radius:999px;background:#123153;border:1px solid var(--border);}
+#ui .brand-chip .info-dot:hover{background:#1f3c60}
+.pm-empty-hint .card{opacity:.98}
+</style><style id="pm-theme-pop">/* pm-info close button style */
+.pm-info header .btn{border:1px solid var(--border);background:#173150;color:var(--txt);padding:6px 10px;border-radius:10px;cursor:pointer}
+.pm-info header .btn:hover{background:#1f3c60}
+
+.pm-info{position:fixed;left:12px;top:70px;z-index:9999;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);width:360px;max-width:calc(100vw - 24px);padding:10px;display:none;backdrop-filter:blur(6px);color:var(--txt)}
+.pm-info.show{display:block}
+.pm-info header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 4px 10px;border-bottom:1px solid var(--border)}
+.pm-info header .ttl{font-weight:700}
+.pm-info .links{display:grid;gap:6px;padding:10px 4px}
+.pm-info a{color:var(--txt);text-decoration:none;padding:10px 12px;border-radius:10px;border:1px solid var(--border)}
+.pm-info a:hover{background:#0e2640}
+.pm-watermark{position:fixed;right:12px;bottom:10px;z-index:9998;opacity:.55;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--txt-dim);text-shadow:0 1px 0 rgba(0,0,0,.15)}
+.pm-watermark svg{height:18px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}</style><style id="pm-theme-empty">
+.pm-empty-hint{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:1;color:var(--txt-dim)}
+.pm-empty-hint .card{background:var(--panel);border:1px dashed currentColor;border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);backdrop-filter:blur(6px);pointer-events:none;font-size:16px}</style><style id="pm-theme-buttons">
+#ui button{
+  margin:4px 6px 0 0;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--border);
+  background:#173150;
+  color:var(--txt);
+  padding:8px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+}
+#ui button:hover{ background:#1f3c60; }
+#ui .btn{
+  border:1px solid var(--border);
+  background:#173150;
+  color:var(--txt);
+  padding:8px 14px;
+  border-radius:12px;
+}
+</style><style id="pm-ui-narrow">#ui{min-width:640px}</style><style id="pm-emptyhint-overlayfix">.pm-empty-hint{pointer-events:none} .pm-empty-hint .card{pointer-events:none}</style>
+<style id="pm-filebtn-and-badge-css">
+/* Styled 'Choose file' button + filename */
+#ui .file-wrap{display:inline-flex;align-items:center;gap:8px;margin-bottom:6px}
+#ui .file-btn{border:1px solid var(--border);background:#173150;color:var(--txt);padding:6px 12px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+#ui .file-btn:hover{background:#1f3c60}
+#ui .file-name{opacity:.85;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* visually hide the native input but keep it accessible */
+#ui input#imgInp{position:absolute !important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
+
+/* Bottom-left badge */
+#pmBadge{
+  position:fixed;left:12px;bottom:12px;z-index:10000;display:none;
+  align-items:center;gap:10px;background:rgba(10,27,46,.7);color:var(--txt);
+  border:1px solid var(--border);padding:8px 12px;border-radius:999px;font-weight:700;
+  box-shadow:var(--shadow);backdrop-filter:blur(6px)
+}
+#pmBadge .ver{opacity:.9;font-variant-numeric:tabular-nums}
+#pmBadge .info-dot{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:999px;background:#123153;border:1px solid var(--border);cursor:pointer; color:#fff; font-weight:700;}
+#pmBadge .info-dot:hover{background:#1f3c60}
+
+/* Info popup opens above badge at bottom-left */
+.pm-info{left:12px;top:auto;bottom:64px}
+</style>
+
+
+<style id="pm-hide-watermark">.pm-watermark{display:none!important}</style>
+
+<style id="pm-btn-scope-fix">
+/* Strict scoping: point-menu buttons stay absolute on points; UI buttons never inherit it */
+.point .btn{
+  position:absolute !important;
+  right:-6px; top:-6px;
+  width:14px; height:14px;
+  font-size:11px;
+  border-radius:50%;
+  background:#444; color:#fff;
+  display:none;
+  align-items:center; justify-content:center;
+  cursor:pointer;
+  z-index:12;
+}
+#ui .btn{position:static !important}
+</style>
+
+<style id="pm-hide-brandchip">/* hide brand-chip */#ui .brand-chip{display:none !important}</style>
+
+<style id="pm-menu-fix">
+.menu{
+  position:absolute;
+  background:rgba(34,34,34,.96);
+  color:#fff;
+  padding:8px;
+  border-radius:8px;
+  font-size:13px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  z-index:10050;
+  border:1px solid rgba(0,0,0,.6);
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+.menu b{margin-bottom:4px;display:block}
+.menu button{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#444;
+  border:none;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:12px;
+  text-align:left;
+  width:100%;
+  box-shadow:none;
+}
+.menu button:hover{background:#5a5a5a}
+.menu .icon{font-size:13px;margin-right:2px}
+</style>
+
+
+<style id="pm-head-spacing-fix">
+#ui .ui-head{gap:14px;margin-bottom: 6px}
+#ui .head-actions{gap:12px;flex-wrap:nowrap}
+#ui .file-wrap{gap:10px;margin:0}
+#ui .file-btn{padding:8px 16px;border-radius:12px}
+#ui .file-name{font-size:13px;opacity:.9;max-width:320px}
+</style>
+
+
+<style id="pm-filewrap-safety-css">
+#ui .ui-head{display:flex; align-items:center;}
+#ui .ui-head .head-actions{margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:nowrap;}
+#ui .file-wrap{display:inline-flex; align-items:center; gap:10px; margin:0;}
+</style>
+
+<style id="pm-load-highlight-css">
+@keyframes pmPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,153,60,.9); }
+  100% { box-shadow: 0 0 0 10px rgba(255,153,60,0); }
+}
+#ui .file-btn.pm-highlight {
+  outline: 2px solid #ff993c;
+  border-color: #ff993c !important;
+  box-shadow: 0 0 0 3px rgba(255,153,60,.35);
+}
+#ui .file-btn.pm-pulse {
+  animation: pmPulse 1.2s ease-out 3;
+}
+</style>
+
+<style id="pm-gap-tighten">
+/* tighten gap between head row and first checkbox line */
+#ui .ui-head + label,
+#ui .ui-head + input + label,
+#ui .ui-head + * label:first-of-type{ margin-top: 0 !important; }
+</style>
+
+<style id="pm-themes-css">
+/* Theme tokens – applied via <html data-theme="..."> */
+:root{
+  --panel: rgba(10,27,46,.86);
+  --txt:   #e8f1ff;
+  --border:rgba(255,255,255,.22);
+  --btn-bg:#173150;
+  --btn-bg-hover:#1f3c60;
+  --shadow: 0 10px 35px rgba(0,0,0,.45);
+  --btn-txt: var(--txt);
+}
+/* Bright: light panel, dark text */
+:root[data-theme="bright"]{
+  --panel:#f9fbff;
+  --txt:#0b1d33;
+  --btn-txt:#0b1d33;
+  --border:#c2ccdc;
+  --btn-bg:#ffffff;
+  --btn-bg-hover:#eef2f7;
+  --shadow:0 8px 28px rgba(20,28,40,.18);
+}
+/* High Contrast: very dark panel, pure white text */
+:root[data-theme="contrast"]{
+  --panel:rgba(0,0,0,.90);
+  --txt:#ffffff;
+  --btn-txt:#ffffff;
+  --border:rgba(255,255,255,.22);
+  --btn-bg:#1f1f1f;
+  --btn-bg-hover:#2a2a2a;
+  --shadow:0 12px 38px rgba(0,0,0,.55);
+}
+
+/* Bind panel + text + borders to tokens if not already bound */
+#ui{border:1px solid var(--border) !important;}
+#ui .btn, #ui .file-btn{border:1px solid var(--border) !important;}
+#ui button{background: var(--btn-bg) !important; color: var(--btn-txt) !important; border:1px solid var(--border) !important;}
+#ui button:hover{background: var(--btn-bg-hover) !important;}
+
+#ui{ background: var(--panel) !important; color: var(--txt) !important; box-shadow: var(--shadow) !important; }
+#ui .btn, #ui .file-btn{ background: var(--btn-bg) !important; color: var(--btn-txt) !important; border-color: var(--border) !important; }
+#ui button{background: var(--btn-bg) !important; color: var(--btn-txt) !important; border:1px solid var(--border) !important;}
+#ui button:hover{background: var(--btn-bg-hover) !important;}
+#ui .btn:hover, #ui .file-btn:hover{ background: var(--btn-bg-hover) !important; }
+#ui .ui-head, #ui .head-actions, #ui .file-name{ color: var(--txt) !important; }
+#ui label{ color: var(--txt) !important; }
+.pm-badge, #pmBadge{ background: rgba(10,27,46,.7); color: var(--txt); border-color: var(--border); box-shadow: var(--shadow); }
+.menu{ color:#fff } /* keep menus readable */
+
+/* disabled look */
+#ui .btn[disabled], #ui .btn.disabled { opacity:.55; cursor:not-allowed; }
+
+/* Burgund: warm, dezente Akzente */
+:root[data-theme="burgund"]{
+  --panel: rgba(58, 16, 33, .90);
+  --txt:   #fff1f6;
+  --btn-txt:#fff1f6;
+  --border:#a34b67;
+  --btn-bg:#64263e;
+  --btn-bg-hover:#74304a;
+  --shadow:0 12px 38px rgba(20,0,10,.55);
+}
+
+/* Herbstholz: warm, gedämpftes Holz-Thema */
+:root[data-theme="herbstholz"]{
+  --panel: rgba(36,24,16,.92);
+  --txt:   #f2ece7;
+  --btn-txt:#f2ece7;
+  --border:#8f6a4d;
+  --btn-bg:#3d2a1f;
+  --btn-bg-hover:#493226;
+  --shadow:0 12px 38px rgba(12,8,5,.55);
+}
+
+/* compact color input + remove default swatch border */
+#ui input[type="color"]{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  border:1px solid var(--border);
+  border-radius:8px;
+  width:28px; height:20px; padding:0;
+  background:transparent; box-shadow:none;
+}
+#ui input[type="color"]::-webkit-color-swatch-wrapper{ padding:0; border-radius:6px; }
+#ui input[type="color"]::-webkit-color-swatch{ border:none; border-radius:6px; }
+#ui input[type="color"]::-moz-color-swatch{ border:none; border-radius:6px; }
+#ui .inline-label{ margin-left:10px; margin-right:6px; font-size:.92rem; opacity:.92; vertical-align:middle; }
+</style>
+
+
+<style id="pm-themeToggle-css">
+#themeToggle{min-width:36px;padding:6px 10px;line-height:1.1;font-size:16px}
+</style>
+
+<style id="pm-themes-bright-readability">
+:root[data-theme="bright"] .pm-empty-hint{ color:#0b1d33 !important; }
+:root[data-theme="bright"] .pm-empty-hint .card{ background: rgba(255,255,255,.85); border-color: var(--border) !important; }
+:root[data-theme="bright"] .pm-info{ color:#0b1d33 !important; border-color: var(--border) !important; }
+</style>
+
+
+<style id="pm-bright-controls">
+:root[data-theme="bright"] input[type="range"]::-webkit-slider-runnable-track{ background:#dfe7f2 }
+:root[data-theme="bright"] input[type="range"]::-webkit-slider-thumb{ border:1px solid #b9c4d6 }
+:root[data-theme="bright"] label{ color:#0b1d33 !important }
+</style>
+
+
+<style id="pm-bright-badge-and-close-fix">
+/* Bright badge bottom-left */
+:root[data-theme="bright"] #pmBadge{
+  background: rgba(255,255,255,.88) !important;
+  color:#0b1d33 !important;
+  border:1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+}
+/* Tutorial modal close button */
+:root[data-theme="bright"] .pm-modal header .close{
+  background: var(--btn-bg) !important;
+  color: var(--btn-txt) !important;
+  border: 1px solid var(--border) !important;
+}
+:root[data-theme="bright"] .pm-modal header .close:hover{
+  background: var(--btn-bg-hover) !important;
+}
+
+/* Badge info close button (Bright) */
+:root[data-theme="bright"] .pm-info header .close{
+  background: var(--btn-bg) !important;
+  color: var(--btn-txt) !important;
+  border: 1px solid var(--border) !important;
+}
+:root[data-theme="bright"] .pm-info header .close:hover{
+  background: var(--btn-bg-hover) !important;
+}
+</style>
+
+
+<style id="pm-splash-core">
+/* Solid, fully-opaque splash with smooth fade and readable text */
+.pm-splash{
+  position:fixed; inset:0;
+  display:grid; place-items:center;
+  z-index:100000; /* sit above everything */
+  opacity:1; transition:opacity .9s ease;
+  /* opaque base color + gradient on top */
+  background:
+    radial-gradient(1200px 800px at 50% 25%, var(--bg2,#0b1f33) 0%, var(--bg1,#07131f) 55%, var(--bg3,#050c14) 100%),
+    linear-gradient(180deg, #07131f 0%, #050c14 100%);
+  color:#fff !important;
+}
+.pm-splash *{ color:#fff !important; text-shadow:0 2px 12px rgba(0,0,0,.28); }
+.pm-splash.hide{ opacity:0; pointer-events:none; }
+.pm-splash-inner{ text-align:center }
+.pm-title{ font-weight:800; letter-spacing:.2px; margin:0;
+  font-size:clamp(54px, 11vw, 110px); }
+.pm-logo{ width:800px; height:auto; display:block; margin:18px auto 24px;
+  filter:drop-shadow(0 8px 22px rgba(30,170,255,.24)); transition:width .2s ease; }
+.pm-splash .chip{ display:flex; align-items:center; gap:10px;
+  background:rgba(10,27,46,.7); border:1px solid var(--border);
+  padding:12px 16px; border-radius:999px; box-shadow:var(--shadow); }
+.pm-splash .chip strong{ font-weight:800 }
+</style>
+
+
+<style id="pm-bright-badge-tweaks">
+/* Subtler (i) in Bright: smaller, light bg, dark icon */
+:root[data-theme="bright"] #pmBadge .info-dot{
+  background:#ffffff !important;
+  color:#0b1d33 !important;
+  border:1px solid var(--border) !important;
+  width:28px !important; height:28px !important;
+  font-size:14px !important;
+}
+:root[data-theme="bright"] #pmBadge .info-dot:hover{
+  background:#eef2f7 !important;
+}
+
+/* Info-box (badge popup) close button in Bright */
+:root[data-theme="bright"] .pm-info header .close{
+  background: var(--btn-bg) !important;
+  color: var(--btn-txt) !important;
+  border: 1px solid var(--border) !important;
+}
+:root[data-theme="bright"] .pm-info header .close:hover{
+  background: var(--btn-bg-hover) !important;
+}
+</style>
+
+<style id="pm-bright-info-close-btn-fix">
+:root[data-theme="bright"] .pm-info header .btn{
+  background: var(--btn-bg) !important;
+  color: var(--btn-txt) !important;
+  border: 1px solid var(--border) !important;
+}
+:root[data-theme="bright"] .pm-info header .btn:hover{
+  background: var(--btn-bg-hover) !important;
+}
+</style>
+
+
+<style id="pm-help-css">
+.pm-modal .content h4{ margin:16px 0 8px; }
+.pm-modal .content ul.kbd li kbd{ display:inline-block; padding:2px 6px; border-radius:4px; background:#e8edf6; color:#0b1d33; border:1px solid #c8d1e0; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
+:root[data-theme="contrast"] .pm-modal .content ul.kbd li kbd{ background:#222; color:#fff; border-color:#444; }
+:root[data-theme="burgund"] .pm-modal .content ul.kbd li kbd{ background:#3a1a27; color:#fff1f6; border-color:#6d2a44; }
+</style>
+
+<style id="pm-splash-hardening">
+.pm-splash, .pm-splash .pm-title, .pm-splash .pm-by, .pm-splash .pm-splash-verline { color:#fff !important; }
+.pm-splash .pm-title { text-shadow: 0 20px 40px rgba(0,0,0,.35); }
+.pm-splash:not(.hide) ~ .pm-empty-hint { display: none !important; }
+</style>
+
+</head>
+<body><div aria-label="Start" class="pm-splash" id="pmSplash" role="dialog"><div class="pm-splash-inner"><h1 class="pm-title" id="pmTitle"><strong>Plot</strong> Mapper</h1><svg aria-hidden="true" class="pm-logo" id="pmLogo"><use href="#pm-logo-sym"></use></svg><p class="pm-by">by Maximilian Georg Liebscher</p><div class="pm-splash-verline" id="pmSplashVerline">PlotMapper Tool v…</div></div></div><svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="pm-logo-sym" viewbox="0 30 200.7 57"><defs><style>.cls-1{fill:#fff;stroke:#005caa;stroke-width:2px}.cls-2{fill:none;stroke:url(#LogoGradient);stroke-linecap:round;stroke-width:4px}</style><lineargradient gradienttransform="translate(146543.5 28841) scale(180 -50)" gradientunits="userSpaceOnUse" id="LogoGradient" x1="-814" x2="-813" y1="576.2" y2="575.2"><stop offset="0" stop-color="#52b0ff"></stop><stop offset="1" stop-color="#005caa"></stop></lineargradient></defs><path class="cls-2" d="M10.4,60c20-33.3,40-33.3,60,0,20,33.3,40,33.3,60,0,20-33.3,40-33.3,60,0"></path><circle class="cls-1" cx="10.4" cy="60" r="6"></circle><circle class="cls-1" cx="70.4" cy="60" r="6"></circle><circle class="cls-1" cx="130.4" cy="60" r="6"></circle><circle class="cls-1" cx="190.4" cy="60" r="6"></circle></symbol></defs></svg>
+<div id="ui"><div class="ui-head"><div class="head-actions"><button class="btn" data-i18n-key="LANG_TOGGLE" id="langToggle">DE</button><button class="btn" id="modeToggle"><span data-i18n-key="TOGGLE_MODE_1">Toggle Mode</span></button><button class="btn" data-i18n-key="TUTORIAL_BTN" id="btnTutorial">Anleitung</button></div></div><input accept="image/*" id="imgInp" type="file"/>
+
+<label><input id="kapitelMode" type="checkbox"/><span data-i18n-key="CHAPTER_NUMBERING_2">Chapter Numbering</span></label>
+<span id="kapitelHinweis"></span> 
+<label><input checked="" id="chkLabels" type="checkbox"/><span data-i18n-key="CHAPTER_3">Chapter</span></label>
+<label><input checked="" id="chkNotes" type="checkbox"/><span data-i18n-key="SHOW_NOTES_4">Show Notes</span></label>
+<label><input checked="" id="chkLines" type="checkbox"/><span data-i18n-key="LINES_5">Lines</span></label>
+<label><input checked="" id="chkEdit" type="checkbox"/><span data-i18n-key="EDIT_BUTTONS_6">Edit‑Buttons</span></label><br/>
+<span data-i18n-key="POINT_TYPES_FILTER_7">Point Types Filter</span>
+<label><input checked="" id="filterRoute" type="checkbox"/><span data-i18n-key="ROUTE_8">Route</span></label>
+<label class="advanced advanced"><input checked="" id="filterPlace" type="checkbox"/><span data-i18n-key="PLACE_9">Place</span></label>
+<label class="advanced advanced"><input checked="" id="filterChar" type="checkbox"/><span data-i18n-key="CHARACTER_10">Character</span></label>
+<label class="advanced advanced"><input checked="" id="filterEvent" type="checkbox"/><span data-i18n-key="EVENT_11">Event</span></label>
+<label class="advanced advanced"><input checked="" id="filterItem" type="checkbox"/><span data-i18n-key="ITEM_12">Item</span></label>
+<label class="advanced advanced"><input checked="" id="chkDauer" type="checkbox"/><span data-i18n-key="_SHOW_DURATION_13">⌛ Show Duration</span></label><br/><span data-i18n-key="ZOOM_14">Zoom</span><input id="zoom" max="5" min="1" step="0.01" type="range" value="1"/><br/><span data-i18n-key="OPACITY_15">Opacity</span><input id="opacity" max="1" min="0.1" step="0.01" type="range" value="1"/> <span class="inline-label" data-i18n-key="LINE_COLOR_22">Linienfarbe</span> <input id="routeColor" type="color" value="#cc3333" title="Line color / Linienfarbe" style="width:70px;height:8px;border:2px solid var(--border);border-radius:6px;vertical-align:middle;margin-left:6px;padding:0;background:transparent;" />
+<span class="inline-label" data-i18n-key="LINE_WIDTH_23">Linienstärke</span>
+<input id="routeWidth" type="range" min="1" max="12" step="1" value="2" title="Line width / Linienstärke" style="width:120px;vertical-align:middle;margin-left:6px;" /><br/>
+<button id="undo"><span data-i18n-key="_UNDO_16">↺ Undo</span></button><button id="redo"><span data-i18n-key="_REDO_17">↻ Redo</span></button>
+<button id="exportMd"><span data-i18n-key="EXPORT_MD_18">Export MD</span></button><button id="importMd"><span data-i18n-key="IMPORT_MD_19">Import MD</span></button>
+<button id="exportImg"><span data-i18n-key="PNG_20">PNG</span></button><button id="clearAll"><span data-i18n-key="CLEAR_ALL_21">Clear All</span></button>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let mdExportCount = 1;
+let imgExportCount = 1;
+
+const translations = {
+  de: {
+    pointTypes: {
+      route: { icon: '🗺️', name: 'Routen-Punkt', label: 'Kapitel', filter: 'filterRoute' },
+      place: { icon: '📍', name: 'Ort',           label: 'Ort',     filter: 'filterPlace' },
+      char:  { icon: '👤', name: 'Charakter',     label: 'Charakter', filter: 'filterChar' },
+      event: { icon: '★', name: 'Event',         label: 'Event',   filter: 'filterEvent' },
+      item:  { icon: '🔑', name: 'Item',          label: 'Item',    filter: 'filterItem' }
+    }
+  },
+  en: {
+    pointTypes: {
+      route: { icon: '🗺️', name: 'Route Point',  label: 'Chapter', filter: 'filterRoute' },
+      place: { icon: '📍', name: 'Place',        label: 'Place',   filter: 'filterPlace' },
+      char:  { icon: '👤', name: 'Character',    label: 'Character', filter: 'filterChar' },
+      event: { icon: '★', name: 'Event',        label: 'Event',   filter: 'filterEvent' },
+      item:  { icon: '🔑', name: 'Item',         label: 'Item',    filter: 'filterItem' }
+    }
+  }
+};
+
+function getLocale() {
+  const urlLang = new URLSearchParams(window.location.search).get('lang');
+  if (urlLang && translations[urlLang]) return urlLang;
+  const docLang = document.documentElement.lang;
+  if (translations[docLang]) return docLang;
+  return navigator.language.startsWith('de') ? 'de' : 'en';
+}
+
+const locale = getLocale();
+const BASE_POINT_TYPES = ['route', 'place', 'char', 'event', 'item'];
+const POINT_TYPES = BASE_POINT_TYPES.map(type => {
+  const t = translations[locale].pointTypes[type];
+  return {
+    type:   type,
+    icon:   t.icon,
+    name:   t.name,
+    label:  t.label,
+    filter: t.filter
+  };
+});
+
+function getIcon(ptype) {
+    const pt=POINT_TYPES.find(t=>t.type===ptype); return pt?pt.icon:'';
+}
+function getTypeMeta(ptype) {
+    return POINT_TYPES.find(t=>t.type===ptype) || POINT_TYPES[0];
+}
+function isVisibleType(ptype){
+    let meta=getTypeMeta(ptype);
+    let box=document.getElementById(meta.filter);
+    return box && box.checked;
+}
+
+const cvs=document.getElementById('canvas'),ctx=cvs.getContext('2d');
+let img=new Image(),imgLoaded=false,zoomValue=1,opacityValue=1,panX=0,panY=0;
+let draggingMap=false,startPan;
+const points=[],midEls=[];
+let showLines=true,showLabels=true,showEdit=true,showNotes=true;
+let showDauer = true;
+const undoStack=[],redoStack=[];
+let kapitelMode=false, kapitelStartNum=1;
+
+function push(){undoStack.push(JSON.stringify(points.map(stripElm)));redoStack.length=0}
+function stripElm(p) {
+  const { el, txt, lbl, btn, noteEl, dauerEl, icon, ...rest } = p;
+  return rest;
+}
+function restore(arr){clearDOM();points.length=0;arr.forEach(d=>createPoint({...d},true));updateNumbers();draw();}
+function clearDOM() {
+  points.forEach(p => {
+    p.el.remove();
+    p.noteEl  && p.noteEl.remove();
+    p.dauerEl && p.dauerEl.remove(); 
+    
+    p.note    = null;
+    p.dauer   = null;
+    p.noteEl  = null;
+    p.dauerEl = null;
+  });
+  midEls.forEach(m => m.remove());
+  midEls.length = 0;
+}
+
+function resize(){cvs.width=innerWidth;cvs.height=innerHeight;draw();updateDOM()}
+window.addEventListener('resize',resize);
+
+function imgRect(){
+    const r=Math.min(cvs.width/img.width,cvs.height/img.height)*zoomValue;
+    const w=img.width*r,h=img.height*r;
+    const x=(cvs.width-w)/2+panX,y=(cvs.height-h)/2+panY;
+    return{x,y,w,h}
+}
+
+function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  if(!imgLoaded) return;
+  const r = imgRect();
+  ctx.globalAlpha = opacityValue;
+  ctx.drawImage(img, r.x, r.y, r.w, r.h);
+  ctx.globalAlpha = 1;
+
+  if(showLines) {
+    drawLines();
+  } else {
+    midEls.forEach(m => m.style.display = 'none');
+  }
+
+  points.forEach(p => {
+    if (p.noteEl)  posNote(p);
+    if (p.dauerEl) posDauer(p);
+  });
+}
+
+function drawLines(){ const __lw = Math.max(1, window.pmLineWidth || 2);
+
+    midEls.forEach(m=>m.remove());midEls.length=0;
+    
+    const routePts = points.filter(p => (p.ptype||'route') === 'route' && isVisibleType('route'));
+    if(routePts.length<2)return;
+    const r=imgRect();
+    ctx.lineWidth=__lw + 2;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    ctx.strokeStyle=(window.pmRouteColor||'#cc3333');ctx.lineWidth=__lw;ctx.beginPath();
+    routePts.forEach((p,i)=>{const px=r.x+p.x*r.w,py=r.y+p.y*r.h;i ? ctx.lineTo(px,py):ctx.moveTo(px,py)});
+    ctx.stroke();
+    routePts.forEach((p,i)=>{if(i)addMid(routePts[i-1],p)});
+}
+
+function addMid(a,b){
+  if ((a.ptype||'route') !== 'route' || (b.ptype||'route') !== 'route') return;
+  const r = imgRect();
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const el = document.createElement('div');el.className = 'mid';document.body.appendChild(el);
+  midEls.push(el);pos(el, mx, my);
+  el.onclick = () => {push();
+    let idxA = points.indexOf(a), idxB = points.indexOf(b);
+    let idx = Math.max(idxA, idxB);
+    let neu = { x: mx, y: my, label: '', note: '', ptype: 'route', dauer: '' };
+    points.splice(idx, 0, neu);
+    createPointMid(neu, idx);
+    updateNumbers(); draw();
+  }
+}
+function createPointMid(d, idx){
+    const { x, y, label='', note='', ptype='route', dauer='', helper=false } = d;
+    const el=document.createElement('div'); el.className = 'point';
+  el.classList.add(ptype);
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,dauer,helper,el,txt,lbl,btn,icon};points[idx]=p;
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+    el.onpointermove = e => {
+  if (e.pointerId !== dragId) return;
+  const r = imgRect();
+  p.x = startD.px + (e.clientX - startD.x) / r.w;
+  p.y = startD.py + (e.clientY - startD.y) / r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if (p.noteEl)  posNote(p);
+  if (p.dauerEl) posDauer(p);
+};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+}
+
+function createPoint(d,fromLoad=false){
+    const {x,y,label='',note='',ptype='route',dauer='',helper=false}=d;
+    const el=document.createElement('div'); el.className = 'point';
+  el.classList.add(ptype);
+    const icon=document.createElement('span');icon.className='icon';
+    if(ptype!=='route') icon.textContent=getIcon(ptype);
+    el.appendChild(icon);
+    const txt=document.createElement('span');el.appendChild(txt);
+    const btn=document.createElement('div');btn.className='btn';btn.textContent='≡';el.appendChild(btn);
+    const lbl=document.createElement('div');lbl.className='label';lbl.textContent=label;el.appendChild(lbl);
+    const p={x,y,label,note,ptype,dauer,helper,el,txt,lbl,btn,icon};points.push(p);
+    document.body.appendChild(el);pos(el,x,y);updateVis();
+    btn.onclick=e=>{e.stopPropagation();showMenu(e.clientX,e.clientY,p)};
+    let dragId=null,startD;
+    el.onpointerdown=e=>{if(e.target===btn)return;dragId=e.pointerId;startD={x:e.clientX,y:e.clientY,px:p.x,py:p.y};el.setPointerCapture(e.pointerId)};
+el.onpointermove = e => {
+  if (e.pointerId !== dragId) return;
+  const r = imgRect();
+  p.x = startD.px + (e.clientX - startD.x) / r.w;
+  p.y = startD.py + (e.clientY - startD.y) / r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if (p.noteEl)  posNote(p);
+  if (p.dauerEl) posDauer(p);
+};
+    el.onpointerup=e=>{if(e.pointerId===dragId){dragId=null;push()}};
+
+el.ontouchstart = function(e){
+  if(e.target===btn)return;
+  const touch = e.touches[0];
+  dragId = "touch";
+  startD = {x: touch.clientX, y: touch.clientY, px: p.x, py: p.y};
+  e.preventDefault();
+};
+el.ontouchmove = function(e){
+  if(dragId !== "touch") return;
+  const touch = e.touches[0];
+  const r = imgRect();
+  p.x = startD.px + (touch.clientX - startD.x)/r.w;
+  p.y = startD.py + (touch.clientY - startD.y)/r.h;
+  pos(el, p.x, p.y);
+  draw();
+  updateDOM();
+  if(p.noteEl) posNote(p);
+  if (p.dauerEl) posDauer(p);
+    if (p.dauerEl) {
+      const r2 = imgRect();
+      p.dauerEl.style.left = (r2.x + p.x * r2.w) + 'px';
+      p.dauerEl.style.top  = (r2.y + p.y * r2.h + 38) + 'px';
+    }
+  e.preventDefault();
+};
+el.ontouchend = function(e){
+    
+    if (e.target === btn) return;
+    
+    if (dragId === "touch") {
+        dragId = null;
+        push();
+        e.preventDefault();
+    }
+};
+
+    if(!fromLoad)push();
+}
+function pos(el,nx,ny){const r=imgRect();el.style.left=r.x+nx*r.w+'px';el.style.top=r.y+ny*r.h+'px'}
+
+function posNote(p){
+  if(!p.noteEl) return;
+  if(p.noteEl.parentNode === p.el){
+    // absvar: CSS erledigt das Stacking
+    p.noteEl.style.left = '50%';
+    p.noteEl.style.top  = '';
+    p.noteEl.style.transform = 'translateX(-50%)';
+  }else{
+    // Fallback (grid/flex): globale Pixelposition
+    const r = imgRect();
+    p.noteEl.style.left = (r.x + p.x * r.w + 8) + 'px';
+    p.noteEl.style.top  = (r.y + p.y * r.h + 8) + 'px';
+    p.noteEl.style.transform = '';
+  }
+}
+
+function posDauer(p){
+  if(!p.dauerEl) return;
+  if(p.dauerEl.parentNode === p.el){
+    p.dauerEl.style.left = '50%';
+    p.dauerEl.style.top  = '';
+    p.dauerEl.style.transform = 'translateX(-50%)';
+  }else{
+    const r = imgRect();
+    p.dauerEl.style.left = (r.x + p.x * r.w + 8) + 'px';
+    p.dauerEl.style.top  = (r.y + p.y * r.h + 24) + 'px';
+    p.dauerEl.style.transform = '';
+  }
+}
+
+function updateVis() {
+  const isFocus = document.documentElement.classList.contains('simple-mode');
+  points.forEach(p => {
+    
+    if (p.note) {
+      if (!p.noteEl) {
+        p.noteEl = document.createElement('div');
+        p.noteEl.className = 'label note';
+        p.el.appendChild(p.noteEl);
+      }
+      p.noteEl.textContent = p.note;
+    }
+    
+    if (p.dauer) {
+      if (!p.dauerEl) {
+        p.dauerEl = document.createElement('div');
+        p.dauerEl.className = 'dauer';
+        p.el.appendChild(p.dauerEl);
+      }
+      p.dauerEl.textContent = p.dauer;
+    }
+    
+    if ((isFocus && (p.ptype||'route')!=='route') || !isVisibleType(p.ptype||'route')) {
+      p.el.classList.add('hide');
+      p.noteEl  && p.noteEl.classList.add('hide');
+      p.dauerEl && (p.dauerEl.style.display = 'none');
+      return;
+    }
+    p.el.classList.remove('hide');
+if (p.noteEl)  p.noteEl.style.display  = (showNotes && p.note)  ? 'block' : 'none';
+if (p.dauerEl) p.dauerEl.style.display = (showDauer && p.dauer) ? 'block' : 'none';
+    
+    p.lbl.style.display = showLabels && p.label ? 'block' : 'none';
+    p.btn.style.display = showEdit               ? 'flex'  : 'none';
+    p.icon.textContent  = p.ptype!=='route'      ? getIcon(p.ptype) : '';
+    
+    p.noteEl  && posNote(p);
+    p.dauerEl && posDauer(p);
+  });
+}
+
+function updateNumbers() {
+    let cnt = 1;
+    points.forEach((p,i)=>{
+      if ((p.ptype||'route') === 'route' && isVisibleType('route')) {
+        if (p.helper) {
+          p.txt.textContent = "";
+          p.route_step = "";
+          p.el && p.el.classList && p.el.classList.add('helper');
+        } else {
+          p.txt.textContent = kapitelMode ? (kapitelStartNum + cnt - 1) : cnt;
+          p.route_step = cnt;
+          p.el && p.el.classList && p.el.classList.remove('helper');
+          cnt++;
+        }
+      } else {
+        p.txt.textContent = "";
+        p.route_step = "";
+        p.el && p.el.classList && p.el.classList.remove('helper');
+      }
+    });
+    const hint = document.getElementById('kapitelHinweis');
+    if (hint) hint.textContent = kapitelMode ? `Chapter mode active (Start: ${kapitelStartNum})` : "";
+}
+
+function updateDOM() {
+  points.forEach(p => {
+    pos(p.el, p.x, p.y);
+    ensureChildren(p);
+    setStackVars(p);
+    if (p.noteEl)  posNote(p);
+    if (p.dauerEl) posDauer(p);
+  });
+  updateVis();
+}
+
+document.getElementById('imgInp').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    img.src = URL.createObjectURL(f);
+    img.onload = () => { imgLoaded=true; window.__pm_imgLoaded=true; try{window.hideEmptyHint&&hideEmptyHint();}catch(_){var h=document.getElementById('pmEmptyHint'); if(h) h.style.display='none';} zoomValue=1; opacityValue=1; panX=panY=0; document.getElementById('zoom').value=1; document.getElementById('opacity').value=1; resize(); }
+};
+document.getElementById('zoom').oninput = e => { zoomValue = parseFloat(e.target.value); draw(); updateDOM(); };
+
+// Mouse wheel zoom (hold Ctrl to zoom)
+(function(){
+  const zEl = document.getElementById('zoom');
+  const getMin = () => parseFloat(zEl?.getAttribute('min') || '0.1');
+  const getMax = () => parseFloat(zEl?.getAttribute('max') || '3');
+  function setZoom(z){
+    const clamped = Math.min(getMax(), Math.max(getMin(), z));
+    zoomValue = clamped;
+    if (zEl) zEl.value = String(zoomValue);
+    draw(); updateDOM();
+  }
+  // Use Ctrl+Wheel to avoid hijacking normal page scroll
+  cvs.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    // Smooth exponential zoom: positive deltaY -> zoom out
+    const factor = Math.pow(1.1, -e.deltaY / 100);
+    setZoom(zoomValue * factor);
+  }, { passive: false });
+})();
+
+document.getElementById('opacity').oninput = e => { opacityValue = parseFloat(e.target.value); draw(); };
+document.getElementById('chkLines').onchange = e => { showLines = e.target.checked; draw(); };
+document.getElementById('chkLabels').onchange = e => { showLabels = e.target.checked; updateVis(); };
+document.getElementById('chkNotes').onchange = e => { showNotes = e.target.checked; updateVis(); };
+    document.getElementById('chkEdit').onchange = e => {
+  showEdit = e.target.checked;
+  updateVis();
+  document.querySelectorAll('.mid').forEach(m =>
+    m.style.display = showEdit ? 'block' : 'none'
+  );
+};
+    document.getElementById('chkDauer').onchange = e => { showDauer = e.target.checked; updateVis(); };
+document.getElementById('undo').onclick = () => { if(undoStack.length){ redoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(undoStack.pop())); }};
+document.getElementById('redo').onclick = () => { if(redoStack.length){ undoStack.push(JSON.stringify(points.map(stripElm))); restore(JSON.parse(redoStack.pop())); }};
+document.getElementById('clearAll').onclick = () => { if(confirm('Delete all points?')){ push(); clearDOM(); points.length=0; draw(); updateNumbers(); }};
+document.getElementById('kapitelMode').onchange = e => {
+   kapitelMode = e.target.checked;
+   if (kapitelMode) {
+       let neu = prompt("Start at which chapter number?", kapitelStartNum);
+       if (!neu || isNaN(parseInt(neu))) neu = kapitelStartNum;
+       kapitelStartNum = parseInt(neu);
+   }
+   updateNumbers(); draw();
+};
+
+['filterRoute','filterPlace','filterChar','filterEvent','filterItem'].forEach(id=>{
+  document.getElementById(id).onchange=()=>{updateVis();draw();}
+});
+
+cvs.onpointerdown = e => {
+    if(!imgLoaded) return;
+    if([...document.elementsFromPoint(e.clientX,e.clientY)].some(el=>el.className && el.className.includes('point'))) return;
+    draggingMap=true; startPan={x:e.clientX,y:e.clientY,px:panX,py:panY}; cvs.setPointerCapture(e.pointerId);
+};
+cvs.onpointermove = e => { if(!draggingMap) return; panX=startPan.px+(e.clientX-startPan.x); panY=startPan.py+(e.clientY-startPan.y); draw(); updateDOM(); };
+cvs.onpointerup = e => draggingMap=false;
+
+cvs.addEventListener("touchstart", handleTouchStart, { passive: false });
+cvs.addEventListener("touchmove", handleTouchMove, { passive: false });
+cvs.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+function getTouchPos(evt) {
+  const rect = cvs.getBoundingClientRect();
+  const touch = evt.touches[0] || evt.changedTouches[0];
+  return {
+    x: touch.clientX,
+    y: touch.clientY
+  };
+}
+
+function handleTouchStart(e) {
+  e.preventDefault();
+  if(!imgLoaded) return;
+  const {x, y} = getTouchPos(e);
+  if([...document.elementsFromPoint(x, y)].some(el => el.className && el.className.includes('point'))) return;
+  draggingMap = true;
+  startPan = { x, y, px: panX, py: panY };
+}
+function handleTouchMove(e) {
+  if(!draggingMap) return;
+  e.preventDefault();
+  const {x, y} = getTouchPos(e);
+  panX = startPan.px + (x - startPan.x);
+  panY = startPan.py + (y - startPan.y);
+  draw(); updateDOM();
+}
+function handleTouchEnd(e) {
+  draggingMap = false;
+  e.preventDefault();
+}
+
+cvs.ondblclick = e => {
+    if (!imgLoaded) return;
+    if ([...document.elementsFromPoint(e.clientX, e.clientY)]
+        .some(el => el.classList && el.classList.contains("point"))) return;
+    if (document.documentElement.classList.contains("simple-mode")) {
+        e.preventDefault(); e.stopPropagation();
+        const rect = cvs.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        addRoutePoint(x, y);
+        updateNumbers(); draw();
+    } else {
+        openTypeMenuAt(e.clientX, e.clientY);
+    }
+};
+
+let lastTap = 0;
+let lastTapPos = null;
+
+cvs.addEventListener('touchend', function(e){
+    
+    const {x, y} = getTouchPos(e);
+
+    
+    if([...document.elementsFromPoint(x, y)].some(el => el.className && el.className.includes('point'))) return;
+
+    const now = Date.now();
+    if(lastTap && lastTapPos) {
+        const dx = Math.abs(x - lastTapPos.x);
+        const dy = Math.abs(y - lastTapPos.y);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if((now - lastTap < 400) && dist < 15) { 
+            openTypeMenuAt(x, y);
+            lastTap = 0; lastTapPos = null; 
+            return;
+        }
+    }
+    lastTap = now;
+    lastTapPos = {x, y};
+}, {passive:false});
+
+function openTypeMenuAt(clientX, clientY) {
+    showTypeSelect(clientX, clientY, type => {
+        const r = imgRect();
+        const nx = (clientX - r.x)/r.w, ny = (clientY - r.y)/r.h;
+        createPoint({x:nx, y:ny, label:'', note:'', ptype:type});
+        updateNumbers(); draw();
+    });
+}
+
+function showTypeSelect(x, y, cb) {
+  let menu = document.createElement('div');
+  menu.className = 'menu';
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
+
+  
+  menu.innerHTML = '<b><span data-i18n-key="CHOOSE_TYPE">'
+                 + uiTranslations['CHOOSE_TYPE'][uiLocale]
+                 + '</span></b>';
+
+  
+  
+  ['route','place','char','event','item'].forEach(type => {
+    const meta = translations[uiLocale].pointTypes[type];
+    const key  = 'PT_' + type.toUpperCase();
+
+    let btn = document.createElement('button');
+    btn.setAttribute('data-i18n-key', key);
+
+    
+    if (meta.icon) {
+      const ico = document.createElement('span');
+      ico.className = 'icon';
+      ico.textContent = meta.icon;
+      btn.appendChild(ico);
+    }
+
+    
+    btn.appendChild(document.createTextNode(meta.name));
+
+    btn.onclick = () => { cb(type); menu.remove(); };
+    menu.appendChild(btn);
+  });
+
+  document.body.appendChild(menu);
+
+  
+  setTimeout(() => {
+    document.addEventListener('pointerdown', function h(ev) {
+      if (!menu.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('pointerdown', h);
+      }
+    });
+  });
+}
+
+let menu=null;
+
+function showMenu(x,y,p){
+  menu && menu.remove();
+  menu = document.createElement('div');
+  menu.className = 'menu';
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  const meta = getTypeMeta(p.ptype || 'route');
+  menu.innerHTML = `
+    <button id="e">${uiTranslations['CTX_CHAPTER_EDIT'][uiLocale]}</button>
+    <button id="n">${uiTranslations['CTX_NOTE_EDIT'][uiLocale]}</button>
+    <button id="toggleNote"></button>
+    <button id="typ">${uiTranslations['CTX_CHANGE_TYPE'][uiLocale]}</button>
+    <button id="dauer">${uiTranslations['CTX_SET_DURATION'][uiLocale]}</button>
+    <button id="d">${uiTranslations['CTX_DELETE'][uiLocale]}</button>
+  `;
+  document.body.appendChild(menu);
+
+  const btnToggle = menu.querySelector('#toggleNote');
+  btnToggle.textContent = (p.noteEl && p.noteEl.style.display === 'block')
+    ? uiTranslations['CTX_HIDE_NOTE'][uiLocale]
+    : uiTranslations['CTX_SHOW_NOTE'][uiLocale];
+
+const helperBtn = document.createElement('button');
+helperBtn.id = 'helper';
+helperBtn.setAttribute('data-i18n-key', p.helper ? 'CTX_HELPER_OFF' : 'CTX_HELPER_ON');
+helperBtn.textContent = uiTranslations[p.helper ? 'CTX_HELPER_OFF' : 'CTX_HELPER_ON'][uiLocale];
+menu.insertBefore(helperBtn, menu.querySelector('#typ'));
+
+btnToggle.onclick = () => {
+  if (p.noteEl && p.noteEl.style.display === 'block') {
+    p.noteEl.style.display = 'none';
+  } else {
+    if (!p.noteEl) {
+      p.noteEl = document.createElement('div');
+      p.noteEl.className = 'label note';
+      p.el.appendChild(p.noteEl);
+    }
+    p.noteEl.textContent = p.note || '';
+    p.noteEl.style.display = (showNotes && (p.note || p.noteEl.textContent)) ? 'block' : 'none';
+  }
+  setStackVars(p);
+  menu.remove();
+};
+  
+  menu.querySelector('#e').onclick = () => {
+    const v = prompt(meta.label, p.label);
+    if (v !== null) {
+      push(); p.label = v; p.lbl.textContent = v; updateVis();
+    }
+    menu.remove();
+  };
+
+  
+menu.querySelector('#n').onclick = () => {
+  const v = prompt('Note', p.note || '');
+  if (v !== null) {
+    push();
+    p.note = v;
+
+    if (!p.noteEl) {
+      p.noteEl = document.createElement('div');
+      p.noteEl.className = 'label note';
+    }
+    p.el.appendChild(p.noteEl);
+    p.noteEl.textContent = p.note;
+    p.noteEl.style.display = (showNotes && p.note) ? 'block' : 'none';
+
+    ensureChildren(p);
+    setStackVars(p);
+  }
+  menu.remove();
+};
+
+menu.querySelector('#dauer').onclick = () => {
+  const v = prompt('Duration (e.g., 3 days)', p.dauer || '');
+  if (v !== null) {
+    push();
+    p.dauer = v;
+
+    if (!p.dauerEl) {
+      p.dauerEl = document.createElement('div');
+      p.dauerEl.className = 'dauer';
+    }
+    p.el.appendChild(p.dauerEl);                 // <- an den Punkt hängen
+    p.dauerEl.textContent = p.dauer;
+    p.dauerEl.style.display = (showDauer && p.dauer) ? 'block' : 'none';
+
+    ensureChildren(p);
+    setStackVars(p);
+  }
+  menu.remove();
+};
+
+  
+  
+  menu.querySelector('#helper').onclick = () => {
+    push();
+    p.helper = !p.helper;
+    p.el && p.el.classList && p.el.classList.toggle('helper', p.helper);
+    updateNumbers();
+    draw();
+    menu.remove();
+  };
+
+  // Punkttyp ändern
+const btnType = menu.querySelector('#typ');
+if (btnType) {
+  btnType.onclick = () => {
+    // Öffnet das bekannte Type-Popup; Callback liefert den neuen Typ "t"
+    showTypeSelect(x, y, (t) => {
+      push();
+      // Modell aktualisieren
+      p.ptype = t;
+
+      // Icon aktualisieren (Route hat kein Icon)
+      p.icon.textContent = (t !== 'route') ? getIcon(t) : '';
+
+      // Nummerierung/Sichtbarkeit/Redraw aktualisieren
+      updateNumbers();
+      updateVis();
+      draw();
+
+      // Menü schließen
+      menu.remove();
+    });
+  };
+}
+
+menu.querySelector('#d').onclick = () => {
+    if (confirm('Delete point?')) {
+      push();
+      const idx = points.indexOf(p);
+      if (idx !== -1) {
+        const removed = points.splice(idx,1)[0];
+        removed.el.remove();
+        removed.noteEl && removed.noteEl.remove();
+        removed.dauerEl && removed.dauerEl.remove();
+        updateNumbers(); draw();
+      }
+    }
+    menu.remove();
+  };
+}
+
+document.body.addEventListener('pointerdown',e=>{ if(menu && !menu.contains(e.target)) menu.remove(); });
+
+document.getElementById('exportMd').onclick = () => {
+    function distance(p1, p2) {
+        const dx = (p1.x || 0) - (p2.x || 0);
+        const dy = (p1.y || 0) - (p2.y || 0);
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    let routePoints = points.filter(p => (p.ptype || 'route') === 'route');
+    let otherPoints = points.filter(p => (p.ptype || 'route') !== 'route');
+
+    
+    routePoints.sort((a, b) => {
+        if (a.pathId !== b.pathId) return 0;
+        return points.indexOf(a) - points.indexOf(b);
+    });
+
+    
+    let step=1; routePoints.forEach(p=>{ if(p.helper){ p.route_step=''; } else { p.route_step=step++; } });
+let bucketMap = new Map();
+    routePoints.forEach(p => bucketMap.set(p, []));
+
+    otherPoints.forEach(p => {
+        let nearest = routePoints[0];
+        let minDist = distance(p, nearest);
+        for (let i = 1; i < routePoints.length; i++) {
+            let d = distance(p, routePoints[i]);
+            if (d < minDist) {
+                minDist = d;
+                nearest = routePoints[i];
+            }
+        }
+        bucketMap.get(nearest).push(p);
+    });
+
+    
+let md =  '| Typ | Label | Notiz | X | Y | Route-Step | Dauer |' + '\n'
+          + '|---|---|---|---|---|---|---|' + '\n';
+
+  
+  routePoints.forEach(p => {
+    const typeName = getTypeMeta(p.ptype||'route').name;
+    md +=  '| ' + typeName
+        + ' | ' + (p.label  || '').replace(/\|/g,'/')
+        + ' | ' + (p.note   || '').replace(/\|/g,'/')
+        + ' | ' + (p.x||0).toFixed(4)
+        + ' | ' + (p.y||0).toFixed(4)
+        + ' | ' + p.route_step
+        + ' | ' + (p.dauer || '')
+        + ' |' + '\n';
+        const others = bucketMap.get(p) || [];
+others.forEach(op => {
+  const opName = getTypeMeta(op.ptype || 'ort').name;
+  md += '| ' + opName
+      + ' | ' + (op.label || '').replace(/\|/g, '/')
+      + ' | ' + (op.note  || '').replace(/\|/g, '/')
+      + ' | ' + (op.x || 0).toFixed(4)
+      + ' | ' + (op.y || 0).toFixed(4)
+      + ' | ' + (op.route_step || '')
+      + ' | ' + (op.dauer || '')
+      + ' |'
+      + '\n';
+});
+    });
+
+    const blob = new Blob([md], {type:'text/markdown'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+    a.download = `PlotMap_${dateStr}_${mdExportCount++}.md`;
+    a.click();
+};
+
+document.getElementById('importMd').onclick = () => {
+  let inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.md,text/markdown';
+  inp.onchange = e => {
+    const file = inp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      let text = ev.target.result;
+      
+      let lines = text.split('\n').filter(l => l.trim() && !l.startsWith('|---'));
+      let newPoints = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        let cols = lines[i].split('|').map(x => x.trim());
+        
+        if (cols.length < 8) continue;
+        let [ , typ, label, note, xs, ys, step, dauer ] = cols;
+        let meta = POINT_TYPES.find(t => t.name === typ) || POINT_TYPES[0];
+        newPoints.push({
+          ptype: meta.type,
+          label,
+          note,
+          x: parseFloat(xs),
+          y: parseFloat(ys),
+          route_step: (/^\d+$/.test(step) ? parseInt(step,10) : ''),
+          dauer: dauer || '',
+          helper: (!/^\d+$/.test(step))
+        });
+      }
+      if (newPoints.length) {
+        push();
+        clearDOM();
+        points.length = 0;
+        newPoints.forEach(d => createPoint(d, true));
+        updateNumbers();
+        draw();
+        updateDOM();
+
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+};
+
+document.getElementById('exportImg').onclick = () => {
+    
+    const __lw = Math.max(1, window.pmLineWidth || 2);
+    midEls.forEach(m=>m.style.display='none');
+    document.querySelectorAll('.dauer').forEach(d=>d.style.display='none');
+    
+    draw();
+
+    
+    const r = imgRect();
+    ctx.save();
+
+    
+    if (showLines) {
+        const routePts = points.filter(p => (p.ptype||'route')==='route' && isVisibleType('route'));
+        if (routePts.length > 1) {
+            ctx.lineWidth = __lw + 2; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath();
+            routePts.forEach((p,i)=> {
+              const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+              i>0 ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+            });
+            ctx.stroke();
+            ctx.strokeStyle=(window.pmRouteColor||'#cc3333'); ctx.lineWidth = __lw; ctx.beginPath();
+            routePts.forEach((p,i)=> {
+              const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+              i>0 ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+            });
+            ctx.stroke();
+        }
+    }
+
+    
+    let cnt = 1;
+    points.forEach(p => {
+        if (!isVisibleType(p.ptype||'route')) return;
+        const x = r.x + p.x*r.w, y = r.y + p.y*r.h;
+
+        
+        ctx.beginPath();
+        ctx.arc(x,y,16,0,2*Math.PI);
+        ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.95)'; ctx.stroke();
+
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if ((p.ptype||'route') === 'route') {
+            ctx.fillText(kapitelMode ? (kapitelStartNum+cnt-1) : cnt, x, y);
+            cnt++;
+        } else {
+            ctx.font = '22px sans-serif';
+            ctx.fillText(getIcon(p.ptype), x, y+1);
+        }
+
+        
+        if (p.label && showLabels) {
+            ctx.font = '11px sans-serif';
+            const w = ctx.measureText(p.label).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(x - w/2 - 4, y + 18, w + 8, 18);
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+            ctx.fillText(p.label, x, y + 27);
+        }
+
+        
+        if (showNotes && p.note) {
+            ctx.font = '12px sans-serif';
+            const noteY = y + 46;
+            const w = ctx.measureText(p.note).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(x - w/2 - 4, noteY - 9, w + 8, 18);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(p.note, x, noteY);
+        }
+    });
+
+    ctx.restore();
+
+    
+    requestAnimationFrame(() => {
+      cvs.toBlob(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        link.download = `PlotMap_${dateStr}_${imgExportCount++}.png`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        
+        midEls.forEach(m=>m.style.display='flex');
+        document.querySelectorAll('.dauer').forEach(d=>d.style.display='block');
+        draw(); updateDOM();
+      }, 'image/png');
+    });
+};
+resize();
+function ensureChildren(p){
+  if(p.noteEl && p.noteEl.parentNode !== p.el){ p.el.appendChild(p.noteEl); }
+  if(p.dauerEl && p.dauerEl.parentNode !== p.el){ p.el.appendChild(p.dauerEl); }
+}
+function setStackVars(p){
+  const lblH  = p.lbl ? p.lbl.offsetHeight : 0;
+  const noteVisible = (p.noteEl && p.noteEl.style.display !== 'none');
+  const noteH = noteVisible ? p.noteEl.offsetHeight : 0;
+  p.el.style.setProperty('--lbl-h',  lblH + 'px');
+  p.el.style.setProperty('--note-h', noteH + 'px');
+}
+</script>
+<script>const uiTranslations = {
+  "TOGGLE_MODE_1":     { "en": "Focus Mode",    "de": "Fokus-Modus" },
+  "CHAPTER_NUMBERING_2":{ "en": "Chapter Numbering", "de": "Kapitel-Nummerierung" },
+  "CHAPTER_3":         { "en": "Chapter",       "de": "Kapitel" },
+  "SHOW_NOTES_4":      { "en": "Show Notes",    "de": "Notizen anzeigen" },
+  "LINES_5":           { "en": "Lines",         "de": "Linien" },
+  "EDIT_BUTTONS_6":    { "en": "Edit-Buttons",  "de": "Edit-Buttons" },
+  "POINT_TYPES_FILTER_7":{ "en": "Point Types Filter", "de": "Punktarten Filter" },
+  "ROUTE_8":           { "en": "Route",         "de": "Route" },
+  "PLACE_9":           { "en": "Place",         "de": "Ort" },
+  "CHARACTER_10":      { "en": "Character",     "de": "Charakter" },
+  "EVENT_11":          { "en": "Event",         "de": "Event" },
+  "ITEM_12":           { "en": "Item",          "de": "Item" },
+  "_SHOW_DURATION_13": { "en": "⌛ Show Duration","de": "⌛ Dauer anzeigen" },
+  "ZOOM_14":           { "en": "Zoom",          "de": "Zoom" },
+  "OPACITY_15":        { "en": "Opacity",       "de": "Deckkraft" },
+  "_UNDO_16":          { "en": "↺ Undo",        "de": "↺ Rückgängig" },
+  "_REDO_17":          { "en": "↻ Redo",        "de": "↻ Wiederholen" },
+  "EXPORT_MD_18":      { "en": "Export MD",     "de": "Export MD" },
+  "IMPORT_MD_19":      { "en": "Import MD",     "de": "Import MD" },
+  "PNG_20":            { "en": "PNG",           "de": "PNG" },
+  "CLEAR_ALL_21":      { "en": "Clear All",     "de": "Alle löschen" },
+  "LINE_COLOR_22":   { "en": "Line color", "de": "Linienfarbe" },
+      "LINE_WIDTH_23": { "en": "Line width", "de": "Linienstärke" },
+  "LANG_TOGGLE":       { "en": "DE",            "de": "EN" },
+  "CHOOSE_TYPE":       { "en": "Choose type:",  "de": "Typ wählen:" },
+  "CTX_CHAPTER_EDIT":  { "en": "Chapter Edit",  "de": "Kapitel bearbeiten" },
+  "CTX_NOTE_EDIT":     { "en": "Note Edit",     "de": "Notiz bearbeiten" },
+  "CTX_SHOW_NOTE":     { "en": "Show Note",     "de": "Notiz anzeigen" },
+  "CTX_HIDE_NOTE":     { "en": "Hide Note",     "de": "Notiz verbergen" },
+  "CTX_CHANGE_TYPE":   { "en": "Change Point Type","de": "Punkttyp ändern" },
+  "CTX_SET_DURATION":  { "en": "⌛ Set Duration","de": "⌛ Dauer setzen" },
+  "CTX_HELPER_ON":  { "en": "Skip number (helper point)", "de": "Nummer auslassen (Hilfspunkt)" },
+  "CTX_HELPER_OFF": { "en": "Show number",                 "de": "Nummer anzeigen" },
+  "CTX_DELETE":        { "en": "Delete",        "de": "Löschen" },
+  "TOGGLE_MODE_2":     { "en": "Story Mode",    "de": "Story-Modus" },
+  "FOCUS_MODE":        { "en": "Focus Mode",    "de": "Fokus-Modus" },
+  "STORY_MODE":        { "en": "Story Mode",    "de": "Story-Modus" },
+  "RELOAD_WARN": {
+  "en": "Warning: Reloading will clear the canvas – all points will be lost. Reload anyway? Save before!",
+  "de": "Achtung: Beim Neuladen wird der Canvas geleert – alle Punkte sind weg. Trotzdem neu laden? Speichere vorher!"
+}
+};
+
+let uiLocale = new URLSearchParams(location.search).get('lang') ||
+               (navigator.language.startsWith('de') ? 'de' : 'en');
+
+function applyUI() {
+  document.documentElement.lang = uiLocale;
+  document.querySelectorAll('[data-i18n-key]').forEach(el => {
+    const key = el.getAttribute('data-i18n-key');
+    if (uiTranslations[key] && uiTranslations[key][uiLocale]) {
+      el.textContent = uiTranslations[key][uiLocale];
+    }
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  
+  applyUI();
+
+  
+  const langBtn = document.getElementById('langToggle');
+  langBtn.addEventListener('click', () => {
+    uiLocale = uiLocale === 'en' ? 'de' : 'en';
+    applyUI();
+    history.replaceState(null, '', '?lang=' + uiLocale);
+  });
+
+  
+  let simpleMode = localStorage.getItem('mode') === 'base';
+  document.documentElement.classList.toggle('simple-mode', simpleMode);
+  const modeBtn = document.getElementById('modeToggle');
+  if (modeBtn) {
+    let span = modeBtn.querySelector('span');
+    if (!span) {
+      span = document.createElement('span');
+      modeBtn.textContent = '';
+      modeBtn.appendChild(span);
+    }
+    span.setAttribute('data-i18n-key',
+      simpleMode ? 'TOGGLE_MODE_2' : 'TOGGLE_MODE_1'
+
+    );
+    applyUI();
+
+    modeBtn.addEventListener('click', () => {
+      simpleMode = !simpleMode;
+      document.documentElement.classList.toggle('simple-mode', simpleMode);
+      localStorage.setItem('mode', simpleMode ? 'base' : 'plus');
+      span.setAttribute('data-i18n-key',
+        simpleMode ? 'TOGGLE_MODE_2' : 'TOGGLE_MODE_1'
+
+      );
+      applyUI();
+      updateVis();
+      draw();
+      updateDOM();
+    });
+  }
+});
+</script><script id="pm-fontscale-js">
+(function(){
+  function ensureI18n(){
+    window.uiTranslations = window.uiTranslations || {};
+    if(!uiTranslations['UI_FONT_SCALE']){
+      uiTranslations['UI_FONT_SCALE'] = { de:'Schriftgröße', en:'Font size' };
+    }
+  }
+
+function addSlider(){
+  const ui = document.getElementById('ui');
+  if(!ui) return;
+  if(document.getElementById('fontScale')) return; // schon da
+
+  const lbl = document.createElement('label');
+  lbl.setAttribute('for','fontScale');
+  lbl.setAttribute('data-i18n-key','UI_FONT_SCALE');
+
+  const input = document.createElement('input');
+  input.id = 'fontScale';
+  input.type = 'range';
+  input.min = '50';
+  input.max = '200';
+  input.value = '100';
+
+  const span = document.createElement('span');
+  span.id = 'fontScaleValue';
+  span.textContent = '100%';
+
+  // i18n Text setzen
+  try {
+    const key = 'UI_FONT_SCALE';
+    const loc = (window.uiLocale || 'en');
+    lbl.textContent = (uiTranslations[key] && uiTranslations[key][loc]) ? uiTranslations[key][loc] : 'Font size';
+  } catch(e){ lbl.textContent = 'Font size'; }
+
+  // etwas Abstand rechts neben dem Zoom-Slider
+  lbl.style.marginLeft   = '20px';
+  input.style.marginLeft = '6px';
+  span.style.marginLeft  = '6px';
+
+  // Statt ans Ende: direkt hinter #zoom einfügen (vor dem <br/> danach)
+  const zoomInput = document.getElementById('zoom');
+  if (zoomInput && zoomInput.parentNode === ui) {
+    const afterZoomBr = zoomInput.nextSibling; // das <br/> nach Zoom
+    ui.insertBefore(lbl,   afterZoomBr);
+    ui.insertBefore(input, afterZoomBr);
+    ui.insertBefore(span,  afterZoomBr);
+  } else {
+    // Fallback: ans Ende, falls Struktur anders ist
+    ui.appendChild(lbl);
+    ui.appendChild(input);
+    ui.appendChild(span);
+  }
+
+  // Handler
+  input.addEventListener('input', function(e){
+    const scale = (parseInt(e.target.value,10) || 100) / 100;
+    document.documentElement.style.setProperty('--font-scale', String(scale));
+    span.textContent = e.target.value + '%';
+
+    // Reflow fürs absvar-Stacking
+    try{
+      if(Array.isArray(window.points)){
+        points.forEach(function(p){
+          if(typeof window.ensureChildren === 'function') ensureChildren(p);
+          if(typeof window.setStackVars   === 'function') setStackVars(p);
+        });
+      }
+      if(typeof window.updateDOM === 'function') updateDOM();
+      if(typeof window.draw      === 'function') draw();
+    }catch(_){}
+  });
+}
+
+  
+
+  function init(){
+    ensureI18n();
+    addSlider();
+    }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+
+
+// System-Dialog immer zeigen (F5, Button, Tab schließen, Pull-to-Refresh)
+window.addEventListener('beforeunload', function (e) {
+  e.preventDefault();
+  e.returnValue = ''; // Standarddialog
+});
+
+// Zusätzlicher Klartext bei Tastatur-Reload (F5 / Ctrl+R / Cmd+R)
+document.addEventListener('keydown', function (e) {
+  const isReload = (e.key === 'F5') || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r');
+  if (!isReload) return;
+  e.preventDefault();
+
+  // Sprache direkt aus <html lang> (wird in applyUI gesetzt)
+  const loc = document.documentElement.lang || 'en';
+  const t = (uiTranslations.RELOAD_WARN && uiTranslations.RELOAD_WARN[loc])
+              ? uiTranslations.RELOAD_WARN[loc]
+              : (uiTranslations.RELOAD_WARN ? uiTranslations.RELOAD_WARN.en : 'Reload?');
+
+  if (confirm(t)) {
+    // Nutzer bestätigt: normal neu laden
+    location.reload();
+  }
+});
+</script>
+<div aria-hidden="true" class="pm-empty-hint" id="pmEmptyHint" style="display:none"><div class="card"><div id="emptyTitle" style="font-weight:700;margin-bottom:4px;">PlotMapper Tool</div><div id="emptySub">Zum Beginnen, lade ein Bild.</div><ul id="emptySteps" style="margin:10px 0 0 16px;padding:0;list-style:disc"><li id="emptyStep1">Step 1</li><li id="emptyStep2">Step 2</li><li id="emptyStep3">Step 3</li></ul></div></div><script>
+(function(){
+  window.uiTranslations = window.uiTranslations || {};
+  var T = window.uiTranslations;
+  function ensure(k,en,de){ T[k]=T[k]||{}; if(!T[k].en) T[k].en=en; if(!T[k].de) T[k].de=de; }
+  ensure('TUTORIAL_BTN','Tutorial','Anleitung');
+  ensure('EMPTY_HINT_TITLE','PlotMapper Tool {v}','PlotMapper Tool {v}');
+  ensure('EMPTY_HINT_SUB','To begin, load an image.','Zum Beginnen, lade ein Bild.');
+  ensure('EMPTY_STEP_1','1) Load an image','1) Bild laden');
+  ensure('EMPTY_STEP_2','2) Double-click to add a point','2) Doppelklick fügt einen Punkt hinzu');
+  ensure('EMPTY_STEP_3','3) Edit via point menu (≡)','3) Bearbeiten über Punkt-Menü (≡)');
+})();</script><aside aria-label="Info-Box" class="pm-info" id="pmInfo"><header><div class="ttl">PlotMapper Tool</div><button class="btn" id="pmInfoClose">×</button></header><div class="links"><a href="https://github.com/maxliebscher/plotmappertool" rel="noopener" target="_blank">GitHub – Repository</a><a href="https://maxliebscher.com/tools/plotmappertool" rel="noopener" target="_blank">Website</a><a href="https://github.com/maxliebscher/plotmappertool/releases" rel="noopener" target="_blank">Changelog</a><a href="#" id="pmLinkTutorial" rel="noopener" style="display:none" target="_blank">Tutorial (YouTube)</a><a href="https://paypal.me/maxliebscher" rel="noopener" target="_blank">Donate ♥</a></div></aside>
+<!-- Anleitung Modal -->
+<div class="pm-modal-backdrop" id="pmHelpBackdrop" aria-hidden="true"></div>
+<div class="pm-modal" id="pmHelpModal" role="dialog" aria-modal="true" aria-labelledby="pmHelpTitle">
+  <header>
+    <h3 id="pmHelpTitle">Anleitung</h3>
+    <button class="close" id="pmHelpClose" type="button">Schließen</button>
+  </header>
+  <div class="content"><div id="pmHelpBody"></div></div>
+</div>
+<div class="pm-watermark"><svg aria-hidden="true"><use href="#pm-logo-sym"></use></svg><span id="pmWatermarkTxt">PlotMapper Tool – v…</span></div><script id="pm-brand-helpers">
+(function(){
+  window.uiTranslations = window.uiTranslations || {};
+  var T = window.uiTranslations;
+  function ensure(k,en,de){ T[k]=T[k]||{}; if(!T[k].en) T[k].en=en; if(!T[k].de) T[k].de=de; }
+  ensure('TUTORIAL_BTN','Tutorial','Anleitung');
+  ensure('EMPTY_HINT_TITLE','PlotMapper Tool {v}','PlotMapper Tool {v}');
+  ensure('EMPTY_HINT_SUB','To begin, load an image.','Zum Beginnen, lade ein Bild.');
+  ensure('EMPTY_STEP_1','1) Load an image','1) Bild laden');
+  ensure('EMPTY_STEP_2','2) Double-click to add a point','2) Doppelklick fügt einen Punkt hinzu');
+  ensure('EMPTY_STEP_3','3) Edit via point menu (≡)','3) Bearbeiten über Punkt-Menü (≡)');
+
+  var vtxt=(document.documentElement.getAttribute('data-version')||'dev').replace(/^v/i,'');
+  var v='v'+vtxt;
+  var vEl=document.getElementById('pmVersion'); if(vEl) vEl.textContent=v;
+  var wm=document.getElementById('pmWatermarkTxt'); if(wm) wm.textContent='PlotMapper Tool – '+v;
+
+  // Info
+  var info=document.getElementById('pmInfo');
+  var btn=document.getElementById('pmInfoBtn');
+  var cls=document.getElementById('pmInfoClose');
+  if(btn && info){ btn.addEventListener('click', function(){ info.classList.toggle('show'); }); }
+  if(cls && info){ cls.addEventListener('click', function(){ info.classList.remove('show'); }); }
+  window.addEventListener('click', function(e){ if(info && !info.contains(e.target) && !e.target.closest('#pmInfoBtn')) info.classList.remove('show'); });
+
+  // Empty hint
+  function t(key, fallback){
+    var L=(window.uiLocale||document.documentElement.lang||'de');
+    try{ return (T[key]&&T[key][L])||fallback; }catch(e){ return fallback; }
+  }
+  window.updateEmptyHint=function(){
+    var title=document.getElementById('emptyTitle'); if(title) title.textContent=(t('EMPTY_HINT_TITLE','PlotMapper Tool {v}')||'').replace('{v}', v);
+    var sub=document.getElementById('emptySub'); if(sub) sub.textContent=t('EMPTY_HINT_SUB','To begin, load an image.');
+    var s1=document.getElementById('emptyStep1'); if(s1) s1.textContent=t('EMPTY_STEP_1','1) Load an image');
+    var s2=document.getElementById('emptyStep2'); if(s2) s2.textContent=t('EMPTY_STEP_2','2) Double-click to add a point');
+    var s3=document.getElementById('emptyStep3'); if(s3) s3.textContent=t('EMPTY_STEP_3','3) Edit via point menu (≡)');
+  };
+  window.showEmptyHint=function(){ var h=document.getElementById('pmEmptyHint'); if(h){ updateEmptyHint(); h.style.display='grid'; } };
+  window.hideEmptyHint=function(){ var h=document.getElementById('pmEmptyHint'); if(h){ h.style.display='none'; } };
+  try{ if(!window.imgLoaded){ showEmptyHint(); } }catch(e){ showEmptyHint(); }
+
+  // Splash auto-hide
+  var sp=document.getElementById('pmSplash');
+  if(sp){ function hide(){ sp.classList.add('hide'); } setTimeout(hide, 2600); sp.addEventListener('click', hide); }
+
+  var langBtn=document.getElementById('langToggle'); if(langBtn){ langBtn.addEventListener('click', function(){ setTimeout(updateEmptyHint,0); }); }
+})();</script><script id="pm-fixes-v2">
+(function(){
+  // Language bootstrap
+  try{
+    var qLang = new URLSearchParams(location.search).get('lang');
+    var navLang = ((navigator.language||'en').toLowerCase().startsWith('de')) ? 'de' : 'en';
+    var current = document.documentElement.getAttribute('lang') || 'en';
+    document.documentElement.setAttribute('lang', qLang || navLang || current);
+window.uiLocale = document.documentElement.getAttribute('lang');
+    window.uiLocale = document.documentElement.getAttribute('lang');
+  }catch(e){}
+
+  // Version texts
+  try{
+    var vtxt=(document.documentElement.getAttribute('data-version')||'dev').replace(/^v/i,'');
+    var v='v'+vtxt;
+    var vEl=document.getElementById('pmVersion'); if(vEl) vEl.textContent=v;
+    var wm=document.getElementById('pmWatermarkTxt'); if(wm) wm.textContent='PlotMapper Tool – '+v;
+    var sv=document.getElementById('pmSplashVerline'); if(sv) sv.textContent='PlotMapper Tool – '+v;
+  }catch(e){}
+
+  // i18n keys
+  window.uiTranslations = window.uiTranslations || {};
+  var T = window.uiTranslations;
+  function ensure(k,en,de){ T[k]=T[k]||{}; if(!T[k].en) T[k].en=en; if(!T[k].de) T[k].de=de; }
+  ensure('TUTORIAL_BTN','Tutorial','Anleitung');
+  ensure('EMPTY_HINT_TITLE','PlotMapper Tool {v}','PlotMapper Tool {v}');
+  ensure('EMPTY_HINT_SUB','To begin, load an image.','Zum Beginnen, lade ein Bild.');
+  ensure('EMPTY_STEP_1','1) Load an image','1) Bild laden');
+  ensure('EMPTY_STEP_2','2) Double-click to add a point','2) Doppelklick fügt einen Punkt hinzu');
+  ensure('EMPTY_STEP_3','3) Edit via point menu (≡)','3) Bearbeiten über Punkt-Menü (≡)');
+
+  function t(key, fallback){
+    var L=(window.uiLocale||document.documentElement.lang||'de');
+    try{ return (T[key]&&T[key][L])||fallback; }catch(e){ return fallback; }
+  }
+  window.updateEmptyHint=function(){
+    var vtxt=(document.documentElement.getAttribute('data-version')||'dev').replace(/^v/i,'');
+    var v='v'+vtxt;
+    var title=document.getElementById('emptyTitle'); if(title) title.textContent=(t('EMPTY_HINT_TITLE','PlotMapper Tool {v}')||'').replace('{v}', v);
+    var sub=document.getElementById('emptySub'); if(sub) sub.textContent=t('EMPTY_HINT_SUB','To begin, load an image.');
+    var s1=document.getElementById('emptyStep1'); if(s1) s1.textContent=t('EMPTY_STEP_1','1) Load an image');
+    var s2=document.getElementById('emptyStep2'); if(s2) s2.textContent=t('EMPTY_STEP_2','2) Double-click to add a point');
+    var s3=document.getElementById('emptyStep3'); if(s3) s3.textContent=t('EMPTY_STEP_3','3) Edit via point menu (≡)');
+  };
+  window.showEmptyHint=function(){ var h=document.getElementById('pmEmptyHint'); if(h){ updateEmptyHint(); h.style.display='grid'; } };
+  window.hideEmptyHint=function(){ var h=document.getElementById('pmEmptyHint'); if(h){ h.style.display='none'; } };
+
+  // Initial update + Hide when image loads
+  document.addEventListener('DOMContentLoaded', function(){
+    
+
+// === Line width (pmLineWidth) ===
+window.pmLineWidth = 2; // default same as previous route width
+
+(function(){
+  const routeWidthEl = document.getElementById('routeWidth');
+  if (routeWidthEl) {
+    // initialize from slider value
+    window.pmLineWidth = parseInt(routeWidthEl.value || '2', 10);
+    routeWidthEl.oninput = (e) => {
+      window.pmLineWidth = parseInt(e.target.value || '2', 10);
+      draw();
+    };
+  }
+})();
+try{ updateEmptyHint(); }catch(e){}
+    // Poll for imgLoaded or an <img> with width
+    var t = setInterval(function(){
+      try{
+        if((window.__pm_imgLoaded===true) || (window.imgLoaded===true) || document.querySelector('img[src]')){
+          hideEmptyHint();
+          clearInterval(t);
+        }
+      }catch(e){}
+    }, 300);
+  });
+
+  // Info popover bindings (just in case)
+  (function(){
+    var info=document.getElementById('pmInfo');
+    var btn=document.getElementById('pmInfoBtn');
+    var cls=document.getElementById('pmInfoClose');
+    if(btn && info){ btn.addEventListener('click', function(){ info.classList.toggle('show'); }); }
+    if(cls && info){ cls.addEventListener('click', function(){ info.classList.remove('show'); }); }
+    window.addEventListener('click', function(e){ if(info && !info.contains(e.target) && !e.target.closest('#pmInfoBtn')) info.classList.remove('show'); });
+  })();
+})();
+</script>
+<script id="pm-filebtn-js">
+(function(){
+  function t(key, fallback){
+    try{ return (window.uiTranslations && window.uiTranslations[key] && window.uiTranslations[key][window.uiLocale||'en']) || fallback; }
+    catch(e){ return fallback; }
+  }
+  function init(){
+    var input = document.getElementById('imgInp');
+    if(!input || input.dataset.pmWrapped) return;
+    var wrap = document.createElement('span'); wrap.className = 'file-wrap';
+    var label = document.createElement('label'); label.className='file-btn'; label.setAttribute('for','imgInp');
+    label.textContent = t('FILE_CHOOSE','Choose file');
+    var name = document.createElement('span'); name.className='file-name'; name.id='pmFileName'; name.textContent = t('FILE_NONE','No file selected');
+    wrap.appendChild(label); wrap.appendChild(name);
+    input.parentNode.insertBefore(wrap, input); // keep v5 layout – file row stays below header
+    input.dataset.pmWrapped = '1';
+    input.addEventListener('change', function(){
+      name.textContent = (input.files && input.files[0] && input.files[0].name) ? input.files[0].name : t('FILE_NONE','No file selected');
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  // also update text when language toggles
+  var langBtn = document.getElementById('langToggle');
+  if(langBtn){ langBtn.addEventListener('click', function(){ setTimeout(function(){
+    var name = document.getElementById('pmFileName'); var lbl = document.querySelector('label.file-btn[for="imgInp"]');
+    if(name) name.textContent = t('FILE_NONE','No file selected');
+    if(lbl)  lbl.textContent  = t('FILE_CHOOSE','Choose file');
+  },0); }); }
+})();
+</script>
+
+
+<script id="pm-badge-js">
+(function(){
+  function showBadge(){
+    var ver = document.documentElement.getAttribute('data-version') || 'v…';
+    if(ver && !/^v/i.test(ver)) ver = 'v' + ver;
+    var b = document.getElementById('pmBadge');
+    if(!b){
+      b = document.createElement('div');
+      b.id = 'pmBadge';
+      b.innerHTML = '<span class="name">PlotMapper Tool</span> <span class="ver">'+ ver +'</span> <button class="info-dot" id="pmBadgeInfo" title="Info">i</button>';
+      document.body.appendChild(b);
+      var btn = document.getElementById('pmBadgeInfo');
+      if(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var info = document.getElementById('pmInfo');
+          if(info){ info.classList.toggle('show'); }
+        });
+      }
+    }
+    b.style.display = 'inline-flex';
+  }
+  function whenSplashGone(){
+    var sp = document.getElementById('pmSplash');
+    if(!sp){ showBadge(); return; }
+    // Observe 'hide' class
+    var obs = new MutationObserver(function(){
+      if(sp.classList.contains('hide')){ showBadge(); obs.disconnect(); }
+    });
+    obs.observe(sp, {attributes:true, attributeFilter:['class']});
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', whenSplashGone); } else { whenSplashGone(); }
+})();
+</script>
+
+
+
+
+
+<script id="pm-help-js">
+(function(){
+  // texts
+  var L = (window.uiLocale || document.documentElement.lang || 'en').toLowerCase().startsWith('de') ? 'de' : 'en';
+  var T = {
+    de: {
+      title:'Anleitung',
+      intro:'Was du hier tun kannst:',
+      l1:'Bild laden',
+      l2:'Doppelklick fügt einen Punkt hinzu',
+      l3:'Bearbeiten über Punkt-Menü (≡)',
+      more:'Tipp: Mit „Fokus-Modus“ blendest du alle Nicht-Routenpunkte aus.',
+      close:'Schließen',
+      btn:'Anleitung'
+    },
+    en: {
+      title:'Tutorial',
+      intro:'What you can do:',
+      l1:'Load an image',
+      l2:'Double-click to add a point',
+      l3:'Edit via point menu (≡)',
+      more:'Tip: Use “Focus Mode” to hide non-route points.',
+      close:'Close',
+      btn:'Tutorial'
+    }
+  }[L];
+
+  function $(id){return document.getElementById(id)}
+  function openHelp(){
+    $('pmHelpTitle').textContent = T.title;
+    $('pmHelpIntro').textContent = T.intro;
+    $('pmHelpL1').textContent = T.l1;
+    $('pmHelpL2').textContent = T.l2;
+    $('pmHelpL3').textContent = T.l3;
+    $('pmHelpMore').textContent = T.more;
+    $('pmHelpClose').textContent = T.close;
+    $('pmHelpBackdrop').style.display='block';
+    $('pmHelpModal').style.display='block';
+  }
+  function closeHelp(){
+    $('pmHelpBackdrop').style.display='none';
+    $('pmHelpModal').style.display='none';
+  }
+
+  var btn = document.getElementById('btnTutorial');
+  if(btn){
+    // falls Button-Text noch nicht i18n ist, setzen
+    if(!btn.dataset.i18nKey){ btn.textContent = T.btn; }
+    btn.addEventListener('click', openHelp);
+  }
+  var b = $('pmHelpBackdrop'), c = $('pmHelpClose');
+  if(b) b.addEventListener('click', closeHelp);
+  if(c) c.addEventListener('click', closeHelp);
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') closeHelp(); });
+
+  // Sprache umgeschaltet? — Texte nachziehen
+  var langBtn = document.getElementById('langToggle');
+  if(langBtn){
+    langBtn.addEventListener('click', function(){
+      setTimeout(function(){
+        var L2 = (document.documentElement.lang||'en').toLowerCase().startsWith('de') ? 'de' : 'en';
+        var TT = (L2==='de'?T=({
+          title:'Anleitung',intro:'Was du hier tun kannst:',l1:'Bild laden',l2:'Doppelklick fügt einen Punkt hinzu',l3:'Bearbeiten über Punkt-Menü (≡)',more:'Tipp: Mit „Fokus-Modus“ blendest du alle Nicht-Routenpunkte aus.',close:'Schließen',btn:'Anleitung'
+        }):T=({
+          title:'Tutorial',intro:'What you can do:',l1:'Load an image',l2:'Double-click to add a point',l3:'Edit via point menu (≡)',more:'Tip: Use “Focus Mode” to hide non-route points.',close:'Close',btn:'Tutorial'
+        }));
+        var btn2 = document.getElementById('btnTutorial');
+        if(btn2 && !btn2.dataset.i18nKey){ btn2.textContent = T.btn; }
+      },0);
+    });
+  }
+})();
+</script>
+
+
+<script id="pm-headorder-fix">
+(function(){
+  function t(key, fallback){
+    try{ return (window.uiTranslations && window.uiTranslations[key] && window.uiTranslations[key][window.uiLocale||'en']) || fallback; }
+    catch(e){ return fallback; }
+  }
+  function getHead(){ return document.querySelector('#ui .ui-head'); }
+  function getActions(){ var h=getHead(); return h && h.querySelector('.head-actions'); }
+
+  function ensureSingleFileWrap(){
+    var head = getHead(); if(!head) return;
+    var actions = getActions();
+
+    // Collect any existing wraps anywhere in #ui (from older builds)
+    var wraps = head.querySelectorAll('.file-wrap');
+    // If none in head, try global search in #ui to move it in
+    if(wraps.length === 0){
+      var any = document.querySelector('#ui .file-wrap');
+      if(any) head.insertBefore(any, actions || head.firstChild);
+      wraps = head.querySelectorAll('.file-wrap');
+    }
+
+    var wrap = wraps[0];
+    // Remove duplicates (keep the first one only)
+    if(wraps.length > 1){
+      for(var i=1;i<wraps.length;i++){ wraps[i].remove(); }
+    }
+
+    // If still no wrap, build one
+    if(!wrap){
+      wrap = document.createElement('label');
+      wrap.className = 'file-wrap'; wrap.setAttribute('for','imgInp');
+      var btn = document.createElement('span'); btn.className='file-btn'; btn.id='fileBtn';
+      btn.textContent = t('LOAD_BTN','Laden');
+      var name = document.createElement('span'); name.className='file-name'; name.id='fileName';
+      name.textContent = t('NO_FILE','Keine ausgewählt');
+      wrap.appendChild(btn); wrap.appendChild(name);
+    }else{
+      // Normalize inner structure of an existing wrap (avoid legacy duplicates)
+      var btn = wrap.querySelector('.file-btn') || (function(){var b=document.createElement('span'); b.className='file-btn'; wrap.prepend(b); return b;})();
+      btn.id = 'fileBtn';
+      btn.textContent = t('LOAD_BTN','Laden');
+      var name = wrap.querySelector('.file-name') || (function(){var n=document.createElement('span'); n.className='file-name'; wrap.appendChild(n); return n;})();
+      name.id = 'fileName';
+      if(!name.textContent) name.textContent = t('NO_FILE','Keine ausgewählt');
+    }
+
+    // Place the single wrap left of the actions
+    if(actions && wrap.parentNode !== getHead()){ getHead().insertBefore(wrap, actions); }
+    if(!actions && wrap.parentNode !== getHead()){ getHead().appendChild(wrap); }
+
+    // Hook native input
+    var input = document.getElementById('imgInp');
+    var btnEl = document.getElementById('fileBtn');
+    var nameEl = document.getElementById('fileName');
+    if(input && btnEl){
+      var clicker = function(e){ e.preventDefault(); input.click(); };
+      btnEl.addEventListener('click', clicker);
+      btnEl.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ clicker(e); }});
+    }
+    if(input && nameEl){
+      input.addEventListener('change', function(){
+        var f = input.files && input.files[0];
+        nameEl.textContent = f ? f.name : t('NO_FILE','Keine ausgewählt');
+      });
+    }
+  }
+
+  function reorderRight(){
+    var actions = getActions(); if(!actions) return;
+    var mode = document.getElementById('modeToggle');
+    var tut  = document.getElementById('btnTutorial');
+    var lang = document.getElementById('langToggle');
+    [mode,tut,lang].forEach(function(n){ if(n && n.parentNode !== actions) actions.appendChild(n); });
+    [mode,tut,lang].forEach(function(n){ if(n) actions.appendChild(n); });
+  }
+
+  function updateI18nTexts(){
+    var btn = document.getElementById('fileBtn');
+    var name = document.getElementById('fileName');
+    if(btn) btn.textContent = t('LOAD_BTN','Laden');
+    if(name){
+      // only reset if no file chosen
+      var input = document.getElementById('imgInp');
+      if(!(input && input.files && input.files.length)) name.textContent = t('NO_FILE','Keine ausgewählt');
+    }
+  }
+
+  function init(){ ensureSingleFileWrap(); reorderRight(); updateI18nTexts(); }
+
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+
+  // Re-apply i18n texts on language toggle
+  var langBtn = document.getElementById('langToggle');
+  if(langBtn){ langBtn.addEventListener('click', function(){ setTimeout(updateI18nTexts,0); }); }
+})();
+</script>
+
+
+
+<script id="pm-file-i18n-sync">
+(function(){
+  function getLocale(){
+    var lang = (document.documentElement.getAttribute('lang')||'').toLowerCase();
+    if(lang.indexOf('de')===0) return 'de';
+    if(lang.indexOf('en')===0) return 'en';
+    var tgl = document.getElementById('langToggle');
+    if(tgl){ return /\bDE\b/i.test(tgl.textContent) ? 'de' : 'en'; }
+    return 'en';
+  }
+  function t(key, fallback){
+    try{
+      var loc = getLocale();
+      if(window.uiTranslations && window.uiTranslations[key] && window.uiTranslations[key][loc]){
+        return window.uiTranslations[key][loc];
+      }
+    }catch(e){}
+    return fallback;
+  }
+  function updateFileTexts(){
+    // also update header labels
+    var tut = document.getElementById('btnTutorial'); if(tut) tut.textContent = t('TUTORIAL_BTN', getLocale()==='de' ? 'Anleitung' : 'Tutorial');
+    var mode = document.getElementById('modeToggle'); if(mode){ var k = getLocale()==='de' ? 'Fokus-Modus' : 'Focus Mode'; var span = mode.querySelector('span'); if(span) span.textContent = t('TOGGLE_MODE_1', k); else mode.textContent=k; }
+    var btn = document.getElementById('fileBtn');
+    var name = document.getElementById('fileName');
+    var input = document.getElementById('imgInp');
+    if(btn){ btn.textContent = t('LOAD_BTN', getLocale()==='de' ? 'Laden' : 'Load'); }
+    if(name && input){
+      if(!(input.files && input.files.length)){
+        name.textContent = t('NO_FILE', getLocale()==='de' ? 'Keine ausgewählt' : 'No file selected');
+      }
+    }
+  }
+  function highlightLoad(){
+    var btn = document.getElementById('fileBtn');
+    if(!btn) return;
+    btn.classList.add('pm-highlight','pm-pulse');
+    setTimeout(function(){ btn.classList.remove('pm-highlight','pm-pulse'); }, 5000);
+}
+  function onSplashGone(){
+    var sp = document.getElementById('pmSplash');
+    if(!sp){ highlightLoad(); return; }
+    var obs = new MutationObserver(function(){
+      if(sp.classList.contains('hide')){ highlightLoad(); obs.disconnect(); }
+    });
+    obs.observe(sp, {attributes:true, attributeFilter:['class']});
+    // fallback
+    setTimeout(highlightLoad, 1500);
+  }
+  function init(){
+    updateFileTexts();
+    onSplashGone();
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  // React on language toggle
+  var langBtn = document.getElementById('langToggle');
+  if(langBtn){ langBtn.addEventListener('click', function(){ setTimeout(updateFileTexts, 0); }); }
+  // React if <html lang> changes
+  var htmlEl = document.documentElement;
+  var m = new MutationObserver(updateFileTexts);
+  m.observe(htmlEl, {attributes:true, attributeFilter:['lang']});
+})();
+</script>
+
+
+<script id="pm-themes-js">
+(function(){
+  var ORDER = ['deep','bright','contrast','burgund','herbstholz'];
+
+  function getTheme(){
+    return document.documentElement.getAttribute('data-theme') || 'deep';
+  }
+  function setTheme(t){
+    if(t === 'deep'){ document.documentElement.removeAttribute('data-theme'); }
+    else { document.documentElement.setAttribute('data-theme', t); }
+    try{ localStorage.setItem('pmTheme', t); }catch(_){}
+    var b = document.getElementById('themeToggle');
+    if(b){
+      var label = (t==='deep'?'Deep':'') || (t==='bright'?'Bright':'') || (t==='contrast'?'Contrast':'') || (t==='burgund'?'Burgund':'');
+      b.title = 'Theme: ' + (label||(''+t).charAt(0).toUpperCase()+(''+t).slice(1));
+    }
+  }
+  function nextTheme(){
+    var cur = getTheme();
+    var idx = ORDER.indexOf(cur); if(idx < 0) idx = 0;
+    var nxt = ORDER[(idx + 1) % ORDER.length];
+    setTheme(nxt);
+  }
+  window.nextTheme = nextTheme;
+  window.setTheme  = setTheme;
+
+  // init from saved
+  try { setTheme(localStorage.getItem('pmTheme') || 'deep'); } catch(_){ setTheme('deep'); }
+
+  // Bind palette button: clone to drop ANY prior listeners, then attach exactly one
+  function bindPalette(){
+    var t = document.getElementById('themeToggle');
+    if(!t) return;
+    var clone = t.cloneNode(true);
+    if(t.parentNode){ t.parentNode.replaceChild(clone, t); }
+    t = clone;
+    t.addEventListener('click', function(e){ e.preventDefault(); nextTheme(); });
+    t._pmBound = true; t._pmBind = true;
+  }
+
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', bindPalette); } else { bindPalette(); }
+  (function(){ var tries=0, iv=setInterval(function(){ if(++tries>10){ clearInterval(iv); return; } bindPalette(); }, 250); })();
+
+  // Keyboard 'T' (bind once)
+  if(!window._pmKeyBound){
+    window.addEventListener('keydown', function(e){
+      var k = (e.key||'').toLowerCase();
+      if(k==='t' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey){ nextTheme(); }
+    });
+    window._pmKeyBound = true;
+  }
+})();
+</script>
+
+
+<script id="pm-theme-button-ensure">
+(function(){
+  function ensureBtn(){
+    var head = document.querySelector('#ui .ui-head');
+    if(!head) return;
+    var actions = head.querySelector('.head-actions') || head;
+    var lang = document.getElementById('langToggle');
+    var existing = document.getElementById('themeToggle');
+    if(!existing){
+      var b = document.createElement('button');
+      b.className='btn'; b.id='themeToggle'; b.title='Theme'; b.setAttribute('aria-label','Theme'); b.textContent='🎨';
+      if(lang && lang.parentNode === actions){
+        actions.insertBefore(b, lang.nextSibling);
+      } else {
+        actions.appendChild(b);
+      }
+    }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', ensureBtn); } else { ensureBtn(); }
+  setTimeout(ensureBtn, 250); setTimeout(ensureBtn, 800); setTimeout(ensureBtn, 1600);
+})();
+</script>
+
+
+<script id="pm-splash-randomizer">
+(function(){
+  function applyRandom(){
+    try{ var saved = localStorage.getItem('pmTheme')||'deep'; if(saved==='bright') return; }catch(e){}
+    var el = document.querySelector('.pm-splash'); if(!el) return;
+    var blends = [
+      /* Herbstmorgen (warm amber/rose, nicht zu grell) */
+      "radial-gradient(1000px 520px at 50% 18%, rgba(210,120,60,.28), transparent 60%), linear-gradient(180deg, #1b1210 0%, #120d12 100%)",
+      /* Mystischer Schlingwald (tiefes Grün/Teal mit violettem Hauch) */
+      "radial-gradient(1100px 540px at 50% 20%, rgba(28,110,96,.28), transparent 60%), linear-gradient(180deg, #0e1516 0%, #0a0f14 100%)",
+"radial-gradient(1100px 520px at 50% 20%, rgba(15,38,66,.35), transparent 60%), linear-gradient(180deg, #0b1f33 0%, #061426 100%)",
+      "radial-gradient(1000px 500px at 50% 18%, rgba(87,35,120,.30), transparent 60%), linear-gradient(180deg, #1a0e2a 0%, #0d122a 100%)",
+      "radial-gradient(1000px 500px at 50% 18%, rgba(130,32,68,.28), transparent 60%), linear-gradient(180deg, #1a0e16 0%, #0a0a14 100%)",
+      "radial-gradient(1100px 540px at 50% 22%, rgba(26,102,120,.28), transparent 60%), linear-gradient(180deg, #0A1823 0%, #08131C 100%)"];
+    el.style.background = blends[Math.floor(Math.random()*blends.length)];
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', applyRandom); } else { applyRandom(); }
+  window.addEventListener('load', function(){ setTimeout(applyRandom, 50); });
+})();
+</script>
+
+<script id="pm-help-i18n">
+(function(){
+  var HELP = { de: `<p><strong>Willkommen!</strong> So arbeitest du am schnellsten:</p>
+  <ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> in die Karte → Punkt anlegen</li><li>Punkt-<strong>Kontextmenü</strong> über (≡)</li></ol>
+  <h4>Bearbeiten</h4><ul><li><strong>Punkttyp</strong>: Route/Ort/Charakter/Event/Item</li><li><strong>Nummer auslassen</strong> (Hilfspunkt)</li><li><strong>Dauer setzen</strong> (⏳)</li><li><strong>Linien</strong> verbinden die Route</li></ul>
+  <h4>Filter & Darstellung</h4><ul><li><strong>Fokus‑Modus</strong>: blendet Nicht‑Routenpunkte aus</li><li><strong>Notizen anzeigen</strong>, <strong>Kapitel</strong>, <strong>Kapitel‑Nummerierung</strong></li><li><strong>Zoom/Deckkraft/Schriftgröße</strong> per Regler</li></ul>
+  <h4>Import/Export</h4><ul><li><strong>Export MD</strong> speichert Punkte als Markdown</li><li><strong>Import MD</strong> lädt sie wieder (Struktur unverändert lassen)</li><li><strong>PNG</strong> rendert die Ansicht als Bild</li></ul>
+  <h4>Tastatur</h4><ul class="kbd"><li><kbd>Strg</kbd>+<kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme umschalten</li><li><kbd>Esc</kbd>: Modale schließen / Splash überspringen</li></ul>
+  <h4>Tipps</h4><ul><li>Präziser setzen: erst zoomen, dann doppelklicken</li><li>Hilfspunkte für Kurven/Verzweigungen</li><li>Regelmäßig <strong>MD exportieren</strong> – dein Savegame</li></ul><p>Video‑Tutorial folgt ✨</p>`,
+  en: `<p><strong>Welcome!</strong> Quick start:</p>
+  <ol><li><strong>Load image</strong> (top left)</li><li><strong>Double‑click</strong> on the map to add a point</li><li>Use the point <strong>context menu</strong> via (≡)</li></ol>
+  <h4>Editing</h4><ul><li><strong>Point type</strong>: Route/Place/Character/Event/Item</li><li><strong>Skip number</strong> (helper point)</li><li><strong>Set duration</strong> (⏳)</li><li><strong>Lines</strong> connect the route</li></ul>
+  <h4>Filters & Display</h4><ul><li><strong>Focus Mode</strong>: hides non‑route points</li><li><strong>Show Notes</strong>, <strong>Chapters</strong>, <strong>Chapter numbering</strong></li><li><strong>Zoom/Opacity/Font size</strong> via sliders</li></ul>
+  <h4>Import/Export</h4><ul><li><strong>Export MD</strong> saves points as Markdown</li><li><strong>Import MD</strong> restores them</li><li><strong>PNG</strong> renders the current view</li></ul>
+  <h4>Keyboard</h4><ul class="kbd"><li><kbd>Ctrl</kbd>+<kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul>
+  <h4>Tips</h4><ul><li>Zoom in for precise placement before double‑click</li><li>Use helper points for branching</li><li>Export MD regularly – your savegame</li></ul><p>Video tutorial coming soon ✨</p>` };
+  function getLocale(){ var lang=(document.documentElement.getAttribute('lang')||'').toLowerCase(); if(lang.indexOf('de')===0)return'de'; if(lang.indexOf('en')===0)return'en'; var t=document.getElementById('langToggle'); return (t && /\bDE\b/i.test(t.textContent))?'de':'en'; }
+  function inject(){ var el=document.getElementById('pmHelpBody'); if(el) el.innerHTML = HELP[getLocale()]||HELP.en; }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', inject); } else { inject(); }
+  var lt=document.getElementById('langToggle'); if(lt){ lt.addEventListener('click', function(){ setTimeout(inject,0); }); }
+})();</script>
+
+<script id="pm-help-open">
+(function(){
+  function openHelp(e){
+    if(e){ e.preventDefault(); }
+    var m = document.getElementById('pmHelpModal');
+    var b = document.getElementById('pmHelpBackdrop');
+    if(m){ m.style.display='block'; }
+    if(b){ b.style.display='block'; }
+  }
+  function closeHelp(e){
+    if(e){ e.preventDefault(); }
+    var m = document.getElementById('pmHelpModal');
+    var b = document.getElementById('pmHelpBackdrop');
+    if(m){ m.style.display='none'; }
+    if(b){ b.style.display='none'; }
+  }
+  function bind(){
+    var t = document.getElementById('btnTutorial');
+    var c = document.getElementById('pmHelpClose');
+    var b = document.getElementById('pmHelpBackdrop');
+    if(t && !t._pmBind){ t.addEventListener('click', openHelp); t._pmBind=true; }
+    if(c && !c._pmBind){ c.addEventListener('click', closeHelp); c._pmBind=true; }
+    if(b && !b._pmBind){ b.addEventListener('click', closeHelp); b._pmBind=true; }
+    document.addEventListener('keydown', function(ev){
+      if(ev.key==='Escape'){ closeHelp(); }
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+  // Safety rebind
+  setTimeout(bind, 300); setTimeout(bind, 1200);
+})();
+</script>
+
+
+
+
+
+
+
+
+<script id="pm-route-color">
+(function(){
+  function setLabel(){
+    var lbl = document.getElementById('routeColorLabel') || document.querySelector('[data-i18n-key="LINE_COLOR_22"]');
+    if(!lbl) return;
+    var langBtn = document.getElementById('langToggle');
+    var isDE = (document.documentElement.getAttribute('lang')||'').toLowerCase().startsWith('de') 
+               || (langBtn && langBtn.textContent.trim()==='EN');
+    lbl.textContent = isDE ? 'Linienfarbe' : 'Line color';
+    lbl.setAttribute('title', lbl.textContent);
+  }
+  function bind(){
+    var inp = document.getElementById('routeColor');
+    if(!inp || inp._pmBound) { setLabel(); return; }
+    try{ window.pmRouteColor = window.pmRouteColor || inp.value; }catch(_){}
+    inp.addEventListener('input', function(){
+      window.pmRouteColor = inp.value || '#cc3333';
+      try{ if(typeof draw==='function') draw(); }catch(_){}
+    });
+    inp._pmBound = true;
+    setLabel();
+    var lang = document.getElementById('langToggle');
+    if(lang && !lang._pmRouteI18n){
+      lang.addEventListener('click', function(){ setTimeout(setLabel, 0); });
+      lang._pmRouteI18n = true;
+    }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+  setTimeout(bind, 200);
+})();
+</script>
+
+</body>
+</html>
