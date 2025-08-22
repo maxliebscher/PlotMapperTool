@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Separate tests and PreAlpha versions
 
 ---
+## [1.1.4] - 2025-08-22
+### Changed
+- Ajustable line width
+- Zoom with Ctrl+Wheel
 
 ## [1.1.3] - 2025-08-14
 ### Changed
