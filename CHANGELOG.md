@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Separate tests and PreAlpha versions
 
 ---
+## [1.1.5] - 2025-08-23
+### Added
+- Added a "Reader"-modal for linear view
+- The "Reader" also allows edit of route
+- Click on chapter-num or title moves to point on map (in work)
+- The standalone linear reader now has edit mode
+### Fixed
+- Many small fixes
+- Removed Zoom Ctrl+Wheel since collide w/ native browser input
+- Empty notice is now i18n
+
 ## [1.1.4] - 2025-08-22
 ### Changed
 - Ajustable line width
