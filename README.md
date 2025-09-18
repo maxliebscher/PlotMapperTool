@@ -5,6 +5,7 @@
 
 📍 **This README is bilingual: English first, scroll down for German 🇩🇪**
 
+Try it out now — Live Link: https://maxliebscher.github.io/PlotMapperTool/
 ---
 
 # 🇬🇧 English
