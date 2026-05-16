@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {
+    "name": "settings-heavy-map.png",
+    "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luz7YwAAAABJRU5ErkJggg==",
+    "width": 1,
+    "height": 1
+  },
+  "settings": {
+    "locale": "de",
+    "theme": "contrast",
+    "filters": {
+      "route": true,
+      "place": false,
+      "char": true,
+      "event": false,
+      "item": true
+    },
+    "showLines": true,
+    "showLabels": false,
+    "showLocation": true,
+    "showNotes": false,
+    "showDuration": true,
+    "showEdit": false,
+    "focusMode": true,
+    "chapterMode": true,
+    "chapterStart": 12,
+    "zoom": 2.5,
+    "opacity": 0.55,
+    "panX": 24,
+    "panY": -18,
+    "routeColor": "#3355aa",
+    "routeWidth": 8,
+    "fontScale": 1.25
+  },
+  "points": [
+    {
+      "id": "settings-route",
+      "x": 0.5,
+      "y": 0.5,
+      "type": "route",
+      "label": "Einstellungspunkt",
+      "note": "Prueft sichtbare Einstellungen",
+      "location": "Mitte",
+      "duration": "3h",
+      "helper": false
+    }
+  ]
+}

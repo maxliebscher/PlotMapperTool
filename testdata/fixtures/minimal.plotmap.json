@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {
+    "name": "minimal-map.png",
+    "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luz7YwAAAABJRU5ErkJggg==",
+    "width": 1,
+    "height": 1
+  },
+  "settings": {
+    "locale": "en",
+    "theme": "deep"
+  },
+  "points": []
+}

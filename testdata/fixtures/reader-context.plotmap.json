@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {
+    "name": "reader-context-map.png",
+    "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luz7YwAAAABJRU5ErkJggg==",
+    "width": 1,
+    "height": 1
+  },
+  "settings": {
+    "locale": "en",
+    "theme": "bright",
+    "showNotes": true,
+    "showDuration": true
+  },
+  "points": [
+    {
+      "id": "chapter-one",
+      "x": 0.1,
+      "y": 0.1,
+      "type": "route",
+      "label": "Chapter One",
+      "note": "First chapter note",
+      "location": "Gate",
+      "duration": "30m",
+      "helper": false
+    },
+    {
+      "id": "near-place",
+      "x": 0.13,
+      "y": 0.11,
+      "type": "place",
+      "label": "Gatehouse",
+      "note": "Nearby place",
+      "location": "Gate",
+      "duration": "",
+      "helper": false
+    },
+    {
+      "id": "near-character",
+      "x": 0.15,
+      "y": 0.14,
+      "type": "char",
+      "label": "Mara",
+      "note": "Meets the route here",
+      "location": "Gate",
+      "duration": "",
+      "helper": false
+    },
+    {
+      "id": "chapter-two",
+      "x": 0.82,
+      "y": 0.78,
+      "type": "route",
+      "label": "Chapter Two",
+      "note": "Second chapter note",
+      "location": "Tower",
+      "duration": "1h",
+      "helper": false
+    },
+    {
+      "id": "near-event",
+      "x": 0.79,
+      "y": 0.76,
+      "type": "event",
+      "label": "Signal fire",
+      "note": "Visible from the tower",
+      "location": "Tower",
+      "duration": "10m",
+      "helper": false
+    },
+    {
+      "id": "near-item",
+      "x": 0.86,
+      "y": 0.8,
+      "type": "item",
+      "label": "Key",
+      "note": "Found after the signal",
+      "location": "Tower",
+      "duration": "",
+      "helper": false
+    }
+  ]
+}
