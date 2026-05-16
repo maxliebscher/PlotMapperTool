@@ -1,3 +1,4 @@
 node_modules/
 .smoke-downloads/
+.superpowers/
 npm-debug.log*
