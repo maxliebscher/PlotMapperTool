@@ -135,6 +135,39 @@ async function toggleControls(page) {
   await setCheckbox(page, "#focusMode", false);
 }
 
+async function visiblePointCount(page) {
+  return page.locator(".point:not(.hidden)").count();
+}
+
+async function exercisePresentation(page) {
+  await page.click("#presentationButton");
+  await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
+  await page.waitForSelector("#presentationDock:not([hidden])");
+  assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide in presentation mode.");
+
+  const startCount = await visiblePointCount(page);
+  assert(startCount === 1, `Presentation should start with one visible point, got ${startCount}.`);
+
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.querySelector("#presentationStep")?.textContent?.startsWith("2 /"), null, { timeout: 5000 });
+  const nextCount = await visiblePointCount(page);
+  assert(nextCount > startCount, `Next step should reveal more points, got ${nextCount} after ${startCount}.`);
+
+  await page.click("#presentationShowAll");
+  const totalPoints = await page.evaluate(() => PM.store.getLiveState().points.length);
+  await page.waitForFunction((count) => document.querySelectorAll(".point:not(.hidden)").length === count, totalPoints, { timeout: 5000 });
+
+  await page.click("#presentationReset");
+  await page.waitForFunction(() => document.querySelectorAll(".point:not(.hidden)").length === 1, null, { timeout: 5000 });
+
+  await page.keyboard.press("End");
+  await page.waitForFunction((count) => document.querySelectorAll(".point:not(.hidden)").length === count, totalPoints, { timeout: 5000 });
+
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => !document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
+  await page.waitForSelector("#toolbar");
+}
+
 async function exerciseReader(page) {
   await page.click("#readerButton");
   await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
@@ -188,6 +221,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await editFirstPointLabel(page);
   await insertMidpointAndUndoRedo(page);
   await toggleControls(page);
+  await exercisePresentation(page);
   await exerciseReader(page);
   await exerciseDownloads(page);
 

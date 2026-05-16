@@ -34,6 +34,10 @@ assert(scripts.length, "No script blocks found in generated HTML.");
 assert(closeScriptCount === scripts.length, "Raw </script> text found inside generated script content.");
 assert(!/\b(?:Export MD|Import MD|markdownInput)\b/.test(html), "Legacy Markdown project controls must not be present in the main UI.");
 assert(html.includes("\\uD83D\\uDCD6 ${PM.I18n.t(locale, \"reader\")}"), "Reader toolbar button should include the book icon prefix.");
+assert(html.includes("PM.createPresentationController"), "App should create the presentation controller.");
+assert(html.includes("getPresentationReveal"), "Point UI should receive presentation reveal state.");
+assert(html.includes("ArrowRight") && html.includes("PageDown") && html.includes("ArrowLeft") && html.includes("PageUp"), "Presentation keyboard navigation should be wired.");
+assert(html.includes("Home") && html.includes("End") && html.includes("Escape"), "Presentation reset, show-all, and exit shortcuts should be wired.");
 requireHtml("helpTitle", "Tutorial modal title");
 requireHtml("Tutorial", "Tutorial copy");
 requireHtml("Schlie", "Localized tutorial close label");
@@ -43,6 +47,15 @@ requireHtml("projectInput", "Project input control");
 requireHtml("exportPng", "PNG export control");
 requireHtml("readerModal", "Reader modal");
 requireHtml("readerExportHtml", "Reader HTML export control");
+requireHtml("presentationButton", "Presentation mode toolbar button");
+requireHtml("presentationDock", "Presentation dock");
+requireHtml("presentationPrev", "Presentation previous control");
+requireHtml("presentationNext", "Presentation next control");
+requireHtml("presentationShowAll", "Presentation show-all control");
+requireHtml("presentationReset", "Presentation reset control");
+requireHtml("presentationExit", "Presentation exit control");
+requireHtml("present:", "Presentation i18n key");
+requireHtml("Präsentieren", "German presentation label");
 assert(!/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || ""), "Tutorial copy must not advertise Markdown project import/export.");
 assert(!/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s+end\s*;/i.test(html), "Empty hint must not be pinned to the right edge.");
 assert(/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s*;/i.test(html), "Empty hint should be centered in the viewport.");
@@ -62,6 +75,7 @@ const coreFiles = [
   "src/i18n.js",
   "src/utils.js",
   "src/state.js",
+  "src/presentation.js",
   "src/serialization.js",
   "src/exporters.js"
 ];
@@ -114,6 +128,35 @@ const routeInfo = PM.computeRouteInfo(project.points, project.settings);
 assertEqual(routeInfo.displayById.get("r1"), 1, "First route step should be 1.");
 assertEqual(routeInfo.displayById.get("h1"), "", "Helper route step should be empty.");
 assertEqual(routeInfo.displayById.get("r2"), 2, "Second numbered route step should be 2.");
+
+const revealFixture = PM.createEmptyProject({ locale: "en" });
+revealFixture.points.push(
+  PM.normalizePoint({ id: "r1", x: 0.1, y: 0.1, type: "route", label: "Start" }),
+  PM.normalizePoint({ id: "h1", x: 0.2, y: 0.2, type: "route", helper: true }),
+  PM.normalizePoint({ id: "r2", x: 0.3, y: 0.3, type: "route", label: "Pass" }),
+  PM.normalizePoint({ id: "h2", x: 0.4, y: 0.4, type: "route", helper: true }),
+  PM.normalizePoint({ id: "r3", x: 0.5, y: 0.5, type: "route", label: "End" }),
+  PM.normalizePoint({ id: "ctx", x: 0.52, y: 0.52, type: "place", label: "Spoiler" })
+);
+const revealInfo = PM.computePresentationReveal(revealFixture.points, revealFixture.settings, {
+  active: true,
+  step: 2,
+  showAll: false
+});
+assertDeepEqual(revealInfo.routePoints.map((point) => point.id), ["r1", "h1", "r2"], "Presentation reveal should include helper only after its segment is revealed.");
+assert(PM.isPointRevealed(revealFixture.points[0], revealFixture.points, revealFixture.settings, revealInfo), "First numbered route point should be revealed at step 2.");
+assert(PM.isPointRevealed(revealFixture.points[1], revealFixture.points, revealFixture.settings, revealInfo), "Helper before step 2 should be revealed.");
+assert(!PM.isPointRevealed(revealFixture.points[3], revealFixture.points, revealFixture.settings, revealInfo), "Helper after step 2 should stay hidden.");
+assert(!PM.isPointRevealed(revealFixture.points[5], revealFixture.points, revealFixture.settings, revealInfo), "Context points should stay hidden in presentation mode.");
+
+const clampedReveal = PM.normalizePresentationState({ active: true, step: 99, showAll: false }, 3);
+assertEqual(clampedReveal.step, 3, "Presentation step should clamp to route length.");
+const showAllReveal = PM.computePresentationReveal(revealFixture.points, revealFixture.settings, {
+  active: true,
+  step: 1,
+  showAll: true
+});
+assertDeepEqual(showAllReveal.routePoints.map((point) => point.id), ["r1", "h1", "r2", "h2", "r3"], "Show all should reveal full route including helpers.");
 
 const json = PM.Serialization.projectToJson(project);
 const parsed = PM.Serialization.parseProjectJson(json);

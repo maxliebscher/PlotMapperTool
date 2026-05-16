@@ -135,6 +135,53 @@ button, input, textarea, select {
   z-index: 70;
 }
 
+.presentation-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 76;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+}
+
+.presentation-dock[hidden] {
+  display: none;
+}
+
+.presentation-step {
+  min-width: 74px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+:root.presentation-mode .toolbar,
+:root.presentation-mode .info-badge,
+:root.presentation-mode .info-panel,
+:root.presentation-mode .mid-layer,
+:root.presentation-mode .point-menu-button {
+  display: none !important;
+}
+
 .point {
   position: absolute;
   width: var(--point-size);
@@ -418,6 +465,7 @@ button, input, textarea, select {
 }
 
 .head-actions #readerButton,
+.head-actions #presentationButton,
 .head-actions .toggle-button,
 .head-actions #helpButton {
   min-width: 100px;
@@ -1095,6 +1143,7 @@ button, input, textarea, select {
   }
 
   .head-actions #readerButton,
+  .head-actions #presentationButton,
   .head-actions .toggle-button,
   .head-actions #helpButton {
     flex: 1 1 104px;

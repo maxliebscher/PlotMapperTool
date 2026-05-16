@@ -9,6 +9,7 @@ const sourceFiles = [
   "src/i18n.js",
   "src/utils.js",
   "src/state.js",
+  "src/presentation.js",
   "src/serialization.js",
   "src/exporters.js",
   "src/theme.js",

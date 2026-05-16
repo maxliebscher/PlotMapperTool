@@ -46,6 +46,7 @@
       </div>
       <div class="head-actions">
         <button id="readerButton" class="btn" type="button">Reader</button>
+        <button id="presentationButton" class="btn" type="button">Present</button>
         <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
@@ -131,6 +132,15 @@
   </div>
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
+
+  <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
+    <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>
+    <output id="presentationStep" class="presentation-step" aria-live="polite">0 / 0</output>
+    <button id="presentationNext" class="btn icon" type="button" aria-label="Next step">&rarr;</button>
+    <button id="presentationShowAll" class="btn small" type="button">All</button>
+    <button id="presentationReset" class="btn small" type="button">Reset</button>
+    <button id="presentationExit" class="btn small" type="button">Exit</button>
+  </section>
 
   <div id="helpBackdrop" class="modal-backdrop" hidden></div>
   <section id="helpModal" class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>

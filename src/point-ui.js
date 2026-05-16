@@ -67,11 +67,11 @@
       return element;
     }
 
-    function updatePointNode(point, routeInfo) {
+    function updatePointNode(point, routeInfo, revealInfo) {
       const element = pointNodes.get(point.id) || makePointNode(point);
       pointNodes.set(point.id, element);
       const settings = latestState.settings;
-      const visible = PM.isPointVisible(point, settings);
+      const visible = PM.isPointVisible(point, settings) && (!revealInfo || PM.isPointRevealed(point, latestState.points, settings, revealInfo));
       element.classList.toggle("hidden", !visible);
       element.classList.toggle("helper", point.helper);
       element.classList.toggle("route", point.type === "route");
@@ -112,7 +112,8 @@
     function updateMidpoints(routePoints) {
       midLayer.textContent = "";
       const settings = latestState.settings;
-      if (!settings.showLines || !settings.showEdit || !settings.filters.route) return;
+      const revealInfo = PM.getPresentationReveal ? PM.getPresentationReveal() : null;
+      if ((revealInfo && revealInfo.active) || !settings.showLines || !settings.showEdit || !settings.filters.route) return;
       for (let index = 1; index < routePoints.length; index += 1) {
         const a = routePoints[index - 1];
         const b = routePoints[index];
@@ -159,7 +160,8 @@
     function render(state) {
       latestState = state;
       document.documentElement.style.setProperty("--font-scale", String(state.settings.fontScale));
-      const routeInfo = PM.computeRouteInfo(state.points, state.settings);
+      const revealInfo = PM.getPresentationReveal ? PM.getPresentationReveal() : null;
+      const routeInfo = revealInfo ? revealInfo.routeInfo : PM.computeRouteInfo(state.points, state.settings);
       const liveIds = new Set(state.points.map((point) => point.id));
       for (const [id, node] of pointNodes) {
         if (!liveIds.has(id)) {
@@ -167,8 +169,10 @@
           pointNodes.delete(id);
         }
       }
-      state.points.forEach((point) => updatePointNode(point, routeInfo));
-      const visibleRoutes = state.points.filter((point) => point.type === "route" && PM.isPointVisible(point, state.settings));
+      state.points.forEach((point) => updatePointNode(point, routeInfo, revealInfo));
+      const visibleRoutes = revealInfo && revealInfo.active
+        ? revealInfo.routePoints
+        : state.points.filter((point) => point.type === "route" && PM.isPointVisible(point, state.settings));
       updateRouteLayer(visibleRoutes);
       updateMidpoints(visibleRoutes);
     }

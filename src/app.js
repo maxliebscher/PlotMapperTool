@@ -38,7 +38,7 @@
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
     const menu = PM.createMenuController($("menuLayer"), store);
-    PM.createPointUi($("pointLayer"), $("midLayer"), $("routeLayer"), store, renderer, menu);
+    const pointUi = PM.createPointUi($("pointLayer"), $("midLayer"), $("routeLayer"), store, renderer, menu);
     const reader = PM.createReader({
       modal: $("readerModal"),
       backdrop: $("readerBackdrop"),
@@ -85,6 +85,14 @@
       undo: $("undoButton"),
       redo: $("redoButton"),
       readerButton: $("readerButton"),
+      presentationButton: $("presentationButton"),
+      presentationDock: $("presentationDock"),
+      presentationStep: $("presentationStep"),
+      presentationPrev: $("presentationPrev"),
+      presentationNext: $("presentationNext"),
+      presentationShowAll: $("presentationShowAll"),
+      presentationReset: $("presentationReset"),
+      presentationExit: $("presentationExit"),
       focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
       chapterStart: $("chapterStart"),
@@ -112,6 +120,22 @@
       return PM.I18n.t(store.getLiveState().settings.locale, key);
     }
 
+    PM.createPresentationController({
+      root: document.documentElement,
+      button: controls.presentationButton,
+      dock: controls.presentationDock,
+      step: controls.presentationStep,
+      previousButton: controls.presentationPrev,
+      nextButton: controls.presentationNext,
+      showAllButton: controls.presentationShowAll,
+      resetButton: controls.presentationReset,
+      exitButton: controls.presentationExit,
+      store,
+      menu,
+      onChange: () => pointUi.render(store.getState()),
+      t
+    });
+
     function setButtonText() {
       const locale = store.getLiveState().settings.locale;
       controls.fileName.textContent = store.getLiveState().map.name || PM.I18n.t(locale, "noProject");
@@ -124,6 +148,13 @@
       controls.undo.textContent = PM.I18n.t(locale, "undo");
       controls.redo.textContent = PM.I18n.t(locale, "redo");
       controls.readerButton.textContent = `\uD83D\uDCD6 ${PM.I18n.t(locale, "reader")}`;
+      controls.presentationButton.textContent = PM.I18n.t(locale, "present");
+      controls.presentationDock.setAttribute("aria-label", PM.I18n.t(locale, "presentation"));
+      controls.presentationPrev.setAttribute("aria-label", PM.I18n.t(locale, "presentationPrevious"));
+      controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
+      controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
+      controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
+      controls.presentationExit.textContent = PM.I18n.t(locale, "presentationExit");
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
