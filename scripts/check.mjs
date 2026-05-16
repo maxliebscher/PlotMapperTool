@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
@@ -8,32 +8,48 @@ const html = await readFile(join(root, "index.html"), "utf8");
 const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map((match) => match[1]);
 const closeScriptCount = (html.match(/<\/script>/gi) || []).length;
 
-if (!scripts.length) throw new Error("No script blocks found in generated HTML.");
-if (closeScriptCount !== scripts.length) throw new Error("Raw </script> text found inside generated script content.");
-if (/\b(?:Export MD|Import MD|markdownInput)\b/.test(html)) {
-  throw new Error("Legacy Markdown project controls must not be present in the main UI.");
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
 }
-if (!html.includes("📖 ${PM.I18n.t(locale, \"reader\")}") && !html.includes("\\uD83D\\uDCD6 ${PM.I18n.t(locale, \"reader\")}")) {
-  throw new Error("Reader toolbar button should include the book icon prefix.");
+
+function assertEqual(actual, expected, message) {
+  if (actual !== expected) {
+    throw new Error(`${message} Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}.`);
+  }
 }
-if (!html.includes("helpTitle") || !html.includes("Tutorial") || !html.includes("Schließen")) {
-  throw new Error("Tutorial modal title and localized close label should be present.");
+
+function assertDeepEqual(actual, expected, message) {
+  const left = JSON.stringify(actual);
+  const right = JSON.stringify(expected);
+  if (left !== right) {
+    throw new Error(`${message} Expected ${right}, got ${left}.`);
+  }
 }
-if (/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "")) {
-  throw new Error("Tutorial copy must not advertise Markdown project import/export.");
+
+function requireHtml(id, label) {
+  assert(html.includes(id), `${label} should be present in generated HTML.`);
 }
-if (/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s+end\s*;/i.test(html)) {
-  throw new Error("Empty hint must not be pinned to the right edge.");
-}
-if (!/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s*;/i.test(html)) {
-  throw new Error("Empty hint should be centered in the viewport.");
-}
-if (!/\.brand-logo\s*\{[\s\S]*?overflow:\s*visible\s*;/i.test(html)) {
-  throw new Error("Splash logo must allow the route stroke to render without clipping.");
-}
-if (!/\.splash\s*\{[\s\S]*?color:\s*#fff\s*;/i.test(html) || !/\.splash h1\s*\{[\s\S]*?color:\s*#fff\s*;/i.test(html)) {
-  throw new Error("Splash title/text must stay white independently of the active theme.");
-}
+
+assert(scripts.length, "No script blocks found in generated HTML.");
+assert(closeScriptCount === scripts.length, "Raw </script> text found inside generated script content.");
+assert(!/\b(?:Export MD|Import MD|markdownInput)\b/.test(html), "Legacy Markdown project controls must not be present in the main UI.");
+assert(html.includes("\\uD83D\\uDCD6 ${PM.I18n.t(locale, \"reader\")}"), "Reader toolbar button should include the book icon prefix.");
+requireHtml("helpTitle", "Tutorial modal title");
+requireHtml("Tutorial", "Tutorial copy");
+requireHtml("Schlie", "Localized tutorial close label");
+requireHtml("saveProject", "Project save control");
+requireHtml("loadProject", "Project load control");
+requireHtml("projectInput", "Project input control");
+requireHtml("exportPng", "PNG export control");
+requireHtml("readerModal", "Reader modal");
+requireHtml("readerExportHtml", "Reader HTML export control");
+assert(!/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || ""), "Tutorial copy must not advertise Markdown project import/export.");
+assert(!/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s+end\s*;/i.test(html), "Empty hint must not be pinned to the right edge.");
+assert(/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s*;/i.test(html), "Empty hint should be centered in the viewport.");
+assert(/\.brand-logo\s*\{[\s\S]*?overflow:\s*visible\s*;/i.test(html), "Splash logo must allow the route stroke to render without clipping.");
+assert(/\.splash\s*\{[\s\S]*?color:\s*#fff\s*;/i.test(html), "Splash text must stay white independently of the active theme.");
+assert(/\.splash h1\s*\{[\s\S]*?color:\s*#fff\s*;/i.test(html), "Splash title must stay white independently of the active theme.");
+
 scripts.forEach((script, index) => {
   if (script.includes("&amp;&amp;")) throw new Error(`Escaped operator found in script ${index + 1}.`);
   if (/\bprompt\s*\(/.test(script)) throw new Error(`prompt() found in script ${index + 1}; use app-owned dialogs instead.`);
@@ -63,6 +79,28 @@ for (const file of coreFiles) {
 }
 
 const PM = context.PM;
+const fixturesDir = join(root, "testdata", "fixtures");
+const fixtureNames = (await readdir(fixturesDir)).filter((name) => name.endsWith(".plotmap.json")).sort();
+
+assertDeepEqual(fixtureNames, [
+  "minimal.plotmap.json",
+  "reader-context.plotmap.json",
+  "route-with-helper.plotmap.json",
+  "settings-heavy.plotmap.json"
+], "Clean fixture set changed unexpectedly.");
+
+const fixtures = new Map();
+for (const name of fixtureNames) {
+  const text = await readFile(join(fixturesDir, name), "utf8");
+  const parsed = PM.Serialization.parseProjectJson(text);
+  const roundTrip = PM.Serialization.parseProjectJson(PM.Serialization.projectToJson(parsed));
+  assertEqual(roundTrip.points.length, parsed.points.length, `${name} point count should round trip.`);
+  assertEqual(roundTrip.map.name, parsed.map.name, `${name} map name should round trip.`);
+  assertEqual(roundTrip.map.dataUrl, parsed.map.dataUrl, `${name} map data URL should round trip.`);
+  assertEqual(roundTrip.settings.locale, parsed.settings.locale, `${name} locale should round trip.`);
+  fixtures.set(name, roundTrip);
+}
+
 const project = PM.createEmptyProject({ locale: "en" });
 project.map = { name: "test-map.png", dataUrl: "data:image/png;base64,AA==", width: 100, height: 100 };
 project.points.push(
@@ -73,16 +111,62 @@ project.points.push(
 );
 
 const routeInfo = PM.computeRouteInfo(project.points, project.settings);
-if (routeInfo.displayById.get("r1") !== 1) throw new Error("First route step should be 1.");
-if (routeInfo.displayById.get("h1") !== "") throw new Error("Helper route step should be empty.");
-if (routeInfo.displayById.get("r2") !== 2) throw new Error("Second numbered route step should be 2.");
+assertEqual(routeInfo.displayById.get("r1"), 1, "First route step should be 1.");
+assertEqual(routeInfo.displayById.get("h1"), "", "Helper route step should be empty.");
+assertEqual(routeInfo.displayById.get("r2"), 2, "Second numbered route step should be 2.");
 
 const json = PM.Serialization.projectToJson(project);
 const parsed = PM.Serialization.parseProjectJson(json);
-if (parsed.points.length !== 4 || parsed.points[3].location !== "Town") throw new Error("Project JSON round trip failed.");
+assert(parsed.points.length === 4 && parsed.points[3].location === "Town", "Project JSON round trip failed.");
 
 const chapters = PM.Exporters.buildReaderChapters(project);
-if (chapters.length !== 2) throw new Error("Reader should contain numbered route points only.");
-if (chapters[0].extras.length !== 1 || chapters[0].extras[0].id !== "p1") throw new Error("Reader should attach context points to nearest numbered route point.");
+assertEqual(chapters.length, 2, "Reader should contain numbered route points only.");
+assert(chapters[0].extras.length === 1 && chapters[0].extras[0].id === "p1", "Reader should attach context points to nearest numbered route point.");
 
-console.log(`Static checks passed (${scripts.length} script block).`);
+const routeFixture = fixtures.get("route-with-helper.plotmap.json");
+const routeFixtureInfo = PM.computeRouteInfo(routeFixture.points, routeFixture.settings);
+assertEqual(routeFixtureInfo.displayById.get("route-start"), 7, "Fixture route start should respect chapterStart.");
+assertEqual(routeFixtureInfo.displayById.get("route-helper"), "", "Fixture helper point should not receive a display number.");
+assertEqual(routeFixtureInfo.displayById.get("route-end"), 8, "Fixture route end should skip helper point when numbering.");
+assertEqual(routeFixtureInfo.numberedRoutes.length, 2, "Fixture numbered route list should skip helper point.");
+
+const readerFixture = fixtures.get("reader-context.plotmap.json");
+const readerFixtureChapters = PM.Exporters.buildReaderChapters(readerFixture);
+assertEqual(readerFixtureChapters.length, 2, "Reader fixture should produce two chapters.");
+assertDeepEqual(readerFixtureChapters[0].extras.map((point) => point.id), ["near-place", "near-character"], "Reader fixture first chapter extras should attach by nearest route.");
+assertDeepEqual(readerFixtureChapters[1].extras.map((point) => point.id), ["near-event", "near-item"], "Reader fixture second chapter extras should attach by nearest route.");
+
+const settingsFixture = fixtures.get("settings-heavy.plotmap.json");
+assertEqual(settingsFixture.settings.locale, "de", "Settings fixture should preserve locale.");
+assertEqual(settingsFixture.settings.theme, "contrast", "Settings fixture should preserve theme.");
+assertEqual(settingsFixture.settings.filters.place, false, "Settings fixture should preserve disabled place filter.");
+assertEqual(settingsFixture.settings.filters.event, false, "Settings fixture should preserve disabled event filter.");
+assertEqual(settingsFixture.settings.chapterStart, 12, "Settings fixture should preserve chapter start.");
+assertEqual(settingsFixture.settings.zoom, 2.5, "Settings fixture should preserve zoom.");
+assertEqual(settingsFixture.settings.opacity, 0.55, "Settings fixture should preserve opacity.");
+assertEqual(settingsFixture.settings.panX, 24, "Settings fixture should preserve panX.");
+assertEqual(settingsFixture.settings.panY, -18, "Settings fixture should preserve panY.");
+assertEqual(settingsFixture.settings.routeColor, "#3355aa", "Settings fixture should preserve route color.");
+assertEqual(settingsFixture.settings.routeWidth, 8, "Settings fixture should preserve route width.");
+assertEqual(settingsFixture.settings.fontScale, 1.25, "Settings fixture should preserve font scale.");
+
+const clamped = PM.normalizeSettings({
+  locale: "xx",
+  theme: "missing",
+  chapterStart: -10,
+  zoom: 99,
+  opacity: -1,
+  routeWidth: 99,
+  fontScale: 99,
+  routeColor: "red"
+});
+assertEqual(clamped.locale, "en", "Invalid locale should clamp to English.");
+assertEqual(clamped.theme, "deep", "Invalid theme should clamp to default.");
+assertEqual(clamped.chapterStart, 1, "Invalid chapter start should clamp to 1.");
+assertEqual(clamped.zoom, 5, "Invalid zoom should clamp to maximum.");
+assertEqual(clamped.opacity, 0.1, "Invalid opacity should clamp to minimum.");
+assertEqual(clamped.routeWidth, 12, "Invalid route width should clamp to maximum.");
+assertEqual(clamped.fontScale, 1.6, "Invalid font scale should clamp to maximum.");
+assertEqual(clamped.routeColor, "#cc3333", "Invalid route color should clamp to default.");
+
+console.log(`Static checks passed (${scripts.length} script block, ${fixtureNames.length} fixtures).`);

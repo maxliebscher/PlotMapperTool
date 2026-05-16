@@ -1,0 +1,3 @@
+node_modules/
+.smoke-downloads/
+npm-debug.log*

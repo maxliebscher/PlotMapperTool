@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {
+    "name": "route-helper-map.png",
+    "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luz7YwAAAABJRU5ErkJggg==",
+    "width": 1,
+    "height": 1
+  },
+  "settings": {
+    "locale": "en",
+    "theme": "deep",
+    "chapterMode": true,
+    "chapterStart": 7,
+    "routeColor": "#2f77cc",
+    "routeWidth": 4
+  },
+  "points": [
+    {
+      "id": "route-start",
+      "x": 0.12,
+      "y": 0.18,
+      "type": "route",
+      "label": "Start",
+      "note": "Opening beat",
+      "location": "Harbor",
+      "duration": "1h",
+      "helper": false
+    },
+    {
+      "id": "route-helper",
+      "x": 0.42,
+      "y": 0.36,
+      "type": "route",
+      "label": "Curve helper",
+      "note": "",
+      "location": "",
+      "duration": "",
+      "helper": true
+    },
+    {
+      "id": "route-end",
+      "x": 0.78,
+      "y": 0.66,
+      "type": "route",
+      "label": "End",
+      "note": "Closing beat",
+      "location": "Hill",
+      "duration": "2h",
+      "helper": false
+    }
+  ]
+}
