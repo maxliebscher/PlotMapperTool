@@ -1,160 +1,135 @@
-# PlotMapper
+﻿# PlotMapper
 
-> 🗺️ A visual tool for planning story structure on maps – runs directly in your browser
-> 🗺️ Ein visuelles Tool zur Story-Planung auf Karten – läuft direkt im Browser
+PlotMapper is a lightweight browser tool for planning story routes, locations, characters, events, items, notes, and reading flow directly on a map. It runs as a standalone HTML app and can be used locally or via GitHub Pages.
 
-📍 **This README is bilingual: English first, scroll down for German 🇩🇪**
+Deutsch weiter unten.
 
-Try it out now — Live Link: https://maxliebscher.github.io/PlotMapperTool/
----
+Live version: https://maxliebscher.github.io/PlotMapperTool/
 
-# 🇬🇧 English
+## English
 
-## 🌍 What is PlotMapper?
+### What is PlotMapper?
 
-PlotMapper is a lightweight, browser-based tool to map your story's path using spatial logic.
-Place points, label events, export everything as Markdown – and develop your world without drowning in chaos.
+PlotMapper helps writers, gamemasters, worldbuilders, teachers, and map-heavy planners turn a map image into a structured story path. Add route points, helper points, context points, notes, locations, labels, and durations, then review the path in a Reader view.
 
-Also helpful for gamemasters, worldbuilders, and narrative designers working with maps and timelines.
-As well as for art historians and educators using various types of maps or paintings.
-Might be useful for route planning too.
+### Features
 
----
+- Load any map or image as the planning background.
+- Add route, place, character, event, and item points.
+- Draw route lines with adjustable color and width.
+- Use helper points to shape paths or branch without changing route numbering.
+- Edit labels, locations, notes, duration, helper state, type, and deletion from the point menu.
+- Toggle filters, labels, locations, notes, duration, edit buttons, chapter numbering, and focus mode.
+- Undo/redo point and editing changes.
+- Switch themes and language between English and German.
+- Save/load projects as versioned `.plotmap.json` files.
+- Export the current view as PNG.
+- Use the Reader modal for a linear route view, route/context editing, jump-to-map, HTML export, and PDF print flow.
 
-## ✨ Features
+### Project Format
 
-* Place points for **locations**, **characters**, **items** and **events**
-* Numbered **route points** with auto-conncection 
-* **Chapter numbering**: start numbering at any chapter
-* **Helper points**: skip a number for branches and curves
-* Add **notes** and **labels** via right-click context menu
-* Optional **duration field** ⌛
-* **Undo/Redo** stack for safe editing
-* Adjustable **line color**, **zoom**, **opacity** and **font size**
-* **Themes** (Deep, Bright, Contrast, Burgund, Herbstholz) – switch via 🎨 button or `T` key
-* **Bilingual UI** (EN/DE) with live language toggle
-* Integrated **tutorial modal** and **info panel**
-* Export and import as `.md` (Markdown), including duration + helper flags
-* Exports Markdown with route points in correct order and groups other point types by proximity to the nearest route point.
-* Export as **PNG** with labels and notes rendered
-* Works on desktop (Win/Linux/Mac) – touch devices now much improved (double-tap menus, drag & drop)
+The canonical app format is `.plotmap.json`. It stores the map image, settings, and all points in a round-trip-safe structure:
 
----
+```json
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {},
+  "settings": {},
+  "points": []
+}
+```
 
-## 🚀 How to Use
+Legacy Markdown/old JSON import is intentionally not part of the main app anymore. Old projects can be converted later with a separate converter.
 
-1. Open `index.html` in your browser
-2. Load a background map image
-3. Add points, assign type, write notes
-4. Export your route and story structure as Markdown
-5. To continue on another device, re-import your `.md` file **and** the map image
+### How to Use
 
----
+1. Open `index.html` or the live GitHub Pages version.
+2. Load a map image.
+3. Double-click the map to add points.
+4. Edit points via the point menu `(=)`.
+5. Save your work as `.plotmap.json`.
+6. Export PNG or Reader HTML/PDF when needed.
 
-## 📌 Use Case
+### Screenshots
 
-PlotMapper is part of a modular toolchain against the “Worldbuilding Disease”™:
-Too many ideas, no finished manuscript? This tool helps you structure first, write later.
+Example screenshots and workflow images are still pending.
 
-Also ideal for gamemasters and narrative designers working with complex timelines and world logic.
+### Development
 
----
+```powershell
+npm.cmd run build
+npm.cmd test
+```
 
-## 🧪 Demo & Download
+The app source lives in `src/`; `scripts/build.mjs` generates the standalone `index.html`.
 
-🔗 [Live version](https://maxliebscher.com/tools/plotmappertool)
-📦 [Download via Releases](https://github.com/maxliebscher/PlotMapper/releases)
+### License
 
----
+Indie devs and small studios may use and adapt this freely. Commercial use by larger companies (10+ employees) requires permission. See [LICENSE.md](LICENSE.md).
 
-## 🧾 License
+## Deutsch
 
-Indie devs and small studios may use and adapt this freely.
-Commercial use by larger companies (10+ employees) requires permission.
-→ See [LICENSE.md](LICENSE.md)
+### Was ist PlotMapper?
 
----
+PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrenden und allen mit kartenbasierten Projekten, einen Handlungsweg direkt auf einer Karte zu strukturieren. Du setzt Routenpunkte, Hilfspunkte, Kontextpunkte, Notizen, Handlungsorte, Labels und Dauerangaben und kannst die Route im Reader linear prüfen.
 
-## 🔗 Related Tools (Soon)
+### Funktionen
 
-* **GDocs Regex Exporter** → Extract chapters, tags and term blocks from large Google Docs via smart regex in Apps Script (fast even on 1000+ pages).
-* **Markdown Table Viewer** → Clean tabular rendering of exported PlotMapper `.md` files
+- Beliebige Karte oder Bilddatei als Hintergrund laden.
+- Routen-, Orts-, Charakter-, Ereignis- und Item-Punkte setzen.
+- Routenlinien mit einstellbarer Farbe und Stärke zeichnen.
+- Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
+- Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
+- Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Kapitel-Nummerierung und Fokus-Modus umschalten.
+- Undo/Redo für Punkt- und Bearbeitungsschritte.
+- Themes und Sprache live zwischen Deutsch und Englisch wechseln.
+- Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
+- Aktuelle Ansicht als PNG exportieren.
+- Reader-Modal für lineare Routenansicht, Bearbeitung, Sprung zur Karte, HTML-Export und PDF-Druck nutzen.
 
----
+### Projektformat
 
-# 🇩🇪 Deutsch
+Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstellungen und alle Punkte round-trip-sicher:
 
-## 🌍 Was ist PlotMapper?
+```json
+{
+  "schemaVersion": 1,
+  "appVersion": "1.1.6-clean",
+  "map": {},
+  "settings": {},
+  "points": []
+}
+```
 
-PlotMapper ist ein leichtgewichtiges Tool zur Visualisierung von Handlungsverläufen auf Karten.
-Setze Punkte für Orte, Charaktere, Items und Ereignisse – exportiere alles als Markdown und bring Struktur in dein Worldbuilding.
+Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App. Alte Projekte können später mit einem separaten Converter übertragen werden.
 
-Auch ideal für Spielleiter, Worldbuilder oder Autoren komplexer Story-Logiken mit Ortsbezug.
-Sowie für Kunsthistoriker zur Nutzung mit verschiedenen Arten von Karten oder Gemälden.
+### Nutzung
 
----
+1. `index.html` oder die GitHub-Pages-Version öffnen.
+2. Karte laden.
+3. Mit Doppelklick Punkte setzen.
+4. Punkte über das Punktmenü `(=)` bearbeiten.
+5. Arbeit als `.plotmap.json` speichern.
+6. Bei Bedarf PNG oder Reader HTML/PDF exportieren.
 
-## ✨ Funktionen
+### Screenshots
 
-* Punkte für **Orte**, **Charaktere**, **Items** und **Ereignisse**
-* Nummerierte **Routenpunkte** mit automatischer Verbindung
-* **Kapitel-Nummerierung**: Startnummer frei wählbar
-* **Hilfspunkte**: Nummer überspringen für Kurven oder Verzweigungen
-* Kontextmenüs mit **Notizen** und **Labels**
-* Optionales **Dauer-Feld** ⌛
-* **Undo/Redo** zum sicheren Bearbeiten
-* Einstellbare **Linienfarbe**, **Zoom**, **Deckkraft** und **Schriftgröße**
-* **Themes** (Deep, Bright, Contrast, Burgund, Herbstholz) – umschalten per 🎨 oder Taste `T`
-* **Bilinguale Oberfläche** (EN/DE) mit Live-Umschalter
-* Integriertes **Anleitungs-Fenster** und **Info-Menü**  
-* Export und Import als `.md` (Markdown) inkl. Dauer und Hilfspunkte
-* Exportiert Markdown mit Routenpunkten in korrekter Reihenfolge und ordnet andere Punktarten zu nach Abstand dem nächstgelegenen Routenpunkt.
-* PNG-Export mit Labels und Notizen
-* Funktioniert stabil auf Desktop-Browsern (Win/Linux/Mac), Touchgeräte deutlich verbessert (Doppeltap-Menüs, Drag&Drop)
+Beispiel-Screenshots und Workflow-Bilder fehlen noch.
 
----
+### Entwicklung
 
-## 🚀 Nutzung
+```powershell
+npm.cmd run build
+npm.cmd test
+```
 
-1. `index.html` im Browser öffnen
-2. Hintergrundkarte laden
-3. Punkte setzen, Typ wählen, Notizen schreiben
-4. Als Markdown exportieren
-5. Auf anderen Geräten: `.md` **und** Karte erneut laden
+Der Quellcode liegt in `src/`; `scripts/build.mjs` erzeugt die Standalone-Datei `index.html`.
 
----
+### Lizenz
 
-## 📌 Zielgruppe
-
-PlotMapper ist Teil einer modularen Toolchain gegen die „Worldbuilding-Krankheit“™:
-Zu viele Ideen, kein roter Faden? Dieses Tool hilft, erst die Struktur zu schaffen – und danach zu schreiben.
-
-Auch ideal für Spielleiter, historische Kartenanalysen, Kunstforschung oder PnP-Planung.
-Ebenso für Kunsthistoriker sowie Pädagogen mit verschiedenen Arten von Karten oder Gemälden.  
-Kann auch für Routenplanung nützlich sein.
+Indie-Entwickler, Studierende und kleine Studios dürfen PlotMapper frei verwenden und anpassen. Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeitern nur mit Genehmigung. Siehe [LICENSE.md](LICENSE.md).
 
 ---
 
-## 🧪 Demo & Download
-
-🔗 [Live-Version](https://maxliebscher.com/tools/plotmappertool)
-📦 [Download über Releases](https://github.com/maxliebscher/PlotMapper/releases)
-
----
-
-## 🧾 Lizenz
-
-Indie-Entwickler, Studenten und kleine Studios dürfen PlotMapper frei verwenden und anpassen.
-Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeiter nur mit Genehmigung.
-→ Siehe [LICENSE.md](LICENSE.md)
-
----
-
-## 🔗 Weitere Tools (Bald)
-
-* **GDocs Regex Exporter** → Extrahiert Kapitel, Tags & Textstellen aus großen Google Docs via Apps Script – läuft auch mit 1000+ Seiten
-* **Markdown Table Viewer** → tabellarische Darstellung von PlotMapper-Exporten
-
----
-
-**Maximilian Georg Liebscher – [maxliebscher.com](https://maxliebscher.com)**  
+Maximilian Georg Liebscher - https://maxliebscher.com

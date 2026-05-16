@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en" data-version="1.1.6-clean" data-theme="deep">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlotMapper - Story Path Mapping Tool</title>
+  <meta name="description" content="PlotMapper is a lightweight browser tool to visually plan routes, characters, events, and notes on a map.">
+  <style>
+/*__PLOTMAP_CSS__*/
+  </style>
+</head>
+<body>
+  <div id="pmSplash" class="splash" role="dialog" aria-label="PlotMapper">
+    <div class="splash-inner">
+      <svg class="brand-logo" aria-hidden="true" viewBox="0 30 200.7 57">
+        <defs>
+          <linearGradient id="pmLogoGradient" x1="0" x2="1">
+            <stop offset="0" stop-color="#52b0ff"></stop>
+            <stop offset="1" stop-color="#005caa"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M10.4,60c20-33.3,40-33.3,60,0,20,33.3,40,33.3,60,0,20-33.3,40-33.3,60,0" fill="none" stroke="url(#pmLogoGradient)" stroke-width="4" stroke-linecap="round"></path>
+        <circle cx="10.4" cy="60" r="6"></circle>
+        <circle cx="70.4" cy="60" r="6"></circle>
+        <circle cx="130.4" cy="60" r="6"></circle>
+        <circle cx="190.4" cy="60" r="6"></circle>
+      </svg>
+      <h1><strong>Plot</strong> Mapper</h1>
+      <p class="splash-by">by Maximilian Georg Liebscher</p>
+      <p>Story Path Mapping Tool</p>
+      <small id="splashVersion">v1.1.6-clean</small>
+    </div>
+  </div>
+
+  <canvas id="mapCanvas" aria-label="PlotMapper canvas"></canvas>
+  <svg id="routeLayer" class="route-layer" aria-hidden="true"></svg>
+  <div id="midLayer" class="mid-layer" aria-hidden="true"></div>
+  <div id="pointLayer" class="point-layer" aria-label="Map points"></div>
+
+  <section id="toolbar" class="toolbar" aria-label="PlotMapper controls">
+    <header class="toolbar-head">
+      <div class="head-left">
+        <label class="file-button" for="imageInput" role="button" tabindex="0"><span>Load map</span></label>
+        <input id="imageInput" type="file" accept="image/*" aria-hidden="true" tabindex="-1">
+        <div id="fileName" class="file-name">No project loaded</div>
+      </div>
+      <div class="head-actions">
+        <button id="readerButton" class="btn" type="button">Reader</button>
+        <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
+        <button id="helpButton" class="btn" type="button">Help</button>
+        <button id="langToggle" class="btn small" type="button">DE</button>
+        <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
+      </div>
+    </header>
+
+    <input id="projectInput" type="file" accept=".plotmap.json,application/json" aria-hidden="true" tabindex="-1">
+
+    <div class="control-row chapter-controls">
+      <label><input id="chapterMode" type="checkbox"><span>Chapter start</span></label>
+      <input id="chapterStart" type="number" min="1" step="1" value="1" aria-label="Chapter start number">
+    </div>
+
+    <div class="control-row toggles">
+      <span id="visibilityLabel" class="inline-caption">Visibility</span>
+      <label><input id="showLabels" type="checkbox" checked><span>Labels</span></label>
+      <label><input id="showLocation" type="checkbox" checked><span>Location</span></label>
+      <label><input id="showNotes" type="checkbox" checked><span>Notes</span></label>
+      <label><input id="showDuration" type="checkbox" checked><span>Duration</span></label>
+      <span class="row-divider" aria-hidden="true"></span>
+      <label><input id="showLines" type="checkbox" checked><span>Lines</span></label>
+      <label><input id="showEdit" type="checkbox" checked><span>Edit</span></label>
+    </div>
+
+    <div class="control-row types">
+      <span id="pointTypesLabel" class="inline-caption">Point types</span>
+      <label><input id="filter-route" type="checkbox" checked><span>Route</span></label>
+      <label><input id="filter-place" type="checkbox" checked><span>Place</span></label>
+      <label><input id="filter-char" type="checkbox" checked><span>Character</span></label>
+      <label><input id="filter-event" type="checkbox" checked><span>Event</span></label>
+      <label><input id="filter-item" type="checkbox" checked><span>Item</span></label>
+    </div>
+
+    <div class="control-row slider-row">
+      <label class="control-field">Zoom<input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
+      <label class="control-field">Font<input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+    </div>
+
+    <div class="control-row slider-row line-row">
+      <label class="control-field">Opacity<input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
+      <label class="control-field compact">Line<input id="routeColor" type="color" value="#cc3333"></label>
+      <label class="control-field">Width<input id="routeWidth" type="range" min="1" max="12" step="1" value="2"></label>
+    </div>
+
+    <div class="toolbar-grid commands">
+      <button id="undoButton" class="btn" type="button">Undo</button>
+      <button id="redoButton" class="btn" type="button">Redo</button>
+      <button id="saveProject" class="btn" type="button">Save project</button>
+      <button id="loadProject" class="btn" type="button">Load project</button>
+      <button id="exportPng" class="btn" type="button">PNG</button>
+      <button id="clearAll" class="btn danger" type="button">Clear</button>
+    </div>
+  </section>
+
+  <div id="emptyHint" class="empty-hint">
+    <div>
+      <strong id="emptyTitle">PlotMapper Tool</strong>
+      <span id="emptySub">Load a map image to begin.</span>
+      <ul id="emptySteps">
+        <li id="emptyStep1">1) Load image</li>
+        <li id="emptyStep2">2) Double-click adds a point</li>
+        <li id="emptyStep3">3) Edit via point menu</li>
+      </ul>
+    </div>
+  </div>
+
+  <aside id="infoPanel" class="info-panel" aria-label="PlotMapper Tool" hidden>
+    <header>
+      <strong>PlotMapper Tool</strong>
+      <button id="infoClose" class="btn small" type="button">x</button>
+    </header>
+    <a href="https://github.com/maxliebscher/plotmappertool" target="_blank" rel="noopener">GitHub - Repository</a>
+    <a href="https://maxliebscher.com/tools/plotmappertool" target="_blank" rel="noopener">Website</a>
+    <a href="https://github.com/maxliebscher/plotmappertool/releases" target="_blank" rel="noopener">Changelog</a>
+    <a href="https://paypal.me/maxliebscher" target="_blank" rel="noopener">Donate ♥</a>
+  </aside>
+
+  <div id="infoBadge" class="info-badge">
+    <strong>PlotMapper Tool</strong>
+    <span id="badgeVersion">v1.1.6-clean</span>
+    <button id="infoButton" class="info-dot" type="button" title="Info">i</button>
+  </div>
+
+  <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
+
+  <div id="helpBackdrop" class="modal-backdrop" hidden></div>
+  <section id="helpModal" class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+    <header><h2 id="helpTitle">Help</h2><button id="helpClose" class="close" type="button">x</button></header>
+    <div id="helpBody" class="modal-content"></div>
+  </section>
+
+  <div id="readerBackdrop" class="modal-backdrop" hidden></div>
+  <section id="readerModal" class="modal reader-modal" role="dialog" aria-modal="true" aria-labelledby="readerTitle" hidden>
+    <header class="reader-head">
+      <div>
+        <h2 id="readerTitle">Reader</h2>
+        <p id="readerHint">Linear route view.</p>
+      </div>
+      <div class="reader-actions">
+        <label><input id="readerExtras" type="checkbox" checked><span>Context points</span></label>
+        <button id="readerExportHtml" class="btn small" type="button">HTML</button>
+        <button id="readerPrintPdf" class="btn small" type="button">PDF</button>
+        <button id="readerClose" class="close" type="button">x</button>
+      </div>
+    </header>
+    <div id="readerCards" class="reader-cards"></div>
+  </section>
+
+  <script>
+/*__PLOTMAP_JS__*/
+  </script>
+</body>
+</html>
