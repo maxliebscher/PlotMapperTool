@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Planned
-- Example screenshots and workflow images.
 - Separate converter for legacy Markdown/old JSON projects.
+
+## [1.1.8] - 2026-05-18
+### Added
+- Presentation Mode for stepping through a single route during writing sessions, tabletop play, talks, or screen sharing.
+- Configurable Focus Fog with Off, Focus, and Whole Route modes plus live controls for surroundings, current radius, path width, edge softness, and old path emphasis.
+- Keyboard navigation for Presentation Mode: next, previous, reset, show all, and exit.
+- README screenshot and release documentation for the new presentation workflow.
+
+### Changed
+- Version bumped from `1.1.6-clean` to `1.1.8`.
+- Presentation Mode hides the main editing UI and uses a compact floating control dock.
+
+### Fixed
+- Added smoke coverage for Presentation Mode, Focus Fog settings, and desktop/narrow viewport behavior.
 
 ## [1.1.6-clean] - 2026-05-16
 ### Changed

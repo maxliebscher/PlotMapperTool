@@ -20,6 +20,7 @@ PlotMapper helps writers, gamemasters, worldbuilders, teachers, and map-heavy pl
 - Use helper points to shape paths or branch without changing route numbering.
 - Edit labels, locations, notes, duration, helper state, type, and deletion from the point menu.
 - Toggle filters, labels, locations, notes, duration, edit buttons, chapter numbering, and focus mode.
+- Present a route step by step with Presentation Mode, keyboard navigation, and configurable Focus Fog.
 - Undo/redo point and editing changes.
 - Switch themes and language between English and German.
 - Save/load projects as versioned `.plotmap.json` files.
@@ -33,7 +34,7 @@ The canonical app format is `.plotmap.json`. It stores the map image, settings, 
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.1.6-clean",
+  "appVersion": "1.1.8",
   "map": {},
   "settings": {},
   "points": []
@@ -53,13 +54,16 @@ Legacy Markdown/old JSON import is intentionally not part of the main app anymor
 
 ### Screenshots
 
-Example screenshots and workflow images are still pending.
+![Presentation Mode with Focus Fog](assets/focus-fog-presentation.png)
+
+Presentation Mode can reveal a route step by step while Focus Fog keeps the unexplored map readable but visually pushed back.
 
 ### Development
 
 ```powershell
 npm.cmd run build
 npm.cmd test
+npm.cmd run smoke
 ```
 
 The app source lives in `src/`; `scripts/build.mjs` generates the standalone `index.html`.
@@ -82,6 +86,7 @@ PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrende
 - Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
 - Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
 - Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Kapitel-Nummerierung und Fokus-Modus umschalten.
+- Routen Schritt für Schritt im Präsentationsmodus zeigen, inklusive Tastatursteuerung und konfigurierbarem Focus Fog.
 - Undo/Redo für Punkt- und Bearbeitungsschritte.
 - Themes und Sprache live zwischen Deutsch und Englisch wechseln.
 - Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
@@ -95,7 +100,7 @@ Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstell
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.1.6-clean",
+  "appVersion": "1.1.8",
   "map": {},
   "settings": {},
   "points": []
@@ -115,13 +120,16 @@ Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App
 
 ### Screenshots
 
-Beispiel-Screenshots und Workflow-Bilder fehlen noch.
+![Präsentationsmodus mit Focus Fog](assets/focus-fog-presentation.png)
+
+Der Präsentationsmodus kann eine Route Schritt für Schritt freilegen, während Focus Fog die unerforschte Karte abdunkelt und die aktuelle Route klar hervorhebt.
 
 ### Entwicklung
 
 ```powershell
 npm.cmd run build
 npm.cmd test
+npm.cmd run smoke
 ```
 
 Der Quellcode liegt in `src/`; `scripts/build.mjs` erzeugt die Standalone-Datei `index.html`.
