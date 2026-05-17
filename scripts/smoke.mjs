@@ -82,6 +82,14 @@ async function setCheckbox(page, selector, checked) {
   }, checked);
 }
 
+async function setInputValue(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = nextValue;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
 async function loadProject(page, fixturePath) {
   await page.setInputFiles("#projectInput", fixturePath);
   await waitForImage(page);
@@ -139,11 +147,45 @@ async function visiblePointCount(page) {
   return page.locator(".point:not(.hidden)").count();
 }
 
+async function canvasPixel(page, xRatio, yRatio) {
+  return page.locator("#mapCanvas").evaluate((canvas, ratios) => {
+    const context = canvas.getContext("2d");
+    const x = Math.max(0, Math.min(canvas.width - 1, Math.floor(canvas.width * ratios.x)));
+    const y = Math.max(0, Math.min(canvas.height - 1, Math.floor(canvas.height * ratios.y)));
+    return Array.from(context.getImageData(x, y, 1, 1).data);
+  }, { x: xRatio, y: yRatio });
+}
+
+function pixelDistance(left, right) {
+  return Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2]) + Math.abs(left[3] - right[3]);
+}
+
 async function exercisePresentation(page) {
   await page.click("#presentationButton");
   await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
   await page.waitForSelector("#presentationDock:not([hidden])");
   assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide in presentation mode.");
+  const fogPixel = await canvasPixel(page, 0.5, 0.5);
+  await page.click("#presentationFogToggle");
+  await page.waitForSelector("#presentationFogPanel:not([hidden])");
+  await page.selectOption("#presentationFogMode", "off");
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "off", null, { timeout: 5000 });
+  const clearPixel = await canvasPixel(page, 0.5, 0.5);
+  assert(pixelDistance(fogPixel, clearPixel) > 24, "Turning fog off should visibly change the map canvas.");
+  await page.selectOption("#presentationFogMode", "all");
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "all", null, { timeout: 5000 });
+  await page.selectOption("#presentationFogMode", "focus");
+  await setInputValue(page, "#presentationFogOutside", "0.12");
+  await setInputValue(page, "#presentationFogFocus", "0.22");
+  await setInputValue(page, "#presentationFogTrail", "0.05");
+  await setInputValue(page, "#presentationFogSoftness", "0.08");
+  await setCheckbox(page, "#presentationFogMemory", false);
+  await page.waitForFunction(() => {
+    const fog = PM.getPresentationFogSettings();
+    return fog.mode === "focus" && fog.outsideVisibility === 0.12 && fog.focusRadius === 0.22 && fog.trailRadius === 0.05 && fog.edgeSoftness === 0.08 && fog.trailMemory === false;
+  }, null, { timeout: 5000 });
+  await page.click("#presentationFogClose");
+  await page.waitForSelector("#presentationFogPanel", { state: "hidden" });
 
   const startCount = await visiblePointCount(page);
   assert(startCount === 1, `Presentation should start with one visible point, got ${startCount}.`);

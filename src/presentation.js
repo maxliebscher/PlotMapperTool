@@ -1,6 +1,34 @@
 (function presentationModule(PM) {
   "use strict";
 
+  const FOG_MODES = ["off", "focus", "all"];
+  const DEFAULT_FOG_SETTINGS = {
+    mode: "focus",
+    outsideVisibility: 0.22,
+    trailRadius: 0.07,
+    focusRadius: 0.18,
+    edgeSoftness: 0.06,
+    trailMemory: true
+  };
+
+  function numberOrFallback(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function normalizePresentationFogSettings(input) {
+    const raw = input || {};
+    const mode = FOG_MODES.includes(raw.mode) ? raw.mode : DEFAULT_FOG_SETTINGS.mode;
+    return {
+      mode,
+      outsideVisibility: PM.clamp(numberOrFallback(raw.outsideVisibility, DEFAULT_FOG_SETTINGS.outsideVisibility), 0.02, 0.45),
+      trailRadius: PM.clamp(numberOrFallback(raw.trailRadius, DEFAULT_FOG_SETTINGS.trailRadius), 0.03, 0.18),
+      focusRadius: PM.clamp(numberOrFallback(raw.focusRadius, DEFAULT_FOG_SETTINGS.focusRadius), 0.08, 0.28),
+      edgeSoftness: PM.clamp(numberOrFallback(raw.edgeSoftness, DEFAULT_FOG_SETTINGS.edgeSoftness), 0.01, 0.14),
+      trailMemory: raw.trailMemory === undefined ? DEFAULT_FOG_SETTINGS.trailMemory : Boolean(raw.trailMemory)
+    };
+  }
+
   function normalizePresentationState(input, routeLength) {
     const max = Math.max(0, parseInt(routeLength, 10) || 0);
     const raw = input || {};
@@ -72,9 +100,20 @@
       nextButton: options.nextButton,
       showAllButton: options.showAllButton,
       resetButton: options.resetButton,
+      fogToggleButton: options.fogToggleButton,
+      fogPanel: options.fogPanel,
+      fogCloseButton: options.fogCloseButton,
+      fogMode: options.fogMode,
+      fogOutside: options.fogOutside,
+      fogFocus: options.fogFocus,
+      fogTrail: options.fogTrail,
+      fogSoftness: options.fogSoftness,
+      fogMemory: options.fogMemory,
       exitButton: options.exitButton
     };
     let state = normalizePresentationState({ active: false, step: 0, showAll: false }, 0);
+    let fogSettings = normalizePresentationFogSettings();
+    let fogPanelOpen = false;
 
     function routeLength() {
       const live = store.getLiveState();
@@ -86,13 +125,21 @@
       state = normalizePresentationState(state, length);
       root.classList.toggle("presentation-mode", state.active);
       elements.dock.hidden = !state.active;
+      elements.fogPanel.hidden = !state.active || !fogPanelOpen;
       const hasRoute = length > 0;
       elements.step.textContent = hasRoute ? `${state.step} / ${length}` : t("presentationEmpty");
       elements.previousButton.disabled = !state.active || !hasRoute || state.step <= 1;
       elements.nextButton.disabled = !state.active || !hasRoute || state.step >= length;
       elements.showAllButton.disabled = !state.active || !hasRoute || state.showAll;
       elements.resetButton.disabled = !state.active || !hasRoute || (!state.showAll && state.step <= 1);
+      elements.fogToggleButton.disabled = !state.active;
       elements.exitButton.disabled = !state.active;
+      elements.fogMode.value = fogSettings.mode;
+      elements.fogOutside.value = String(fogSettings.outsideVisibility);
+      elements.fogFocus.value = String(fogSettings.focusRadius);
+      elements.fogTrail.value = String(fogSettings.trailRadius);
+      elements.fogSoftness.value = String(fogSettings.edgeSoftness);
+      elements.fogMemory.checked = fogSettings.trailMemory;
       onChange();
     }
 
@@ -104,6 +151,7 @@
     }
 
     function exit() {
+      fogPanelOpen = false;
       state = normalizePresentationState({ active: false, step: 0, showAll: false }, routeLength());
       update();
     }
@@ -137,6 +185,26 @@
       return computePresentationReveal(live.points, live.settings, state);
     }
 
+    function getPresentationFogSettings() {
+      return state.active ? fogSettings : normalizePresentationFogSettings({ mode: "off" });
+    }
+
+    function patchFogSettings(patch) {
+      fogSettings = normalizePresentationFogSettings({ ...fogSettings, ...patch });
+      update();
+    }
+
+    function toggleFogPanel() {
+      if (!state.active) return;
+      fogPanelOpen = !fogPanelOpen;
+      update();
+    }
+
+    function closeFogPanel() {
+      fogPanelOpen = false;
+      update();
+    }
+
     function handleKeydown(event) {
       if (!state.active || isInputLike(event.target)) return;
       const key = event.key;
@@ -163,11 +231,19 @@
     elements.nextButton.addEventListener("click", next);
     elements.showAllButton.addEventListener("click", showAll);
     elements.resetButton.addEventListener("click", reset);
+    elements.fogToggleButton.addEventListener("click", toggleFogPanel);
+    elements.fogCloseButton.addEventListener("click", closeFogPanel);
+    elements.fogMode.addEventListener("change", () => patchFogSettings({ mode: elements.fogMode.value }));
+    elements.fogOutside.addEventListener("input", () => patchFogSettings({ outsideVisibility: elements.fogOutside.value }));
+    elements.fogFocus.addEventListener("input", () => patchFogSettings({ focusRadius: elements.fogFocus.value }));
+    elements.fogTrail.addEventListener("input", () => patchFogSettings({ trailRadius: elements.fogTrail.value }));
+    elements.fogSoftness.addEventListener("input", () => patchFogSettings({ edgeSoftness: elements.fogSoftness.value }));
+    elements.fogMemory.addEventListener("change", () => patchFogSettings({ trailMemory: elements.fogMemory.checked }));
     elements.exitButton.addEventListener("click", exit);
     document.addEventListener("keydown", handleKeydown);
-    store.subscribe(update);
-
     PM.getPresentationReveal = getPresentationReveal;
+    PM.getPresentationFogSettings = getPresentationFogSettings;
+    store.subscribe(update);
 
     return {
       enter,
@@ -176,11 +252,13 @@
       next,
       showAll,
       reset,
-      getPresentationReveal
+      getPresentationReveal,
+      getPresentationFogSettings
     };
   }
 
   PM.normalizePresentationState = normalizePresentationState;
+  PM.normalizePresentationFogSettings = normalizePresentationFogSettings;
   PM.computePresentationReveal = computePresentationReveal;
   PM.isPointRevealed = isPointRevealed;
   PM.createPresentationController = createPresentationController;

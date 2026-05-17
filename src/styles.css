@@ -174,6 +174,69 @@ button, input, textarea, select {
   line-height: 1;
 }
 
+.presentation-fog-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 78px;
+  z-index: 77;
+  width: min(292px, calc(100vw - 24px));
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-strong) 95%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.presentation-fog-panel[hidden] {
+  display: none;
+}
+
+.presentation-fog-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fog-field {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fog-field select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 4px 8px;
+}
+
+.fog-field input[type="range"] {
+  width: 100%;
+}
+
+.fog-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fog-check input {
+  accent-color: var(--accent);
+}
+
 :root.presentation-mode .toolbar,
 :root.presentation-mode .info-badge,
 :root.presentation-mode .info-panel,
@@ -1195,5 +1258,10 @@ button, input, textarea, select {
 
   .reader-edit .row {
     grid-template-columns: 1fr;
+  }
+
+  .presentation-fog-panel {
+    right: 8px;
+    bottom: 72px;
   }
 }

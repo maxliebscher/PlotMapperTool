@@ -54,6 +54,14 @@ requireHtml("presentationNext", "Presentation next control");
 requireHtml("presentationShowAll", "Presentation show-all control");
 requireHtml("presentationReset", "Presentation reset control");
 requireHtml("presentationExit", "Presentation exit control");
+requireHtml("presentationFogToggle", "Presentation fog settings toggle");
+requireHtml("presentationFogPanel", "Presentation fog settings panel");
+requireHtml("presentationFogMode", "Presentation fog mode control");
+requireHtml("presentationFogOutside", "Presentation fog outside visibility control");
+requireHtml("presentationFogFocus", "Presentation fog focus radius control");
+requireHtml("presentationFogTrail", "Presentation fog trail width control");
+requireHtml("presentationFogSoftness", "Presentation fog edge softness control");
+requireHtml("presentationFogMemory", "Presentation fog trail memory control");
 requireHtml("present:", "Presentation i18n key");
 requireHtml("Präsentieren", "German presentation label");
 assert(!/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || ""), "Tutorial copy must not advertise Markdown project import/export.");
@@ -157,6 +165,25 @@ const showAllReveal = PM.computePresentationReveal(revealFixture.points, revealF
   showAll: true
 });
 assertDeepEqual(showAllReveal.routePoints.map((point) => point.id), ["r1", "h1", "r2", "h2", "r3"], "Show all should reveal full route including helpers.");
+
+const defaultFog = PM.normalizePresentationFogSettings();
+assertEqual(defaultFog.mode, "focus", "Focus fog should be the default presentation fog mode.");
+assertEqual(defaultFog.outsideVisibility, 0.22, "Default focus fog should keep only a little outside map visibility.");
+assertEqual(defaultFog.trailMemory, true, "Default focus fog should keep the old trail subtler than the current point.");
+const clampedFog = PM.normalizePresentationFogSettings({
+  mode: "missing",
+  outsideVisibility: 99,
+  trailRadius: -5,
+  focusRadius: 999,
+  edgeSoftness: "x",
+  trailMemory: false
+});
+assertEqual(clampedFog.mode, "focus", "Invalid fog mode should clamp to focus.");
+assertEqual(clampedFog.outsideVisibility, 0.45, "Outside visibility should clamp to maximum.");
+assertEqual(clampedFog.trailRadius, 0.03, "Trail radius should clamp to minimum.");
+assertEqual(clampedFog.focusRadius, 0.28, "Focus radius should clamp to maximum.");
+assertEqual(clampedFog.edgeSoftness, 0.06, "Invalid edge softness should fall back to default.");
+assertEqual(clampedFog.trailMemory, false, "Trail memory should preserve explicit false.");
 
 const json = PM.Serialization.projectToJson(project);
 const parsed = PM.Serialization.parseProjectJson(json);

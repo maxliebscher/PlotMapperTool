@@ -130,6 +130,67 @@
       targetCtx.restore();
     }
 
+    function drawFogRevealShape(targetCtx, rect, routePoints, currentPoint, fogSettings) {
+      const scale = Math.max(1, Math.min(rect.w, rect.h));
+      const trailWidth = Math.max(16, fogSettings.trailRadius * scale * (fogSettings.trailMemory ? 0.72 : 1));
+      const focusRadius = Math.max(28, fogSettings.focusRadius * scale);
+      const edgeBlur = Math.max(2, fogSettings.edgeSoftness * scale);
+      targetCtx.save();
+      targetCtx.globalCompositeOperation = "destination-out";
+      targetCtx.shadowColor = "#000";
+      targetCtx.shadowBlur = edgeBlur;
+      targetCtx.lineCap = "round";
+      targetCtx.lineJoin = "round";
+      targetCtx.strokeStyle = "#000";
+      targetCtx.fillStyle = "#000";
+      if (routePoints.length) {
+        targetCtx.lineWidth = trailWidth;
+        targetCtx.beginPath();
+        routePoints.forEach((point, index) => {
+          const px = rect.x + point.x * rect.w;
+          const py = rect.y + point.y * rect.h;
+          if (index) targetCtx.lineTo(px, py);
+          else targetCtx.moveTo(px, py);
+        });
+        targetCtx.stroke();
+      }
+      if (currentPoint) {
+        const px = rect.x + currentPoint.x * rect.w;
+        const py = rect.y + currentPoint.y * rect.h;
+        targetCtx.beginPath();
+        targetCtx.arc(px, py, focusRadius, 0, Math.PI * 2);
+        targetCtx.fill();
+      }
+      targetCtx.restore();
+    }
+
+    function drawPresentationFog(size, rect) {
+      if (!PM.getPresentationReveal || !PM.getPresentationFogSettings) return;
+      const revealInfo = PM.getPresentationReveal();
+      const fogSettings = PM.getPresentationFogSettings();
+      if (!revealInfo || !revealInfo.active || fogSettings.mode === "off") return;
+      const routePoints = fogSettings.mode === "all"
+        ? latestState.points.filter((point) => point.type === "route" && PM.isPointVisible(point, latestState.settings))
+        : revealInfo.routePoints;
+      if (!routePoints.length) return;
+      const currentPoint = revealInfo.routeInfo.numberedRoutes[Math.max(0, revealInfo.step - 1)] || revealInfo.routePoints[revealInfo.routePoints.length - 1];
+      const overlay = document.createElement("canvas");
+      overlay.width = Math.max(1, Math.floor(size.width));
+      overlay.height = Math.max(1, Math.floor(size.height));
+      const overlayCtx = overlay.getContext("2d");
+      const brightness = 0.34 + fogSettings.outsideVisibility * 0.9;
+      overlayCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg") || "#101112";
+      overlayCtx.fillRect(0, 0, overlay.width, overlay.height);
+      overlayCtx.save();
+      overlayCtx.filter = `grayscale(1) brightness(${brightness})`;
+      overlayCtx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+      overlayCtx.restore();
+      overlayCtx.fillStyle = `rgba(0, 0, 0, ${PM.clamp(0.76 - fogSettings.outsideVisibility, 0.28, 0.74)})`;
+      overlayCtx.fillRect(0, 0, overlay.width, overlay.height);
+      drawFogRevealShape(overlayCtx, rect, routePoints, currentPoint, fogSettings);
+      ctx.drawImage(overlay, 0, 0);
+    }
+
     function draw() {
       const size = getViewportSize();
       ctx.clearRect(0, 0, size.width, size.height);
@@ -141,6 +202,7 @@
       ctx.globalAlpha = latestState.settings.opacity;
       ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
       ctx.restore();
+      drawPresentationFog(size, rect);
     }
 
     function drawWrappedText(targetCtx, text, x, y, maxWidth, lineHeight) {

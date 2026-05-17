@@ -182,6 +182,69 @@ button, input, textarea, select {
   line-height: 1;
 }
 
+.presentation-fog-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 78px;
+  z-index: 77;
+  width: min(292px, calc(100vw - 24px));
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-strong) 95%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.presentation-fog-panel[hidden] {
+  display: none;
+}
+
+.presentation-fog-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fog-field {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fog-field select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 4px 8px;
+}
+
+.fog-field input[type="range"] {
+  width: 100%;
+}
+
+.fog-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fog-check input {
+  accent-color: var(--accent);
+}
+
 :root.presentation-mode .toolbar,
 :root.presentation-mode .info-badge,
 :root.presentation-mode .info-panel,
@@ -1204,6 +1267,11 @@ button, input, textarea, select {
   .reader-edit .row {
     grid-template-columns: 1fr;
   }
+
+  .presentation-fog-panel {
+    right: 8px;
+    bottom: 72px;
+  }
 }
   </style>
 </head>
@@ -1337,7 +1405,43 @@ button, input, textarea, select {
     <button id="presentationNext" class="btn icon" type="button" aria-label="Next step">&rarr;</button>
     <button id="presentationShowAll" class="btn small" type="button">All</button>
     <button id="presentationReset" class="btn small" type="button">Reset</button>
+    <button id="presentationFogToggle" class="btn icon" type="button" aria-label="Fog settings">&#9881;</button>
     <button id="presentationExit" class="btn small" type="button">Exit</button>
+  </section>
+
+  <section id="presentationFogPanel" class="presentation-fog-panel" aria-label="Fog settings" hidden>
+    <header>
+      <strong id="presentationFogTitle">Fog</strong>
+      <button id="presentationFogClose" class="btn icon" type="button" aria-label="Close">x</button>
+    </header>
+    <label class="fog-field">
+      <span id="presentationFogModeLabel">Mode</span>
+      <select id="presentationFogMode">
+        <option value="off">Off</option>
+        <option value="focus">Focus</option>
+        <option value="all">All</option>
+      </select>
+    </label>
+    <label class="fog-field">
+      <span id="presentationFogOutsideLabel">Surroundings</span>
+      <input id="presentationFogOutside" type="range" min="0.02" max="0.45" step="0.01" value="0.22">
+    </label>
+    <label class="fog-field">
+      <span id="presentationFogFocusLabel">Current radius</span>
+      <input id="presentationFogFocus" type="range" min="0.08" max="0.28" step="0.01" value="0.18">
+    </label>
+    <label class="fog-field">
+      <span id="presentationFogTrailLabel">Path width</span>
+      <input id="presentationFogTrail" type="range" min="0.03" max="0.18" step="0.01" value="0.07">
+    </label>
+    <label class="fog-field">
+      <span id="presentationFogSoftnessLabel">Soft edge</span>
+      <input id="presentationFogSoftness" type="range" min="0.01" max="0.14" step="0.01" value="0.06">
+    </label>
+    <label class="fog-check">
+      <input id="presentationFogMemory" type="checkbox" checked>
+      <span id="presentationFogMemoryLabel">Subtle old path</span>
+    </label>
   </section>
 
   <div id="helpBackdrop" class="modal-backdrop" hidden></div>
@@ -1473,6 +1577,17 @@ button, input, textarea, select {
       presentationReset: "Reset",
       presentationExit: "Exit",
       presentationEmpty: "No route",
+      presentationFog: "Fog",
+      presentationFogSettings: "Fog settings",
+      presentationFogMode: "Mode",
+      presentationFogOff: "Off",
+      presentationFogFocus: "Focus",
+      presentationFogAll: "Whole route",
+      presentationFogOutside: "Surroundings",
+      presentationFogCurrent: "Current radius",
+      presentationFogTrail: "Path width",
+      presentationFogSoftness: "Soft edge",
+      presentationFogMemory: "Subtle old path",
       png: "PNG",
       clear: "Clear",
       help: "Help",
@@ -1556,6 +1671,17 @@ button, input, textarea, select {
       presentationReset: "Reset",
       presentationExit: "Ende",
       presentationEmpty: "Keine Route",
+      presentationFog: "Fog",
+      presentationFogSettings: "Fog-Einstellungen",
+      presentationFogMode: "Modus",
+      presentationFogOff: "Aus",
+      presentationFogFocus: "Fokus",
+      presentationFogAll: "Ganze Route",
+      presentationFogOutside: "Umgebung sichtbar",
+      presentationFogCurrent: "Aktueller Radius",
+      presentationFogTrail: "Pfadbreite",
+      presentationFogSoftness: "Kantenweichheit",
+      presentationFogMemory: "Alten Pfad schwächer",
       png: "PNG",
       clear: "Leeren",
       help: "Anleitung",
@@ -1961,6 +2087,34 @@ button, input, textarea, select {
 (function presentationModule(PM) {
   "use strict";
 
+  const FOG_MODES = ["off", "focus", "all"];
+  const DEFAULT_FOG_SETTINGS = {
+    mode: "focus",
+    outsideVisibility: 0.22,
+    trailRadius: 0.07,
+    focusRadius: 0.18,
+    edgeSoftness: 0.06,
+    trailMemory: true
+  };
+
+  function numberOrFallback(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function normalizePresentationFogSettings(input) {
+    const raw = input || {};
+    const mode = FOG_MODES.includes(raw.mode) ? raw.mode : DEFAULT_FOG_SETTINGS.mode;
+    return {
+      mode,
+      outsideVisibility: PM.clamp(numberOrFallback(raw.outsideVisibility, DEFAULT_FOG_SETTINGS.outsideVisibility), 0.02, 0.45),
+      trailRadius: PM.clamp(numberOrFallback(raw.trailRadius, DEFAULT_FOG_SETTINGS.trailRadius), 0.03, 0.18),
+      focusRadius: PM.clamp(numberOrFallback(raw.focusRadius, DEFAULT_FOG_SETTINGS.focusRadius), 0.08, 0.28),
+      edgeSoftness: PM.clamp(numberOrFallback(raw.edgeSoftness, DEFAULT_FOG_SETTINGS.edgeSoftness), 0.01, 0.14),
+      trailMemory: raw.trailMemory === undefined ? DEFAULT_FOG_SETTINGS.trailMemory : Boolean(raw.trailMemory)
+    };
+  }
+
   function normalizePresentationState(input, routeLength) {
     const max = Math.max(0, parseInt(routeLength, 10) || 0);
     const raw = input || {};
@@ -2032,9 +2186,20 @@ button, input, textarea, select {
       nextButton: options.nextButton,
       showAllButton: options.showAllButton,
       resetButton: options.resetButton,
+      fogToggleButton: options.fogToggleButton,
+      fogPanel: options.fogPanel,
+      fogCloseButton: options.fogCloseButton,
+      fogMode: options.fogMode,
+      fogOutside: options.fogOutside,
+      fogFocus: options.fogFocus,
+      fogTrail: options.fogTrail,
+      fogSoftness: options.fogSoftness,
+      fogMemory: options.fogMemory,
       exitButton: options.exitButton
     };
     let state = normalizePresentationState({ active: false, step: 0, showAll: false }, 0);
+    let fogSettings = normalizePresentationFogSettings();
+    let fogPanelOpen = false;
 
     function routeLength() {
       const live = store.getLiveState();
@@ -2046,13 +2211,21 @@ button, input, textarea, select {
       state = normalizePresentationState(state, length);
       root.classList.toggle("presentation-mode", state.active);
       elements.dock.hidden = !state.active;
+      elements.fogPanel.hidden = !state.active || !fogPanelOpen;
       const hasRoute = length > 0;
       elements.step.textContent = hasRoute ? `${state.step} / ${length}` : t("presentationEmpty");
       elements.previousButton.disabled = !state.active || !hasRoute || state.step <= 1;
       elements.nextButton.disabled = !state.active || !hasRoute || state.step >= length;
       elements.showAllButton.disabled = !state.active || !hasRoute || state.showAll;
       elements.resetButton.disabled = !state.active || !hasRoute || (!state.showAll && state.step <= 1);
+      elements.fogToggleButton.disabled = !state.active;
       elements.exitButton.disabled = !state.active;
+      elements.fogMode.value = fogSettings.mode;
+      elements.fogOutside.value = String(fogSettings.outsideVisibility);
+      elements.fogFocus.value = String(fogSettings.focusRadius);
+      elements.fogTrail.value = String(fogSettings.trailRadius);
+      elements.fogSoftness.value = String(fogSettings.edgeSoftness);
+      elements.fogMemory.checked = fogSettings.trailMemory;
       onChange();
     }
 
@@ -2064,6 +2237,7 @@ button, input, textarea, select {
     }
 
     function exit() {
+      fogPanelOpen = false;
       state = normalizePresentationState({ active: false, step: 0, showAll: false }, routeLength());
       update();
     }
@@ -2097,6 +2271,26 @@ button, input, textarea, select {
       return computePresentationReveal(live.points, live.settings, state);
     }
 
+    function getPresentationFogSettings() {
+      return state.active ? fogSettings : normalizePresentationFogSettings({ mode: "off" });
+    }
+
+    function patchFogSettings(patch) {
+      fogSettings = normalizePresentationFogSettings({ ...fogSettings, ...patch });
+      update();
+    }
+
+    function toggleFogPanel() {
+      if (!state.active) return;
+      fogPanelOpen = !fogPanelOpen;
+      update();
+    }
+
+    function closeFogPanel() {
+      fogPanelOpen = false;
+      update();
+    }
+
     function handleKeydown(event) {
       if (!state.active || isInputLike(event.target)) return;
       const key = event.key;
@@ -2123,11 +2317,19 @@ button, input, textarea, select {
     elements.nextButton.addEventListener("click", next);
     elements.showAllButton.addEventListener("click", showAll);
     elements.resetButton.addEventListener("click", reset);
+    elements.fogToggleButton.addEventListener("click", toggleFogPanel);
+    elements.fogCloseButton.addEventListener("click", closeFogPanel);
+    elements.fogMode.addEventListener("change", () => patchFogSettings({ mode: elements.fogMode.value }));
+    elements.fogOutside.addEventListener("input", () => patchFogSettings({ outsideVisibility: elements.fogOutside.value }));
+    elements.fogFocus.addEventListener("input", () => patchFogSettings({ focusRadius: elements.fogFocus.value }));
+    elements.fogTrail.addEventListener("input", () => patchFogSettings({ trailRadius: elements.fogTrail.value }));
+    elements.fogSoftness.addEventListener("input", () => patchFogSettings({ edgeSoftness: elements.fogSoftness.value }));
+    elements.fogMemory.addEventListener("change", () => patchFogSettings({ trailMemory: elements.fogMemory.checked }));
     elements.exitButton.addEventListener("click", exit);
     document.addEventListener("keydown", handleKeydown);
-    store.subscribe(update);
-
     PM.getPresentationReveal = getPresentationReveal;
+    PM.getPresentationFogSettings = getPresentationFogSettings;
+    store.subscribe(update);
 
     return {
       enter,
@@ -2136,11 +2338,13 @@ button, input, textarea, select {
       next,
       showAll,
       reset,
-      getPresentationReveal
+      getPresentationReveal,
+      getPresentationFogSettings
     };
   }
 
   PM.normalizePresentationState = normalizePresentationState;
+  PM.normalizePresentationFogSettings = normalizePresentationFogSettings;
   PM.computePresentationReveal = computePresentationReveal;
   PM.isPointRevealed = isPointRevealed;
   PM.createPresentationController = createPresentationController;
@@ -2389,6 +2593,67 @@ button, input, textarea, select {
       targetCtx.restore();
     }
 
+    function drawFogRevealShape(targetCtx, rect, routePoints, currentPoint, fogSettings) {
+      const scale = Math.max(1, Math.min(rect.w, rect.h));
+      const trailWidth = Math.max(16, fogSettings.trailRadius * scale * (fogSettings.trailMemory ? 0.72 : 1));
+      const focusRadius = Math.max(28, fogSettings.focusRadius * scale);
+      const edgeBlur = Math.max(2, fogSettings.edgeSoftness * scale);
+      targetCtx.save();
+      targetCtx.globalCompositeOperation = "destination-out";
+      targetCtx.shadowColor = "#000";
+      targetCtx.shadowBlur = edgeBlur;
+      targetCtx.lineCap = "round";
+      targetCtx.lineJoin = "round";
+      targetCtx.strokeStyle = "#000";
+      targetCtx.fillStyle = "#000";
+      if (routePoints.length) {
+        targetCtx.lineWidth = trailWidth;
+        targetCtx.beginPath();
+        routePoints.forEach((point, index) => {
+          const px = rect.x + point.x * rect.w;
+          const py = rect.y + point.y * rect.h;
+          if (index) targetCtx.lineTo(px, py);
+          else targetCtx.moveTo(px, py);
+        });
+        targetCtx.stroke();
+      }
+      if (currentPoint) {
+        const px = rect.x + currentPoint.x * rect.w;
+        const py = rect.y + currentPoint.y * rect.h;
+        targetCtx.beginPath();
+        targetCtx.arc(px, py, focusRadius, 0, Math.PI * 2);
+        targetCtx.fill();
+      }
+      targetCtx.restore();
+    }
+
+    function drawPresentationFog(size, rect) {
+      if (!PM.getPresentationReveal || !PM.getPresentationFogSettings) return;
+      const revealInfo = PM.getPresentationReveal();
+      const fogSettings = PM.getPresentationFogSettings();
+      if (!revealInfo || !revealInfo.active || fogSettings.mode === "off") return;
+      const routePoints = fogSettings.mode === "all"
+        ? latestState.points.filter((point) => point.type === "route" && PM.isPointVisible(point, latestState.settings))
+        : revealInfo.routePoints;
+      if (!routePoints.length) return;
+      const currentPoint = revealInfo.routeInfo.numberedRoutes[Math.max(0, revealInfo.step - 1)] || revealInfo.routePoints[revealInfo.routePoints.length - 1];
+      const overlay = document.createElement("canvas");
+      overlay.width = Math.max(1, Math.floor(size.width));
+      overlay.height = Math.max(1, Math.floor(size.height));
+      const overlayCtx = overlay.getContext("2d");
+      const brightness = 0.34 + fogSettings.outsideVisibility * 0.9;
+      overlayCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg") || "#101112";
+      overlayCtx.fillRect(0, 0, overlay.width, overlay.height);
+      overlayCtx.save();
+      overlayCtx.filter = `grayscale(1) brightness(${brightness})`;
+      overlayCtx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+      overlayCtx.restore();
+      overlayCtx.fillStyle = `rgba(0, 0, 0, ${PM.clamp(0.76 - fogSettings.outsideVisibility, 0.28, 0.74)})`;
+      overlayCtx.fillRect(0, 0, overlay.width, overlay.height);
+      drawFogRevealShape(overlayCtx, rect, routePoints, currentPoint, fogSettings);
+      ctx.drawImage(overlay, 0, 0);
+    }
+
     function draw() {
       const size = getViewportSize();
       ctx.clearRect(0, 0, size.width, size.height);
@@ -2400,6 +2665,7 @@ button, input, textarea, select {
       ctx.globalAlpha = latestState.settings.opacity;
       ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
       ctx.restore();
+      drawPresentationFog(size, rect);
     }
 
     function drawWrappedText(targetCtx, text, x, y, maxWidth, lineHeight) {
@@ -3221,6 +3487,22 @@ button, input, textarea, select {
       presentationNext: $("presentationNext"),
       presentationShowAll: $("presentationShowAll"),
       presentationReset: $("presentationReset"),
+      presentationFogToggle: $("presentationFogToggle"),
+      presentationFogPanel: $("presentationFogPanel"),
+      presentationFogTitle: $("presentationFogTitle"),
+      presentationFogClose: $("presentationFogClose"),
+      presentationFogMode: $("presentationFogMode"),
+      presentationFogModeLabel: $("presentationFogModeLabel"),
+      presentationFogOutside: $("presentationFogOutside"),
+      presentationFogOutsideLabel: $("presentationFogOutsideLabel"),
+      presentationFogFocus: $("presentationFogFocus"),
+      presentationFogFocusLabel: $("presentationFogFocusLabel"),
+      presentationFogTrail: $("presentationFogTrail"),
+      presentationFogTrailLabel: $("presentationFogTrailLabel"),
+      presentationFogSoftness: $("presentationFogSoftness"),
+      presentationFogSoftnessLabel: $("presentationFogSoftnessLabel"),
+      presentationFogMemory: $("presentationFogMemory"),
+      presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
       focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
@@ -3258,10 +3540,22 @@ button, input, textarea, select {
       nextButton: controls.presentationNext,
       showAllButton: controls.presentationShowAll,
       resetButton: controls.presentationReset,
+      fogToggleButton: controls.presentationFogToggle,
+      fogPanel: controls.presentationFogPanel,
+      fogCloseButton: controls.presentationFogClose,
+      fogMode: controls.presentationFogMode,
+      fogOutside: controls.presentationFogOutside,
+      fogFocus: controls.presentationFogFocus,
+      fogTrail: controls.presentationFogTrail,
+      fogSoftness: controls.presentationFogSoftness,
+      fogMemory: controls.presentationFogMemory,
       exitButton: controls.presentationExit,
       store,
       menu,
-      onChange: () => pointUi.render(store.getState()),
+      onChange: () => {
+        renderer.draw();
+        pointUi.render(store.getState());
+      },
       t
     });
 
@@ -3283,6 +3577,19 @@ button, input, textarea, select {
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
       controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
+      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
+      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
+      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
+      controls.presentationFogClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.presentationFogModeLabel.textContent = PM.I18n.t(locale, "presentationFogMode");
+      controls.presentationFogMode.options[0].textContent = PM.I18n.t(locale, "presentationFogOff");
+      controls.presentationFogMode.options[1].textContent = PM.I18n.t(locale, "presentationFogFocus");
+      controls.presentationFogMode.options[2].textContent = PM.I18n.t(locale, "presentationFogAll");
+      controls.presentationFogOutsideLabel.textContent = PM.I18n.t(locale, "presentationFogOutside");
+      controls.presentationFogFocusLabel.textContent = PM.I18n.t(locale, "presentationFogCurrent");
+      controls.presentationFogTrailLabel.textContent = PM.I18n.t(locale, "presentationFogTrail");
+      controls.presentationFogSoftnessLabel.textContent = PM.I18n.t(locale, "presentationFogSoftness");
+      controls.presentationFogMemoryLabel.textContent = PM.I18n.t(locale, "presentationFogMemory");
       controls.presentationExit.textContent = PM.I18n.t(locale, "presentationExit");
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");

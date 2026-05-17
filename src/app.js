@@ -92,6 +92,22 @@
       presentationNext: $("presentationNext"),
       presentationShowAll: $("presentationShowAll"),
       presentationReset: $("presentationReset"),
+      presentationFogToggle: $("presentationFogToggle"),
+      presentationFogPanel: $("presentationFogPanel"),
+      presentationFogTitle: $("presentationFogTitle"),
+      presentationFogClose: $("presentationFogClose"),
+      presentationFogMode: $("presentationFogMode"),
+      presentationFogModeLabel: $("presentationFogModeLabel"),
+      presentationFogOutside: $("presentationFogOutside"),
+      presentationFogOutsideLabel: $("presentationFogOutsideLabel"),
+      presentationFogFocus: $("presentationFogFocus"),
+      presentationFogFocusLabel: $("presentationFogFocusLabel"),
+      presentationFogTrail: $("presentationFogTrail"),
+      presentationFogTrailLabel: $("presentationFogTrailLabel"),
+      presentationFogSoftness: $("presentationFogSoftness"),
+      presentationFogSoftnessLabel: $("presentationFogSoftnessLabel"),
+      presentationFogMemory: $("presentationFogMemory"),
+      presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
       focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
@@ -129,10 +145,22 @@
       nextButton: controls.presentationNext,
       showAllButton: controls.presentationShowAll,
       resetButton: controls.presentationReset,
+      fogToggleButton: controls.presentationFogToggle,
+      fogPanel: controls.presentationFogPanel,
+      fogCloseButton: controls.presentationFogClose,
+      fogMode: controls.presentationFogMode,
+      fogOutside: controls.presentationFogOutside,
+      fogFocus: controls.presentationFogFocus,
+      fogTrail: controls.presentationFogTrail,
+      fogSoftness: controls.presentationFogSoftness,
+      fogMemory: controls.presentationFogMemory,
       exitButton: controls.presentationExit,
       store,
       menu,
-      onChange: () => pointUi.render(store.getState()),
+      onChange: () => {
+        renderer.draw();
+        pointUi.render(store.getState());
+      },
       t
     });
 
@@ -154,6 +182,19 @@
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
       controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
+      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
+      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
+      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
+      controls.presentationFogClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.presentationFogModeLabel.textContent = PM.I18n.t(locale, "presentationFogMode");
+      controls.presentationFogMode.options[0].textContent = PM.I18n.t(locale, "presentationFogOff");
+      controls.presentationFogMode.options[1].textContent = PM.I18n.t(locale, "presentationFogFocus");
+      controls.presentationFogMode.options[2].textContent = PM.I18n.t(locale, "presentationFogAll");
+      controls.presentationFogOutsideLabel.textContent = PM.I18n.t(locale, "presentationFogOutside");
+      controls.presentationFogFocusLabel.textContent = PM.I18n.t(locale, "presentationFogCurrent");
+      controls.presentationFogTrailLabel.textContent = PM.I18n.t(locale, "presentationFogTrail");
+      controls.presentationFogSoftnessLabel.textContent = PM.I18n.t(locale, "presentationFogSoftness");
+      controls.presentationFogMemoryLabel.textContent = PM.I18n.t(locale, "presentationFogMemory");
       controls.presentationExit.textContent = PM.I18n.t(locale, "presentationExit");
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
