@@ -106,7 +106,7 @@
         if (point.duration) {
           const pill = document.createElement("span");
           pill.className = "pill";
-          pill.textContent = point.duration;
+          pill.textContent = PM.formatDurationLabel(point.duration);
           head.appendChild(pill);
         }
         const form = editForm(point, locale);
@@ -140,7 +140,7 @@
             if (extra.duration) {
               const dur = document.createElement("span");
               dur.className = "pill";
-              dur.textContent = extra.duration;
+              dur.textContent = PM.formatDurationLabel(extra.duration);
               body.appendChild(dur);
             }
             const extraForm = editForm(extra, locale);
@@ -160,8 +160,8 @@
       const chapters = PM.Exporters.buildReaderChapters(state);
       const body = chapters.map((chapter) => {
         const point = chapter.point;
-        const extras = chapter.extras.map((extra) => `<li><span class="pill">${PM.escapeHtml(PM.I18n.pointLabel(locale, extra.type))}</span> <strong>${PM.escapeHtml(extra.label || PM.I18n.pointLabel(locale, extra.type))}</strong>${extra.note ? `<div class="note">${PM.escapeHtml(extra.note)}</div>` : ""}${extra.duration ? ` <span class="pill">${PM.escapeHtml(extra.duration)}</span>` : ""}</li>`).join("");
-        return `<section class="card"><div class="step"><span class="num">${PM.escapeHtml(chapter.step)}</span><h2>${PM.escapeHtml(point.label || `${PM.I18n.t(locale, "chapter")} ${chapter.step}`)}</h2>${point.duration ? `<span class="pill">${PM.escapeHtml(point.duration)}</span>` : ""}</div>${point.note ? `<div class="note">${PM.escapeHtml(point.note)}</div>` : ""}${extras ? `<ul class="extras">${extras}</ul>` : ""}</section>`;
+        const extras = chapter.extras.map((extra) => `<li><span class="pill">${PM.escapeHtml(PM.I18n.pointLabel(locale, extra.type))}</span> <strong>${PM.escapeHtml(extra.label || PM.I18n.pointLabel(locale, extra.type))}</strong>${extra.note ? `<div class="note">${PM.escapeHtml(extra.note)}</div>` : ""}${extra.duration ? ` <span class="pill">${PM.escapeHtml(PM.formatDurationLabel(extra.duration))}</span>` : ""}</li>`).join("");
+        return `<section class="card"><div class="step"><span class="num">${PM.escapeHtml(chapter.step)}</span><h2>${PM.escapeHtml(point.label || `${PM.I18n.t(locale, "chapter")} ${chapter.step}`)}</h2>${point.duration ? `<span class="pill">${PM.escapeHtml(PM.formatDurationLabel(point.duration))}</span>` : ""}</div>${point.note ? `<div class="note">${PM.escapeHtml(point.note)}</div>` : ""}${extras ? `<ul class="extras">${extras}</ul>` : ""}</section>`;
       }).join("");
       return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="source-app" content="PlotMapper Tool"><meta name="source-version" content="${PM.APP_VERSION}"><title>PlotReader Export</title><style>${css}</style></head><body><main class="cards">${body}</main></body></html>`;
     }

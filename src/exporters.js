@@ -9,7 +9,9 @@
 
   function buildReaderChapters(project) {
     const state = PM.normalizeProject(project);
-    const routeInfo = PM.computeRouteInfo(state.points, state.settings);
+    const activeRoute = PM.getActiveRoute(state.settings, state.routes);
+    if (!activeRoute || activeRoute.visible === false) return [];
+    const routeInfo = PM.computeRouteInfo(state.points, state.settings, activeRoute);
     const routes = routeInfo.numberedRoutes;
     const chapters = routes.map((route) => ({
       point: route,

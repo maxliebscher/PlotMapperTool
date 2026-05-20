@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-version="1.1.8" data-theme="deep">
+<html lang="en" data-version="1.2.0" data-theme="deep">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,7 +28,7 @@
       <h1><strong>Plot</strong> Mapper</h1>
       <p class="splash-by">by Maximilian Georg Liebscher</p>
       <p>Story Path Mapping Tool</p>
-      <small id="splashVersion">v1.1.8</small>
+      <small id="splashVersion">v1.2.0</small>
     </div>
   </div>
 
@@ -51,6 +51,7 @@
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
+        <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
 
@@ -59,7 +60,32 @@
     <div class="control-row chapter-controls">
       <label><input id="chapterMode" type="checkbox"><span>Chapter start</span></label>
       <input id="chapterStart" type="number" min="1" step="1" value="1" aria-label="Chapter start number">
+      <button id="routePanelToggle" class="btn route-panel-toggle" type="button" aria-expanded="false" aria-controls="routePanel">
+        <span class="active-route-swatch" aria-hidden="true"></span>
+        <span id="activeRouteLabel">Route</span>
+        <span id="routePanelCaret" class="route-panel-caret" aria-hidden="true">&#9662;</span>
+      </button>
     </div>
+
+    <section id="routePanel" class="route-panel" aria-label="Route management" hidden>
+      <header class="route-panel-head">
+        <strong id="routePanelTitle">Routes</strong>
+        <button id="addRouteButton" class="btn small" type="button">+ Route</button>
+      </header>
+      <div class="route-grid-head" aria-hidden="true">
+        <span id="routeActiveHead">Active</span>
+        <span id="routeColorHead">Color</span>
+        <span id="routeVisibleHead">Visible</span>
+        <span id="routeNumbersHead">Num.</span>
+        <span id="routeArrowsHead">Arrows</span>
+        <span id="routeStartHead">Start</span>
+        <span id="routeStyleHead">Style</span>
+        <span id="routeWidthHead">Width</span>
+        <span id="routeNameHead">Name</span>
+        <span id="routeDeleteHead">Delete</span>
+      </div>
+      <div id="routeRows" class="route-rows"></div>
+    </section>
 
     <div class="control-row toggles">
       <span id="visibilityLabel" class="inline-caption">Visibility</span>
@@ -82,14 +108,15 @@
     </div>
 
     <div class="control-row slider-row">
-      <label class="control-field">Zoom<input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
-      <label class="control-field">Font<input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
     </div>
 
-    <div class="control-row slider-row line-row">
-      <label class="control-field">Opacity<input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
-      <label class="control-field compact">Line<input id="routeColor" type="color" value="#cc3333"></label>
-      <label class="control-field">Width<input id="routeWidth" type="range" min="1" max="12" step="1" value="2"></label>
+    <div class="control-row slider-row">
+      <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
+      <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
+      <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
     </div>
 
     <div class="toolbar-grid commands">
@@ -100,6 +127,23 @@
       <button id="exportPng" class="btn" type="button">PNG</button>
       <button id="clearAll" class="btn danger" type="button">Clear</button>
     </div>
+  </section>
+
+  <button id="toolbarRestore" class="toolbar-restore" type="button" hidden>
+    <span class="active-route-swatch" aria-hidden="true"></span>
+    <span id="toolbarRestoreLabel">Menu</span>
+    <span aria-hidden="true">&#9662;</span>
+  </button>
+
+  <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
+    <div class="color-popover-header">
+      <span id="routeColorPopoverLabel">Color</span>
+      <div class="color-popover-actions">
+        <button id="routeColorOk" class="btn small" type="button">OK</button>
+        <button id="routeColorCancel" class="btn small" type="button">Cancel</button>
+      </div>
+    </div>
+    <input id="routeColorPicker" type="color" value="#cc3333" aria-label="Route color">
   </section>
 
   <div id="emptyHint" class="empty-hint">
@@ -127,13 +171,14 @@
 
   <div id="infoBadge" class="info-badge">
     <strong>PlotMapper Tool</strong>
-    <span id="badgeVersion">v1.1.8</span>
+    <span id="badgeVersion">v1.2.0</span>
     <button id="infoButton" class="info-dot" type="button" title="Info">i</button>
   </div>
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
 
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
+    <div id="presentationRoutes" class="presentation-routes" aria-label="Routes"></div>
     <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>
     <output id="presentationStep" class="presentation-step" aria-live="polite">0 / 0</output>
     <button id="presentationNext" class="btn icon" type="button" aria-label="Next step">&rarr;</button>

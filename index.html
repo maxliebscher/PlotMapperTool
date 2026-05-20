@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-version="1.1.8" data-theme="deep">
+<html lang="en" data-version="1.2.0" data-theme="deep">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,8 @@
   color-scheme: dark;
   --bg: #101112;
   --panel: rgba(10, 27, 46, 0.86);
+  --panel-rgb: 10, 27, 46;
+  --toolbar-opacity: 0.86;
   --panel-strong: #0d2033;
   --surface: #173150;
   --surface-2: #1f3c60;
@@ -21,6 +23,7 @@
   --warn: #d87b32;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
   --point-size: 32px;
+  --helper-point-size: 24px;
   --font-scale: 1;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -29,6 +32,7 @@
   color-scheme: light;
   --bg: #eef0ec;
   --panel: rgba(255, 255, 255, 0.94);
+  --panel-rgb: 255, 255, 255;
   --panel-strong: #ffffff;
   --surface: #f0f3f5;
   --surface-2: #e3e8ea;
@@ -44,6 +48,7 @@
 :root[data-theme="contrast"] {
   --bg: #050505;
   --panel: rgba(0, 0, 0, 0.94);
+  --panel-rgb: 0, 0, 0;
   --panel-strong: #0b0b0b;
   --surface: #171717;
   --surface-2: #242424;
@@ -57,6 +62,7 @@
 :root[data-theme="burgund"] {
   --bg: #21141a;
   --panel: rgba(45, 23, 32, 0.94);
+  --panel-rgb: 45, 23, 32;
   --panel-strong: #381d29;
   --surface: #4a2736;
   --surface-2: #5b3243;
@@ -70,6 +76,7 @@
 :root[data-theme="autumn"] {
   --bg: #181715;
   --panel: rgba(38, 36, 31, 0.94);
+  --panel-rgb: 38, 36, 31;
   --panel-strong: #312d27;
   --surface: #403a31;
   --surface-2: #51483b;
@@ -341,6 +348,16 @@ button, input, textarea, select {
   border-style: dashed;
 }
 
+.point.route {
+  background: var(--route-color, #fbfaf5);
+}
+
+.point.route.helper {
+  width: var(--helper-point-size);
+  height: var(--helper-point-size);
+  background: color-mix(in srgb, var(--route-color, #fbfaf5) 48%, #d7d2c7);
+}
+
 .point.hidden {
   display: none;
 }
@@ -385,8 +402,9 @@ button, input, textarea, select {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  max-width: 320px;
-  min-width: max-content;
+  width: max-content;
+  max-width: min(260px, 42vw);
+  min-width: 0;
   padding: 2px 7px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.6);
@@ -407,7 +425,7 @@ button, input, textarea, select {
 .point-note {
   top: calc(100% + var(--stack-gap) + var(--lbl-h) + var(--stack-gap) + var(--loc-h) + var(--stack-gap));
   font-weight: 500;
-  max-width: 360px;
+  max-width: min(230px, 38vw);
 }
 .point-duration {
   top: calc(100% + var(--stack-gap) + var(--lbl-h) + var(--stack-gap) + var(--loc-h) + var(--stack-gap) + var(--note-h) + var(--stack-gap));
@@ -427,12 +445,15 @@ button, input, textarea, select {
 
 .midpoint {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
+  min-width: 0;
+  min-height: 0;
   transform: translate(-50%, -50%);
   border: 2px solid rgba(0, 0, 0, 0.54);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.76);
+  padding: 0;
   pointer-events: auto;
   cursor: copy;
   z-index: 12;
@@ -443,14 +464,52 @@ button, input, textarea, select {
   left: 12px;
   top: 12px;
   z-index: 50;
-  width: min(730px, calc(100vw - 24px));
+  width: min(800px, calc(100vw - 24px));
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--panel);
+  background: rgba(var(--panel-rgb), var(--toolbar-opacity));
   color: var(--text);
   box-shadow: var(--shadow);
   backdrop-filter: blur(8px);
+}
+
+:root.toolbar-collapsed .toolbar {
+  display: none;
+}
+
+.toolbar-restore {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 51;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 24px));
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--border));
+  border-radius: 999px;
+  background: rgba(var(--panel-rgb), var(--toolbar-opacity));
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.toolbar-restore[hidden],
+:root.presentation-mode .toolbar-restore {
+  display: none !important;
+}
+
+.toolbar-restore #toolbarRestoreLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toolbar-head {
@@ -472,7 +531,7 @@ button, input, textarea, select {
 .file-name {
   color: var(--muted);
   font-size: 13px;
-  max-width: 180px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -638,18 +697,25 @@ button, input, textarea, select {
 }
 
 .slider-row {
-  gap: 14px 26px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 14px;
+  align-items: center;
 }
 
-.line-row {
-  gap: 14px 18px;
-}
-
-.control-field {
+.control-row .control-field {
   min-width: 0;
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: minmax(72px, max-content) minmax(96px, 1fr);
   align-items: center;
   gap: 8px;
+}
+
+.control-field-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .control-field.compact {
@@ -657,11 +723,12 @@ button, input, textarea, select {
 }
 
 .control-field input[type="range"] {
-  width: 148px;
+  width: 100%;
+  min-width: 96px;
 }
 
 .control-field input[type="color"] {
-  width: 52px;
+  width: 44px;
   height: 20px;
   padding: 0;
   border: 1px solid var(--border);
@@ -677,6 +744,369 @@ button, input, textarea, select {
   background: var(--surface);
   color: var(--text);
   padding: 4px 7px;
+}
+
+.route-panel-toggle {
+  position: relative;
+  gap: 7px;
+}
+
+.route-panel-toggle[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+  background: color-mix(in srgb, var(--surface-2) 82%, var(--accent) 18%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.route-panel-toggle[aria-expanded="true"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -13px;
+  width: 2px;
+  height: 12px;
+  background: var(--accent);
+  opacity: 0.7;
+  transform: translateX(-50%);
+}
+
+.active-route-swatch {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.route-panel-caret {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.presentation-routes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(420px, 42vw);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.presentation-route-pill {
+  min-width: 0;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--route-color) 42%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-strong) 84%, var(--route-color) 16%);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.presentation-route-pill.is-active {
+  border-color: color-mix(in srgb, var(--route-color) 72%, #fff);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--route-color) 28%, transparent);
+}
+
+.presentation-route-pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.presentation-route-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: var(--route-color);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.38);
+}
+
+.presentation-route-name {
+  max-width: 118px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presentation-route-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.route-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-strong) 82%, transparent);
+}
+
+.route-panel[hidden] {
+  display: none;
+}
+
+.route-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-grid-head,
+.route-row {
+  display: grid;
+  grid-template-columns: 40px 42px 40px 40px 82px 46px 70px 56px minmax(96px, 1fr) 32px;
+  gap: 6px;
+  align-items: center;
+}
+
+.route-grid-head {
+  min-height: 42px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.05;
+  padding: 0 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 54%, transparent);
+}
+
+.route-grid-head > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  text-align: center;
+}
+
+.route-grid-head strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.route-head-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--text) 14%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.route-head-icon .route-trash-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.route-rows {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: visible;
+}
+
+.route-row {
+  min-width: 0;
+  padding: 7px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.route-row.is-active {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface) 30%);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.route-active-cell {
+  justify-content: center;
+}
+
+.route-active-cell input {
+  accent-color: var(--accent);
+}
+
+.route-color-button {
+  justify-self: center;
+  width: 34px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--swatch-color);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #fff 22%, transparent);
+  cursor: pointer;
+}
+
+.route-color-button:hover,
+.route-color-button:focus-visible {
+  border-color: var(--accent);
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 34%, transparent), inset 0 0 0 2px color-mix(in srgb, #fff 26%, transparent);
+}
+
+.color-popover {
+  position: fixed;
+  z-index: 91;
+  width: 210px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-strong) 96%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.color-popover[hidden] {
+  display: none;
+}
+
+.color-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.color-popover input[type="color"] {
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+}
+
+.color-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.route-check {
+  justify-content: center;
+  font-size: 0;
+}
+
+.route-check input {
+  accent-color: var(--accent);
+}
+
+.route-start-input,
+.route-arrow-mode-input,
+.route-style-input,
+.route-name-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 4px 7px;
+}
+
+.route-width-stepper {
+  min-width: 0;
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: 17px minmax(20px, 1fr) 17px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.route-width-button {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+}
+
+.route-width-button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.route-width-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-weight: 800;
+  text-align: center;
+  appearance: textfield;
+  padding: 0;
+}
+
+.route-width-input::-webkit-outer-spin-button,
+.route-width-input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.route-delete-input {
+  width: 30px;
+  height: 30px;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.route-delete-input:hover {
+  border-color: color-mix(in srgb, var(--warn) 72%, var(--border));
+  background: color-mix(in srgb, var(--warn) 16%, var(--surface));
+  color: var(--text);
+}
+
+.route-trash-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 :root.focus-mode .types label:not(:first-of-type),
@@ -871,6 +1301,116 @@ button, input, textarea, select {
 
 .context-menu button:hover {
   background: #666;
+}
+
+.context-menu .route-type-choice {
+  border-left: 4px solid var(--route-choice-color);
+}
+
+.context-menu.type-menu {
+  width: min(258px, calc(100vw - 16px));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(14, 15, 16, 0.97);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.type-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-width: 0;
+  padding: 1px 1px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.type-menu-title {
+  min-width: max-content;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.1;
+  font-weight: 850;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.74);
+}
+
+.type-menu-route {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e9f9ff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.type-menu-route span:last-child {
+  min-width: 0;
+  max-width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type-menu-route-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: var(--route-choice-color);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.42);
+}
+
+.context-menu.type-menu button {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  background: #4c4c48;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 780;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.context-menu.type-menu button:hover,
+.context-menu.type-menu button:focus-visible {
+  background: #676356;
+  border-color: rgba(255, 255, 255, 0.22);
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 1px;
+}
+
+.context-menu.type-menu .route-type-choice {
+  border-left: 5px solid var(--route-choice-color);
+  background: color-mix(in srgb, #5d594a 78%, var(--route-choice-color) 22%);
+}
+
+.type-menu-option-icon {
+  width: 22px;
+  flex: 0 0 22px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.type-menu-option-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .modal-backdrop {
@@ -1248,12 +1788,17 @@ button, input, textarea, select {
     gap: 8px;
   }
 
-  .control-field {
+  .slider-row {
+    grid-template-columns: 1fr;
+  }
+
+  .control-row .control-field {
     min-width: 0;
+    grid-template-columns: minmax(72px, max-content) minmax(120px, 1fr);
   }
 
   .control-field input[type="range"] {
-    width: 112px;
+    width: 100%;
   }
 
   .reader-head {
@@ -1271,6 +1816,19 @@ button, input, textarea, select {
   .presentation-fog-panel {
     right: 8px;
     bottom: 72px;
+  }
+
+  .presentation-dock {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  .presentation-routes {
+    order: -1;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
   }
 }
   </style>
@@ -1294,7 +1852,7 @@ button, input, textarea, select {
       <h1><strong>Plot</strong> Mapper</h1>
       <p class="splash-by">by Maximilian Georg Liebscher</p>
       <p>Story Path Mapping Tool</p>
-      <small id="splashVersion">v1.1.8</small>
+      <small id="splashVersion">v1.2.0</small>
     </div>
   </div>
 
@@ -1317,6 +1875,7 @@ button, input, textarea, select {
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
+        <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
 
@@ -1325,7 +1884,32 @@ button, input, textarea, select {
     <div class="control-row chapter-controls">
       <label><input id="chapterMode" type="checkbox"><span>Chapter start</span></label>
       <input id="chapterStart" type="number" min="1" step="1" value="1" aria-label="Chapter start number">
+      <button id="routePanelToggle" class="btn route-panel-toggle" type="button" aria-expanded="false" aria-controls="routePanel">
+        <span class="active-route-swatch" aria-hidden="true"></span>
+        <span id="activeRouteLabel">Route</span>
+        <span id="routePanelCaret" class="route-panel-caret" aria-hidden="true">&#9662;</span>
+      </button>
     </div>
+
+    <section id="routePanel" class="route-panel" aria-label="Route management" hidden>
+      <header class="route-panel-head">
+        <strong id="routePanelTitle">Routes</strong>
+        <button id="addRouteButton" class="btn small" type="button">+ Route</button>
+      </header>
+      <div class="route-grid-head" aria-hidden="true">
+        <span id="routeActiveHead">Active</span>
+        <span id="routeColorHead">Color</span>
+        <span id="routeVisibleHead">Visible</span>
+        <span id="routeNumbersHead">Num.</span>
+        <span id="routeArrowsHead">Arrows</span>
+        <span id="routeStartHead">Start</span>
+        <span id="routeStyleHead">Style</span>
+        <span id="routeWidthHead">Width</span>
+        <span id="routeNameHead">Name</span>
+        <span id="routeDeleteHead">Delete</span>
+      </div>
+      <div id="routeRows" class="route-rows"></div>
+    </section>
 
     <div class="control-row toggles">
       <span id="visibilityLabel" class="inline-caption">Visibility</span>
@@ -1348,14 +1932,15 @@ button, input, textarea, select {
     </div>
 
     <div class="control-row slider-row">
-      <label class="control-field">Zoom<input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
-      <label class="control-field">Font<input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+      <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
     </div>
 
-    <div class="control-row slider-row line-row">
-      <label class="control-field">Opacity<input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
-      <label class="control-field compact">Line<input id="routeColor" type="color" value="#cc3333"></label>
-      <label class="control-field">Width<input id="routeWidth" type="range" min="1" max="12" step="1" value="2"></label>
+    <div class="control-row slider-row">
+      <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
+      <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
+      <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
     </div>
 
     <div class="toolbar-grid commands">
@@ -1366,6 +1951,23 @@ button, input, textarea, select {
       <button id="exportPng" class="btn" type="button">PNG</button>
       <button id="clearAll" class="btn danger" type="button">Clear</button>
     </div>
+  </section>
+
+  <button id="toolbarRestore" class="toolbar-restore" type="button" hidden>
+    <span class="active-route-swatch" aria-hidden="true"></span>
+    <span id="toolbarRestoreLabel">Menu</span>
+    <span aria-hidden="true">&#9662;</span>
+  </button>
+
+  <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
+    <div class="color-popover-header">
+      <span id="routeColorPopoverLabel">Color</span>
+      <div class="color-popover-actions">
+        <button id="routeColorOk" class="btn small" type="button">OK</button>
+        <button id="routeColorCancel" class="btn small" type="button">Cancel</button>
+      </div>
+    </div>
+    <input id="routeColorPicker" type="color" value="#cc3333" aria-label="Route color">
   </section>
 
   <div id="emptyHint" class="empty-hint">
@@ -1393,13 +1995,14 @@ button, input, textarea, select {
 
   <div id="infoBadge" class="info-badge">
     <strong>PlotMapper Tool</strong>
-    <span id="badgeVersion">v1.1.8</span>
+    <span id="badgeVersion">v1.2.0</span>
     <button id="infoButton" class="info-dot" type="button" title="Info">i</button>
   </div>
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
 
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
+    <div id="presentationRoutes" class="presentation-routes" aria-label="Routes"></div>
     <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>
     <output id="presentationStep" class="presentation-step" aria-live="polite">0 / 0</output>
     <button id="presentationNext" class="btn icon" type="button" aria-label="Next step">&rarr;</button>
@@ -1472,7 +2075,7 @@ button, input, textarea, select {
 (function initNamespace(global) {
   "use strict";
   global.PM = global.PM || {};
-  global.PM.APP_VERSION = "1.1.8";
+  global.PM.APP_VERSION = "1.2.0";
   global.PM.SCHEMA_VERSION = 1;
 })(globalThis);
 
@@ -1483,15 +2086,16 @@ button, input, textarea, select {
 
   PM.POINT_TYPES = [
     { type: "route", icon: "", fallbackLabel: "Route" },
-    { type: "place", icon: "📍", fallbackLabel: "Place" },
-    { type: "char", icon: "👤", fallbackLabel: "Character" },
-    { type: "event", icon: "★", fallbackLabel: "Event" },
-    { type: "item", icon: "◆", fallbackLabel: "Item" }
+    { type: "place", icon: "\uD83D\uDCCD", fallbackLabel: "Place" },
+    { type: "char", icon: "\uD83D\uDC64", fallbackLabel: "Character" },
+    { type: "event", icon: "\u2605", fallbackLabel: "Event" },
+    { type: "item", icon: "\uD83D\uDDDD\uFE0F", fallbackLabel: "Item" }
   ];
 
   PM.DEFAULT_SETTINGS = {
     locale: "en",
     theme: "deep",
+    activeRouteId: "route-default",
     filters: {
       route: true,
       place: true,
@@ -1514,7 +2118,26 @@ button, input, textarea, select {
     panY: 0,
     routeColor: "#cc3333",
     routeWidth: 2,
-    fontScale: 1
+    fontScale: 1,
+    pointSizePx: 32,
+    helperPointSizePx: 24
+  };
+
+  PM.DEFAULT_ROUTE_ID = "route-default";
+  PM.LINE_STYLES = ["solid", "dashed", "dotted"];
+  PM.ARROW_MODES = ["none", "middle", "repeated", "target"];
+
+  PM.DEFAULT_ROUTE = {
+    id: PM.DEFAULT_ROUTE_ID,
+    name: "Route",
+    color: PM.DEFAULT_SETTINGS.routeColor,
+    visible: true,
+    showNumbers: true,
+    showArrows: false,
+    arrowMode: "none",
+    startNumber: 1,
+    lineStyle: "solid",
+    width: PM.DEFAULT_SETTINGS.routeWidth
   };
 
   PM.EMPTY_MAP = {
@@ -1528,6 +2151,11 @@ button, input, textarea, select {
 
   PM.getPointType = function getPointType(type) {
     return PM.POINT_TYPES.find((entry) => entry.type === type) || PM.POINT_TYPES[0];
+  };
+
+  PM.routePalette = function routePalette(index) {
+    const colors = ["#cc3333", "#0d7040", "#d8f51d", "#2f77cc", "#d76f2a", "#8a55d7", "#111111"];
+    return colors[Math.abs(parseInt(index, 10) || 0) % colors.length];
   };
 })(globalThis.PM);
 
@@ -1563,7 +2191,40 @@ button, input, textarea, select {
       opacity: "Opacity",
       line: "Line",
       width: "Width",
+      routes: "Routes",
+      activeRoute: "Active route",
+      addRoute: "+ Add route",
+      routeActive: "Active",
+      routeColor: "Color",
+      routeVisible: "Visible",
+      routeNumbers: "Num.",
+      routeArrows: "Arrows",
+      routeStart: "Start",
+      routeDelete: "Delete",
+      routeName: "Name",
+      routeLineStyle: "Style",
+      routeWidthDown: "Decrease line width",
+      routeWidthUp: "Increase line width",
+      colorChoice: "Choose color",
+      routeArrowNone: "Off",
+      routeArrowMiddle: "Middle",
+      routeArrowRepeated: "Repeat",
+      routeArrowTarget: "Target",
+      routeSolid: "Line",
+      routeDashed: "Dashes",
+      routeDotted: "Dots",
+      routePoint: "Route point",
+      routePointFor: "Route point for",
+      deleteRouteConfirm: "Delete this route and its route points?",
+      routeLastDeleteBlocked: "The last route cannot be deleted.",
       font: "Font",
+      pointSize: "Point",
+      pointSizeFull: "Point size",
+      helperPointSize: "Helper",
+      helperPointSizeFull: "Helper point size",
+      menuOpacity: "Menu",
+      collapseMenu: "Collapse menu",
+      expandMenu: "Open menu",
       focus: "Focus",
       chapterStart: "Chapter numbering",
       undo: "Undo",
@@ -1620,6 +2281,7 @@ button, input, textarea, select {
       saveHtml: "HTML",
       printPdf: "PDF",
       save: "Save",
+      ok: "OK",
       cancel: "Cancel",
       jump: "Jump to map",
       chapter: "Chapter",
@@ -1629,7 +2291,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map to add a point</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Editing</h3><ul><li><strong>Point type:</strong> Route/Place/Character/Event/Item</li><li><strong>Skip number</strong> (helper point)</li><li><strong>Set duration</strong> (hourglass)</li><li><strong>Lines</strong> connect the route</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Show Notes, Chapters, Chapter numbering</strong></li><li><strong>Zoom/Opacity/Font size</strong> via sliders</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Zoom in for precise placement before double-click</li><li>Use helper points for branching or line shaping</li><li>Save your .plotmap.json project regularly</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -1657,7 +2319,40 @@ button, input, textarea, select {
       opacity: "Deckkraft",
       line: "Linie",
       width: "Stärke",
+      routes: "Routen",
+      activeRoute: "Aktiver Pfad",
+      addRoute: "+ Pfad hinzufügen",
+      routeActive: "Aktiv",
+      routeColor: "Farbe",
+      routeVisible: "Sichtbar",
+      routeNumbers: "Num.",
+      routeArrows: "Pfeile",
+      routeStart: "Start",
+      routeDelete: "Löschen",
+      routeName: "Name",
+      routeLineStyle: "Strich-Art",
+      routeWidthDown: "Strichstärke verringern",
+      routeWidthUp: "Strichstärke erhöhen",
+      colorChoice: "Farbe wählen",
+      routeArrowNone: "Aus",
+      routeArrowMiddle: "Mitte",
+      routeArrowRepeated: "Mehrfach",
+      routeArrowTarget: "Ziel",
+      routeSolid: "Linie",
+      routeDashed: "Striche",
+      routeDotted: "Punkte",
+      routePoint: "Routen-Punkt",
+      routePointFor: "Routen-Punkt für",
+      deleteRouteConfirm: "Diesen Pfad und seine Routenpunkte löschen?",
+      routeLastDeleteBlocked: "Der letzte Pfad kann nicht gelöscht werden.",
       font: "Schrift",
+      pointSize: "Punkt",
+      pointSizeFull: "Punktgröße",
+      helperPointSize: "Hilfspunkte",
+      helperPointSizeFull: "Hilfspunkte (unnummerierte Routenpunkte)",
+      menuOpacity: "Menü",
+      collapseMenu: "Menü einklappen",
+      expandMenu: "Menü ausklappen",
       focus: "Fokus-Modus",
       chapterStart: "Kapitel-Nummerierung",
       undo: "Rückgängig",
@@ -1714,6 +2409,7 @@ button, input, textarea, select {
       saveHtml: "HTML",
       printPdf: "PDF",
       save: "Speichern",
+      ok: "OK",
       cancel: "Abbrechen",
       jump: "Zur Karte",
       chapter: "Kapitel",
@@ -1723,7 +2419,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte fügt einen Punkt hinzu</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Bearbeiten</h3><ul><li><strong>Punkttyp:</strong> Route/Ort/Charakter/Ereignis/Item</li><li><strong>Nummer auslassen</strong> (Hilfspunkt)</li><li><strong>Dauer setzen</strong> (Sanduhr)</li><li><strong>Linien</strong> verbinden die Route</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Kapitel-Nummerierung</strong> anzeigen</li><li><strong>Zoom/Deckkraft/Schriftgröße</strong> per Regler</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Vor dem Doppelklick für präzise Platzierung hineinzoomen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Dein .plotmap.json Projekt regelmäßig speichern</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -1798,6 +2494,12 @@ button, input, textarea, select {
   PM.formatDateStamp = function formatDateStamp(date) {
     return (date || new Date()).toISOString().slice(0, 10).replace(/-/g, "");
   };
+
+  PM.formatDurationLabel = function formatDurationLabel(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    return /^\u231b\s*/.test(text) ? text : `\u231b ${text}`;
+  };
 })(globalThis.PM);
 
 
@@ -1819,8 +2521,61 @@ button, input, textarea, select {
     settings.panY = Number(settings.panY) || 0;
     settings.routeWidth = PM.clamp(parseInt(settings.routeWidth, 10) || 2, 1, 12);
     settings.fontScale = PM.clamp(Number(settings.fontScale) || 1, 0.75, 1.6);
+    settings.pointSizePx = PM.clamp(parseInt(settings.pointSizePx, 10) || base.pointSizePx, 22, 48);
+    const helperPointSize = raw.helperPointSizePx === undefined ? raw.midpointSizePx : raw.helperPointSizePx;
+    settings.helperPointSizePx = PM.clamp(parseInt(helperPointSize, 10) || base.helperPointSizePx, 12, 32);
+    delete settings.midpointSizePx;
     settings.routeColor = /^#[0-9a-f]{6}$/i.test(settings.routeColor || "") ? settings.routeColor : base.routeColor;
+    settings.activeRouteId = String(settings.activeRouteId || base.activeRouteId);
     return settings;
+  }
+
+  function validColor(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
+  }
+
+  function normalizeArrowMode(input, base) {
+    if (PM.ARROW_MODES.includes(input.arrowMode)) return input.arrowMode;
+    if (input.showArrows !== undefined) return input.showArrows ? "middle" : "none";
+    if (PM.ARROW_MODES.includes(base.arrowMode)) return base.arrowMode;
+    return base.showArrows ? "middle" : "none";
+  }
+
+  function normalizeRoute(raw, fallback, usedIds) {
+    const base = { ...PM.DEFAULT_ROUTE, ...(fallback || {}) };
+    const input = raw || {};
+    let id = String(input.id || base.id || PM.uid("route"));
+    if (!id || usedIds.has(id)) {
+      const root = id || PM.uid("route");
+      let index = 2;
+      while (usedIds.has(`${root}-${index}`)) index += 1;
+      id = `${root}-${index}`;
+    }
+    usedIds.add(id);
+    const arrowMode = normalizeArrowMode(input, base);
+    return {
+      id,
+      name: String(input.name || base.name || "Route"),
+      color: validColor(input.color, base.color),
+      visible: input.visible === undefined ? Boolean(base.visible) : Boolean(input.visible),
+      showNumbers: input.showNumbers === undefined ? Boolean(base.showNumbers) : Boolean(input.showNumbers),
+      showArrows: arrowMode !== "none",
+      arrowMode,
+      startNumber: Math.max(1, parseInt(input.startNumber, 10) || base.startNumber || 1),
+      lineStyle: PM.LINE_STYLES.includes(input.lineStyle) ? input.lineStyle : base.lineStyle,
+      width: PM.clamp(parseInt(input.width, 10) || base.width || 2, 1, 12)
+    };
+  }
+
+  function defaultRouteFromSettings(settings) {
+    return {
+      ...PM.DEFAULT_ROUTE,
+      id: PM.DEFAULT_ROUTE_ID,
+      name: settings.locale === "de" ? "Route" : "Route",
+      color: settings.routeColor,
+      width: settings.routeWidth,
+      startNumber: settings.chapterMode ? settings.chapterStart : 1
+    };
   }
 
   function normalizeMap(input) {
@@ -1845,44 +2600,108 @@ button, input, textarea, select {
       note: String(input.note || ""),
       location: String(input.location || ""),
       duration: String(input.duration || ""),
-      helper: Boolean(input.helper)
+      helper: Boolean(input.helper),
+      routeId: type === "route" ? String(input.routeId || PM.DEFAULT_ROUTE_ID) : ""
     };
   }
 
   function createEmptyProject(settings) {
+    const normalizedSettings = normalizeSettings(settings);
     return {
       schemaVersion: PM.SCHEMA_VERSION,
       appVersion: PM.APP_VERSION,
       map: PM.clone(PM.EMPTY_MAP),
-      settings: normalizeSettings(settings),
+      settings: normalizedSettings,
+      routes: [normalizeRoute(PM.DEFAULT_ROUTE, defaultRouteFromSettings(normalizedSettings), new Set())],
       points: []
     };
   }
 
+  function ensureActiveRouteVisible(settings, routes) {
+    let activeRoute = routes.find((route) => route.id === settings.activeRouteId) || routes[0];
+    if (!activeRoute) return null;
+    if (activeRoute.visible === false) {
+      const visibleRoute = routes.find((route) => route.visible !== false);
+      if (visibleRoute) {
+        settings.activeRouteId = visibleRoute.id;
+        activeRoute = visibleRoute;
+      } else {
+        activeRoute.visible = true;
+      }
+    }
+    return activeRoute;
+  }
+
   function normalizeProject(input) {
     const raw = input || createEmptyProject();
+    const settings = normalizeSettings(raw.settings);
+    const rawSettings = raw.settings || {};
+    const hasHelperSize = rawSettings.helperPointSizePx !== undefined || rawSettings.midpointSizePx !== undefined;
+    if (!hasHelperSize && Array.isArray(raw.points) && raw.points.length) {
+      settings.helperPointSizePx = PM.DEFAULT_SETTINGS.pointSizePx;
+    }
+    const usedIds = new Set();
+    const routeFallback = defaultRouteFromSettings(settings);
+    const routes = Array.isArray(raw.routes) && raw.routes.length
+      ? raw.routes.map((route) => normalizeRoute(route, routeFallback, usedIds))
+      : [normalizeRoute(routeFallback, routeFallback, usedIds)];
+    const routeIds = new Set(routes.map((route) => route.id));
+    if (!routeIds.has(settings.activeRouteId)) {
+      settings.activeRouteId = routes[0].id;
+    }
+    const activeRoute = ensureActiveRouteVisible(settings, routes) || routes[0];
+    settings.routeColor = activeRoute.color;
+    settings.routeWidth = activeRoute.width;
+    settings.chapterStart = activeRoute.startNumber;
     return {
       schemaVersion: PM.SCHEMA_VERSION,
       appVersion: String(raw.appVersion || PM.APP_VERSION),
       map: normalizeMap(raw.map),
-      settings: normalizeSettings(raw.settings),
-      points: Array.isArray(raw.points) ? raw.points.map(normalizePoint) : []
+      settings,
+      routes,
+      points: Array.isArray(raw.points)
+        ? raw.points.map((point) => {
+          const normalized = normalizePoint(point);
+          if (normalized.type === "route" && !routeIds.has(normalized.routeId)) {
+            normalized.routeId = routes[0].id;
+          }
+          if (normalized.type !== "route") normalized.routeId = "";
+          return normalized;
+        })
+        : []
     };
   }
 
-  function computeRouteInfo(points, settings) {
+  function getRouteById(routes, routeId) {
+    return (routes || []).find((route) => route.id === routeId) || null;
+  }
+
+  function getActiveRoute(settings, routes) {
+    const list = Array.isArray(routes) && routes.length ? routes : [PM.DEFAULT_ROUTE];
+    return getRouteById(list, settings && settings.activeRouteId) || list[0];
+  }
+
+  function routeForPoint(point, routes) {
+    return point && point.type === "route" ? getRouteById(routes, point.routeId) : null;
+  }
+
+  function computeRouteInfo(points, settings, route) {
     const stepById = new Map();
     const displayById = new Map();
     const numberedRoutes = [];
+    const routeId = route && route.id ? route.id : (settings && settings.activeRouteId);
+    const startNumber = route && route.startNumber ? route.startNumber : (settings && settings.chapterMode ? settings.chapterStart : 1);
+    const showNumbers = !route || route.showNumbers !== false;
     let step = 1;
     for (const point of points) {
       if (point.type !== "route") continue;
+      if (routeId && point.routeId && point.routeId !== routeId) continue;
       if (point.helper) {
         stepById.set(point.id, "");
         displayById.set(point.id, "");
         continue;
       }
-      const display = settings.chapterMode ? settings.chapterStart + step - 1 : step;
+      const display = showNumbers ? startNumber + step - 1 : "";
       stepById.set(point.id, step);
       displayById.set(point.id, display);
       numberedRoutes.push(point);
@@ -1891,8 +2710,26 @@ button, input, textarea, select {
     return { stepById, displayById, numberedRoutes };
   }
 
-  function isPointVisible(point, settings) {
+  function computeRoutesInfo(points, settings, routes) {
+    const stepById = new Map();
+    const displayById = new Map();
+    const numberedRoutes = [];
+    const list = Array.isArray(routes) && routes.length ? routes : [getActiveRoute(settings, routes)];
+    for (const route of list) {
+      const info = computeRouteInfo(points, settings, route);
+      info.stepById.forEach((value, key) => stepById.set(key, value));
+      info.displayById.forEach((value, key) => displayById.set(key, value));
+      numberedRoutes.push(...info.numberedRoutes);
+    }
+    return { stepById, displayById, numberedRoutes };
+  }
+
+  function isPointVisible(point, settings, routes) {
     if (settings.focusMode && point.type !== "route") return false;
+    if (point.type === "route") {
+      const route = routeForPoint(point, routes);
+      if (route && !route.visible) return false;
+    }
     return Boolean(settings.filters[point.type]);
   }
 
@@ -1907,6 +2744,7 @@ button, input, textarea, select {
       return JSON.stringify({
         map: state.map,
         settings: state.settings,
+        routes: state.routes,
         points: state.points
       });
     }
@@ -1918,6 +2756,7 @@ button, input, textarea, select {
         appVersion: state.appVersion,
         map: parsed.map,
         settings: parsed.settings,
+        routes: parsed.routes,
         points: parsed.points
       });
     }
@@ -2002,10 +2841,59 @@ button, input, textarea, select {
           draft.settings.filters[type] = Boolean(value);
         }, { history: false });
       },
+      setActiveRoute(routeId) {
+        commit((draft) => {
+          const route = draft.routes.find((entry) => entry.id === routeId);
+          if (route) {
+            route.visible = true;
+            draft.settings.activeRouteId = route.id;
+          }
+        });
+      },
+      addRoute(route) {
+        let id = "";
+        commit((draft) => {
+          const index = draft.routes.length + 1;
+          const usedIds = new Set(draft.routes.map((entry) => entry.id));
+          const next = normalizeRoute({
+            id: PM.uid("route"),
+            name: route && route.name ? route.name : `Route ${index}`,
+            color: route && route.color ? route.color : PM.routePalette(index - 1),
+            ...(route || {})
+          }, PM.DEFAULT_ROUTE, usedIds);
+          id = next.id;
+          draft.routes.push(next);
+          draft.settings.activeRouteId = id;
+        });
+        return id;
+      },
+      patchRoute(routeId, patch, options) {
+        commit((draft) => {
+          const index = draft.routes.findIndex((route) => route.id === routeId);
+          if (index < 0) return;
+          const usedIds = new Set(draft.routes.map((route) => route.id).filter((id) => id !== routeId));
+          draft.routes[index] = normalizeRoute({ ...draft.routes[index], ...patch, id: routeId }, draft.routes[index], usedIds);
+        }, options);
+      },
+      deleteRoute(routeId) {
+        commit((draft) => {
+          if (draft.routes.length <= 1) return;
+          const index = draft.routes.findIndex((route) => route.id === routeId);
+          if (index < 0) return;
+          draft.routes.splice(index, 1);
+          draft.points = draft.points.filter((point) => point.type !== "route" || point.routeId !== routeId);
+          if (draft.settings.activeRouteId === routeId) {
+            draft.settings.activeRouteId = draft.routes[Math.max(0, index - 1)].id;
+          }
+        });
+      },
       addPoint(point) {
         let id = "";
         commit((draft) => {
-          const next = normalizePoint(point);
+          const next = normalizePoint({
+            ...point,
+            routeId: point && point.type === "route" ? (point.routeId || draft.settings.activeRouteId) : ""
+          });
           id = next.id;
           draft.points.push(next);
         });
@@ -2015,7 +2903,8 @@ button, input, textarea, select {
         let id = "";
         commit((draft) => {
           const index = draft.points.findIndex((point) => point.id === pointId);
-          const next = normalizePoint({ x, y, type: "route" });
+          const previous = draft.points[index];
+          const next = normalizePoint({ x, y, type: "route", routeId: previous && previous.routeId ? previous.routeId : draft.settings.activeRouteId });
           id = next.id;
           draft.points.splice(index >= 0 ? index + 1 : draft.points.length, 0, next);
         });
@@ -2026,6 +2915,11 @@ button, input, textarea, select {
           const point = draft.points.find((entry) => entry.id === pointId);
           if (!point) return;
           Object.assign(point, patch);
+          if (point.type === "route" && !point.routeId) point.routeId = draft.settings.activeRouteId;
+          if (point.type !== "route") {
+            point.routeId = "";
+            point.helper = false;
+          }
         }, options);
       },
       deletePoint(pointId) {
@@ -2073,11 +2967,16 @@ button, input, textarea, select {
   }
 
   PM.normalizeSettings = normalizeSettings;
+  PM.normalizeRoute = normalizeRoute;
   PM.normalizeMap = normalizeMap;
   PM.normalizePoint = normalizePoint;
   PM.createEmptyProject = createEmptyProject;
   PM.normalizeProject = normalizeProject;
+  PM.getRouteById = getRouteById;
+  PM.getActiveRoute = getActiveRoute;
+  PM.routeForPoint = routeForPoint;
   PM.computeRouteInfo = computeRouteInfo;
+  PM.computeRoutesInfo = computeRoutesInfo;
   PM.isPointVisible = isPointVisible;
   PM.createStore = createStore;
 })(globalThis.PM);
@@ -2088,6 +2987,7 @@ button, input, textarea, select {
   "use strict";
 
   const FOG_MODES = ["off", "focus", "all"];
+  const CONTEXT_REVEAL_RADIUS = 0.065;
   const DEFAULT_FOG_SETTINGS = {
     mode: "focus",
     outsideVisibility: 0.22,
@@ -2120,51 +3020,163 @@ button, input, textarea, select {
     const raw = input || {};
     const showAll = Boolean(raw.showAll);
     const step = max ? PM.clamp(parseInt(raw.step, 10) || 1, 1, max) : 0;
+    const routeSteps = {};
+    if (raw.routeSteps && typeof raw.routeSteps === "object") {
+      Object.entries(raw.routeSteps).forEach(([routeId, value]) => {
+        const parsed = parseInt(value, 10);
+        if (routeId && Number.isFinite(parsed)) routeSteps[routeId] = Math.max(0, parsed);
+      });
+    }
     return {
       active: Boolean(raw.active),
+      activeRouteId: raw.activeRouteId ? String(raw.activeRouteId) : "",
       step: showAll ? max : step,
-      showAll
+      showAll,
+      routeSteps
     };
   }
 
-  function computePresentationReveal(points, settings, presentationState) {
-    const routeInfo = PM.computeRouteInfo(points, settings);
-    const normalized = normalizePresentationState(presentationState, routeInfo.numberedRoutes.length);
-    if (!normalized.active) {
-      return {
-        ...normalized,
-        routeInfo,
-        routePoints: points.filter((point) => point.type === "route" && PM.isPointVisible(point, settings)),
-        visibleIds: null
-      };
-    }
+  function visibleRoutes(settings, routes) {
+    const list = Array.isArray(routes) && routes.length ? routes : [PM.getActiveRoute(settings, routes)];
+    const visible = list.filter((route) => route && route.visible !== false);
+    return visible.length ? visible : list.filter(Boolean).slice(0, 1);
+  }
 
+  function routeContainsPoint(route, point, settings) {
+    if (!point || point.type !== "route") return false;
+    const routeId = route && route.id ? route.id : settings && settings.activeRouteId;
+    if (!routeId) return true;
+    return !point.routeId || point.routeId === routeId;
+  }
+
+  function routeRevealFor(points, settings, routes, route, requestedStep, showAll) {
+    const routeInfo = PM.computeRouteInfo(points, settings, route);
+    const length = routeInfo.numberedRoutes.length;
+    const step = length ? (showAll ? length : PM.clamp(parseInt(requestedStep, 10) || 1, 1, length)) : 0;
     const visibleIds = new Set();
     const routePoints = [];
     let revealedNumbered = 0;
+
     for (const point of points) {
-      if (point.type !== "route" || !PM.isPointVisible(point, settings)) continue;
+      if (!routeContainsPoint(route, point, settings) || !PM.isPointVisible(point, settings, routes)) continue;
       if (!point.helper) {
-        const step = Number(routeInfo.stepById.get(point.id)) || 0;
-        if (normalized.showAll || step <= normalized.step) {
+        const pointStep = Number(routeInfo.stepById.get(point.id)) || 0;
+        if (showAll || pointStep <= step) {
           visibleIds.add(point.id);
           routePoints.push(point);
-          revealedNumbered = Math.max(revealedNumbered, step);
+          revealedNumbered = Math.max(revealedNumbered, pointStep);
         }
         continue;
       }
-      if (normalized.showAll || (revealedNumbered > 0 && revealedNumbered < normalized.step)) {
+      if (showAll || (revealedNumbered > 0 && revealedNumbered < step)) {
         visibleIds.add(point.id);
         routePoints.push(point);
       }
     }
 
-    return { ...normalized, routeInfo, routePoints, visibleIds };
+    return {
+      route,
+      routeInfo,
+      routePoints,
+      visibleIds,
+      step,
+      length,
+      currentPoint: routeInfo.numberedRoutes[Math.max(0, step - 1)] || routePoints[routePoints.length - 1] || null
+    };
   }
 
-  function isPointRevealed(point, points, settings, revealInfo) {
-    if (!revealInfo || !revealInfo.active) return PM.isPointVisible(point, settings);
-    if (revealInfo.showAll) return PM.isPointVisible(point, settings);
+  function distanceSquared(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
+  function pointToSegmentDistance(point, start, end) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (!lengthSquared) return Math.sqrt(distanceSquared(point, start));
+    const t = PM.clamp(((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared, 0, 1);
+    return Math.sqrt(distanceSquared(point, { x: start.x + dx * t, y: start.y + dy * t }));
+  }
+
+  function distanceToRevealPath(point, routePoints) {
+    if (!routePoints.length) return Infinity;
+    if (routePoints.length === 1) return Math.sqrt(distanceSquared(point, routePoints[0]));
+    let best = Infinity;
+    for (let index = 1; index < routePoints.length; index += 1) {
+      best = Math.min(best, pointToSegmentDistance(point, routePoints[index - 1], routePoints[index]));
+    }
+    return best;
+  }
+
+  function isNearRevealedRoute(point, routeReveals) {
+    return routeReveals.some((entry) => distanceToRevealPath(point, entry.routePoints) <= CONTEXT_REVEAL_RADIUS);
+  }
+
+  function computePresentationReveal(points, settings, presentationState, routes) {
+    const routesVisible = visibleRoutes(settings, routes);
+    const combinedRouteInfo = PM.computeRoutesInfo ? PM.computeRoutesInfo(points, settings, routes) : PM.computeRouteInfo(points, settings, routesVisible[0]);
+    const fallbackActive = PM.getActiveRoute ? PM.getActiveRoute(settings, routesVisible) : routesVisible[0];
+    const fallbackLength = PM.computeRouteInfo(points, settings, fallbackActive).numberedRoutes.length;
+    const normalized = normalizePresentationState(presentationState, fallbackLength);
+    const activeRoute = routesVisible.find((route) => route.id === normalized.activeRouteId)
+      || routesVisible.find((route) => route.id === (settings && settings.activeRouteId))
+      || fallbackActive;
+
+    if (!normalized.active) {
+      const inactiveRouteReveals = routesVisible.map((route) => {
+        const routeInfo = PM.computeRouteInfo(points, settings, route);
+        const routePoints = points.filter((point) => routeContainsPoint(route, point, settings) && PM.isPointVisible(point, settings, routes));
+        return {
+          route,
+          routeInfo,
+          routePoints,
+          visibleIds: new Set(routePoints.map((point) => point.id)),
+          step: routeInfo.numberedRoutes.length,
+          length: routeInfo.numberedRoutes.length,
+          currentPoint: routeInfo.numberedRoutes.at(-1) || routePoints.at(-1) || null
+        };
+      });
+      return {
+        ...normalized,
+        activeRouteId: activeRoute ? activeRoute.id : "",
+        routeInfo: combinedRouteInfo,
+        activeRoute,
+        routePoints: inactiveRouteReveals.find((entry) => entry.route === activeRoute)?.routePoints || [],
+        routeReveals: inactiveRouteReveals,
+        visibleIds: null
+      };
+    }
+
+    const routeReveals = routesVisible.map((route) => {
+      const requestedStep = normalized.routeSteps[route.id] || (route === activeRoute ? normalized.step : 1);
+      return routeRevealFor(points, settings, routes, route, requestedStep, normalized.showAll);
+    });
+    const activeReveal = routeReveals.find((entry) => entry.route === activeRoute) || routeReveals[0] || null;
+    const visibleIds = new Set();
+    routeReveals.forEach((entry) => entry.visibleIds.forEach((id) => visibleIds.add(id)));
+
+    for (const point of points) {
+      if (point.type === "route" || !PM.isPointVisible(point, settings, routes)) continue;
+      if (normalized.showAll || isNearRevealedRoute(point, routeReveals)) visibleIds.add(point.id);
+    }
+
+    return {
+      ...normalized,
+      activeRouteId: activeRoute ? activeRoute.id : "",
+      step: activeReveal ? activeReveal.step : normalized.step,
+      routeInfo: combinedRouteInfo,
+      activeRoute,
+      routePoints: activeReveal ? activeReveal.routePoints : [],
+      routeReveals,
+      visibleIds
+    };
+  }
+
+  function isPointRevealed(point, points, settings, revealInfo, routes) {
+    if (!revealInfo || !revealInfo.active) return PM.isPointVisible(point, settings, routes);
+    if (revealInfo.showAll) return PM.isPointVisible(point, settings, routes);
     return Boolean(revealInfo.visibleIds && revealInfo.visibleIds.has(point.id));
   }
 
@@ -2181,6 +3193,7 @@ button, input, textarea, select {
     const elements = {
       button: options.button,
       dock: options.dock,
+      routeList: options.routeList,
       step: options.step,
       previousButton: options.previousButton,
       nextButton: options.nextButton,
@@ -2201,23 +3214,78 @@ button, input, textarea, select {
     let fogSettings = normalizePresentationFogSettings();
     let fogPanelOpen = false;
 
-    function routeLength() {
+    function routeSummaries() {
       const live = store.getLiveState();
-      return PM.computeRouteInfo(live.points, live.settings).numberedRoutes.length;
+      return visibleRoutes(live.settings, live.routes).map((route) => {
+        const routeInfo = PM.computeRouteInfo(live.points, live.settings, route);
+        return { route, length: routeInfo.numberedRoutes.length };
+      });
+    }
+
+    function activeSummary(summaries) {
+      return summaries.find((entry) => entry.route.id === state.activeRouteId)
+        || summaries.find((entry) => entry.route.id === store.getLiveState().settings.activeRouteId)
+        || summaries[0]
+        || null;
+    }
+
+    function normalizeForSummaries(rawState, summaries) {
+      const active = summaries.find((entry) => entry.route.id === rawState.activeRouteId)
+        || activeSummary(summaries);
+      const normalized = normalizePresentationState({
+        ...rawState,
+        activeRouteId: active ? active.route.id : rawState.activeRouteId
+      }, active ? active.length : 0);
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        const rawStep = rawState.routeSteps && rawState.routeSteps[route.id];
+        routeSteps[route.id] = length ? (normalized.showAll ? length : PM.clamp(parseInt(rawStep, 10) || 1, 1, length)) : 0;
+      });
+      return {
+        ...normalized,
+        activeRouteId: active ? active.route.id : "",
+        routeSteps,
+        step: active ? routeSteps[active.route.id] : 0
+      };
+    }
+
+    function renderRouteControls(summaries) {
+      if (!elements.routeList) return;
+      elements.routeList.textContent = "";
+      summaries.forEach(({ route, length }) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `presentation-route-pill${route.id === state.activeRouteId ? " is-active" : ""}`;
+        button.style.setProperty("--route-color", route.color);
+        button.disabled = !state.active || length < 1;
+        button.setAttribute("aria-pressed", String(route.id === state.activeRouteId));
+        button.setAttribute("title", route.name);
+        button.innerHTML = [
+          "<span class=\"presentation-route-swatch\" aria-hidden=\"true\"></span>",
+          `<span class="presentation-route-name">${PM.escapeHtml(route.name)}</span>`,
+          `<span class="presentation-route-count">${PM.escapeHtml(String(state.routeSteps[route.id] || 0))}/${PM.escapeHtml(String(length))}</span>`
+        ].join("");
+        button.addEventListener("click", () => {
+          state = normalizeForSummaries({ ...state, activeRouteId: route.id, showAll: false }, routeSummaries());
+          update();
+        });
+        elements.routeList.appendChild(button);
+      });
     }
 
     function update() {
-      const length = routeLength();
-      state = normalizePresentationState(state, length);
+      const summaries = routeSummaries();
+      state = normalizeForSummaries(state, summaries);
       root.classList.toggle("presentation-mode", state.active);
       elements.dock.hidden = !state.active;
       elements.fogPanel.hidden = !state.active || !fogPanelOpen;
-      const hasRoute = length > 0;
-      elements.step.textContent = hasRoute ? `${state.step} / ${length}` : t("presentationEmpty");
-      elements.previousButton.disabled = !state.active || !hasRoute || state.step <= 1;
-      elements.nextButton.disabled = !state.active || !hasRoute || state.step >= length;
-      elements.showAllButton.disabled = !state.active || !hasRoute || state.showAll;
-      elements.resetButton.disabled = !state.active || !hasRoute || (!state.showAll && state.step <= 1);
+      const active = activeSummary(summaries);
+      const hasRoute = Boolean(active && active.length > 0);
+      elements.step.textContent = hasRoute ? `${state.routeSteps[active.route.id]} / ${active.length}` : t("presentationEmpty");
+      elements.previousButton.disabled = !state.active || !hasRoute || state.routeSteps[active.route.id] <= 1;
+      elements.nextButton.disabled = !state.active || !hasRoute || state.routeSteps[active.route.id] >= active.length;
+      elements.showAllButton.disabled = !state.active || !summaries.some((entry) => entry.length > 0) || state.showAll;
+      elements.resetButton.disabled = !state.active || !summaries.some((entry) => entry.length > 0) || (!state.showAll && summaries.every((entry) => state.routeSteps[entry.route.id] <= 1));
       elements.fogToggleButton.disabled = !state.active;
       elements.exitButton.disabled = !state.active;
       elements.fogMode.value = fogSettings.mode;
@@ -2226,49 +3294,73 @@ button, input, textarea, select {
       elements.fogTrail.value = String(fogSettings.trailRadius);
       elements.fogSoftness.value = String(fogSettings.edgeSoftness);
       elements.fogMemory.checked = fogSettings.trailMemory;
+      renderRouteControls(summaries);
       onChange();
     }
 
     function enter() {
-      const length = routeLength();
+      const summaries = routeSummaries();
+      const preferred = summaries.find((entry) => entry.route.id === store.getLiveState().settings.activeRouteId) || summaries[0] || null;
       if (menu && typeof menu.close === "function") menu.close();
-      state = normalizePresentationState({ active: true, step: length ? 1 : 0, showAll: false }, length);
+      state = normalizeForSummaries({ active: true, activeRouteId: preferred ? preferred.route.id : "", step: 1, showAll: false }, summaries);
       update();
     }
 
     function exit() {
       fogPanelOpen = false;
-      state = normalizePresentationState({ active: false, step: 0, showAll: false }, routeLength());
+      state = normalizeForSummaries({ active: false, step: 0, showAll: false }, routeSummaries());
+      update();
+    }
+
+    function patchActiveStep(delta) {
+      if (!state.active) return;
+      const summaries = routeSummaries();
+      const active = activeSummary(summaries);
+      if (!active || active.length < 1) return;
+      state = normalizeForSummaries({
+        ...state,
+        showAll: false,
+        routeSteps: {
+          ...state.routeSteps,
+          [active.route.id]: (state.routeSteps[active.route.id] || 1) + delta
+        }
+      }, summaries);
       update();
     }
 
     function previous() {
-      if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: state.step - 1, showAll: false }, routeLength());
-      update();
+      patchActiveStep(-1);
     }
 
     function next() {
-      if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: state.step + 1, showAll: false }, routeLength());
-      update();
+      patchActiveStep(1);
     }
 
     function showAll() {
       if (!state.active) return;
-      state = normalizePresentationState({ ...state, showAll: true }, routeLength());
+      const summaries = routeSummaries();
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        routeSteps[route.id] = length;
+      });
+      state = normalizeForSummaries({ ...state, routeSteps, showAll: true }, summaries);
       update();
     }
 
     function reset() {
       if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: 1, showAll: false }, routeLength());
+      const summaries = routeSummaries();
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        routeSteps[route.id] = length ? 1 : 0;
+      });
+      state = normalizeForSummaries({ ...state, routeSteps, showAll: false }, summaries);
       update();
     }
 
     function getPresentationReveal() {
       const live = store.getLiveState();
-      return computePresentationReveal(live.points, live.settings, state);
+      return computePresentationReveal(live.points, live.settings, state, live.routes);
     }
 
     function getPresentationFogSettings() {
@@ -2362,6 +3454,7 @@ button, input, textarea, select {
       appVersion: PM.APP_VERSION,
       map: normalized.map,
       settings: normalized.settings,
+      routes: normalized.routes,
       points: normalized.points
     }, null, 2);
   }
@@ -2393,7 +3486,9 @@ button, input, textarea, select {
 
   function buildReaderChapters(project) {
     const state = PM.normalizeProject(project);
-    const routeInfo = PM.computeRouteInfo(state.points, state.settings);
+    const activeRoute = PM.getActiveRoute(state.settings, state.routes);
+    if (!activeRoute || activeRoute.visible === false) return [];
+    const routeInfo = PM.computeRouteInfo(state.points, state.settings, activeRoute);
     const routes = routeInfo.numberedRoutes;
     const chapters = routes.map((route) => ({
       point: route,
@@ -2563,33 +3658,133 @@ button, input, textarea, select {
       });
     }
 
+    function dashForRoute(route) {
+      if (!route) return [];
+      if (route.lineStyle === "dashed") return [14, 10];
+      if (route.lineStyle === "dotted") return [2, Math.max(6, route.width * 2)];
+      return [];
+    }
+
+    function routePointSets(state) {
+      return state.routes
+        .filter((route) => route.visible)
+        .map((route) => ({
+          route,
+          points: state.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, state.settings, state.routes))
+        }))
+        .filter((set) => set.points.length >= 2);
+    }
+
+    function strokeRoutePath(targetCtx, rect, points) {
+      targetCtx.beginPath();
+      points.forEach((point, index) => {
+        const px = rect.x + point.x * rect.w;
+        const py = rect.y + point.y * rect.h;
+        if (index) targetCtx.lineTo(px, py);
+        else targetCtx.moveTo(px, py);
+      });
+      targetCtx.stroke();
+    }
+
+    function canvasPoint(rect, point) {
+      return {
+        x: rect.x + point.x * rect.w,
+        y: rect.y + point.y * rect.h
+      };
+    }
+
+    function routeArrowMode(route) {
+      return route.arrowMode || (route.showArrows ? "middle" : "none");
+    }
+
+    function arrowPlacements(from, to, mode) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      if (!length || mode === "none") return [];
+      const angle = Math.atan2(dy, dx);
+      const at = (t, kind) => ({ x: from.x + dx * t, y: from.y + dy * t, angle, kind });
+      if (mode === "target") {
+        return [at(Math.max(0.34, Math.min(0.82, 1 - 28 / length)), "triangle")];
+      }
+      if (mode === "repeated") {
+        const count = Math.max(1, Math.min(4, Math.floor(length / 84)));
+        return Array.from({ length: count }, (_value, index) => at((index + 1) / (count + 1), "chevron"));
+      }
+      return [at(0.5, "triangle")];
+    }
+
+    function drawTriangleArrow(targetCtx, placement, size) {
+      const side = size * 0.62;
+      targetCtx.beginPath();
+      targetCtx.moveTo(size * 0.85, 0);
+      targetCtx.lineTo(-size, -side);
+      targetCtx.lineTo(-size, side);
+      targetCtx.closePath();
+      targetCtx.fill();
+      if (targetCtx.strokeStyle) targetCtx.stroke();
+    }
+
+    function drawChevronArrow(targetCtx, placement, size) {
+      const side = size * 0.62;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-size * 0.48, -side);
+      targetCtx.lineTo(size * 0.26, 0);
+      targetCtx.lineTo(-size * 0.48, side);
+      targetCtx.stroke();
+    }
+
+    function drawArrowPlacement(targetCtx, placement, route, shadow) {
+      const size = Math.max(8, route.width * 1.9 + 7);
+      targetCtx.save();
+      targetCtx.translate(placement.x + (shadow ? 2 : 0), placement.y + (shadow ? 2 : 0));
+      targetCtx.rotate(placement.angle);
+      if (placement.kind === "chevron") {
+        targetCtx.fillStyle = "transparent";
+        targetCtx.strokeStyle = shadow ? "rgba(0, 0, 0, 0.62)" : route.color;
+        targetCtx.lineWidth = shadow ? 5 : 3;
+        targetCtx.lineCap = "round";
+        targetCtx.lineJoin = "round";
+        drawChevronArrow(targetCtx, placement, size);
+      } else {
+        targetCtx.fillStyle = shadow ? "rgba(0, 0, 0, 0.62)" : route.color;
+        targetCtx.strokeStyle = shadow ? "transparent" : "rgba(255, 255, 255, 0.62)";
+        targetCtx.lineWidth = shadow ? 0 : 1;
+        drawTriangleArrow(targetCtx, placement, size);
+      }
+      targetCtx.restore();
+    }
+
+    function drawRouteArrows(targetCtx, rect, route, points) {
+      const mode = routeArrowMode(route);
+      if (mode === "none" || points.length < 2) return;
+      const placements = [];
+      for (let index = 1; index < points.length; index += 1) {
+        placements.push(...arrowPlacements(canvasPoint(rect, points[index - 1]), canvasPoint(rect, points[index]), mode));
+      }
+      targetCtx.save();
+      targetCtx.setLineDash([]);
+      placements.forEach((placement) => drawArrowPlacement(targetCtx, placement, route, true));
+      placements.forEach((placement) => drawArrowPlacement(targetCtx, placement, route, false));
+      targetCtx.restore();
+    }
+
     function drawLineSet(targetCtx, state, rect) {
       if (!state.settings.showLines) return;
-      const routePoints = state.points.filter((point) => point.type === "route" && PM.isPointVisible(point, state.settings));
-      if (routePoints.length < 2) return;
       targetCtx.save();
       targetCtx.lineCap = "round";
       targetCtx.lineJoin = "round";
-      targetCtx.lineWidth = state.settings.routeWidth + 2;
-      targetCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
-      targetCtx.beginPath();
-      routePoints.forEach((point, index) => {
-        const px = rect.x + point.x * rect.w;
-        const py = rect.y + point.y * rect.h;
-        if (index) targetCtx.lineTo(px, py);
-        else targetCtx.moveTo(px, py);
+      routePointSets(state).forEach(({ route, points }) => {
+        targetCtx.setLineDash([]);
+        targetCtx.lineWidth = route.width + 2;
+        targetCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+        strokeRoutePath(targetCtx, rect, points);
+        targetCtx.setLineDash(dashForRoute(route));
+        targetCtx.lineWidth = route.width;
+        targetCtx.strokeStyle = route.color;
+        strokeRoutePath(targetCtx, rect, points);
+        drawRouteArrows(targetCtx, rect, route, points);
       });
-      targetCtx.stroke();
-      targetCtx.lineWidth = state.settings.routeWidth;
-      targetCtx.strokeStyle = state.settings.routeColor;
-      targetCtx.beginPath();
-      routePoints.forEach((point, index) => {
-        const px = rect.x + point.x * rect.w;
-        const py = rect.y + point.y * rect.h;
-        if (index) targetCtx.lineTo(px, py);
-        else targetCtx.moveTo(px, py);
-      });
-      targetCtx.stroke();
       targetCtx.restore();
     }
 
@@ -2632,11 +3827,16 @@ button, input, textarea, select {
       const revealInfo = PM.getPresentationReveal();
       const fogSettings = PM.getPresentationFogSettings();
       if (!revealInfo || !revealInfo.active || fogSettings.mode === "off") return;
-      const routePoints = fogSettings.mode === "all"
-        ? latestState.points.filter((point) => point.type === "route" && PM.isPointVisible(point, latestState.settings))
-        : revealInfo.routePoints;
-      if (!routePoints.length) return;
-      const currentPoint = revealInfo.routeInfo.numberedRoutes[Math.max(0, revealInfo.step - 1)] || revealInfo.routePoints[revealInfo.routePoints.length - 1];
+      const routeReveals = fogSettings.mode === "all"
+        ? latestState.routes
+          .filter((route) => route.visible)
+          .map((route) => {
+            const routeInfo = PM.computeRouteInfo(latestState.points, latestState.settings, route);
+            const routePoints = latestState.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, latestState.settings, latestState.routes));
+            return { routePoints, currentPoint: routeInfo.numberedRoutes.at(-1) || routePoints.at(-1) || null };
+          })
+        : (revealInfo.routeReveals || [{ routePoints: revealInfo.routePoints, currentPoint: revealInfo.routeInfo.numberedRoutes[Math.max(0, revealInfo.step - 1)] || revealInfo.routePoints[revealInfo.routePoints.length - 1] }]);
+      if (!routeReveals.some((entry) => entry.routePoints && entry.routePoints.length)) return;
       const overlay = document.createElement("canvas");
       overlay.width = Math.max(1, Math.floor(size.width));
       overlay.height = Math.max(1, Math.floor(size.height));
@@ -2650,7 +3850,9 @@ button, input, textarea, select {
       overlayCtx.restore();
       overlayCtx.fillStyle = `rgba(0, 0, 0, ${PM.clamp(0.76 - fogSettings.outsideVisibility, 0.28, 0.74)})`;
       overlayCtx.fillRect(0, 0, overlay.width, overlay.height);
-      drawFogRevealShape(overlayCtx, rect, routePoints, currentPoint, fogSettings);
+      routeReveals.forEach((entry) => {
+        if (entry.routePoints && entry.routePoints.length) drawFogRevealShape(overlayCtx, rect, entry.routePoints, entry.currentPoint, fogSettings);
+      });
       ctx.drawImage(overlay, 0, 0);
     }
 
@@ -2668,35 +3870,96 @@ button, input, textarea, select {
       drawPresentationFog(size, rect);
     }
 
-    function drawWrappedText(targetCtx, text, x, y, maxWidth, lineHeight) {
-      const words = String(text || "").split(/\s+/);
+    function wrapTextLines(targetCtx, text, maxWidth) {
       const lines = [];
-      let line = "";
-      for (const word of words) {
-        const test = line ? `${line} ${word}` : word;
-        if (targetCtx.measureText(test).width > maxWidth && line) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = test;
+      const pushWord = (word) => {
+        if (!word) return;
+        if (targetCtx.measureText(word).width <= maxWidth) {
+          lines.push(word);
+          return;
         }
-      }
-      if (line) lines.push(line);
+        let chunk = "";
+        for (const char of word) {
+          const test = `${chunk}${char}`;
+          if (chunk && targetCtx.measureText(test).width > maxWidth) {
+            lines.push(chunk);
+            chunk = char;
+          } else {
+            chunk = test;
+          }
+        }
+        if (chunk) lines.push(chunk);
+      };
+      String(text || "").split(/\n/).forEach((paragraph) => {
+        const words = paragraph.trim().split(/\s+/).filter(Boolean);
+        if (!words.length) {
+          lines.push("");
+          return;
+        }
+        let line = "";
+        for (const word of words) {
+          const test = line ? `${line} ${word}` : word;
+          if (targetCtx.measureText(test).width > maxWidth && line) {
+            lines.push(line);
+            line = "";
+            if (targetCtx.measureText(word).width > maxWidth) {
+              pushWord(word);
+            } else {
+              line = word;
+            }
+          } else if (targetCtx.measureText(test).width > maxWidth) {
+            pushWord(word);
+          } else {
+            line = test;
+          }
+        }
+        if (line) lines.push(line);
+      });
+      return lines;
+    }
+
+    function drawWrappedText(targetCtx, text, x, y, maxWidth, lineHeight) {
+      const lines = wrapTextLines(targetCtx, text, maxWidth);
       lines.forEach((entry, index) => targetCtx.fillText(entry, x, y + index * lineHeight));
       return lines.length * lineHeight;
     }
 
+    function parseHexColor(value, fallback) {
+      const match = String(value || fallback || "#fbfaf5").match(/^#([0-9a-f]{6})$/i);
+      const hex = match ? match[1] : "fbfaf5";
+      return [0, 2, 4].map((index) => parseInt(hex.slice(index, index + 2), 16));
+    }
+
+    function mixColor(color, base, ratio) {
+      const a = parseHexColor(color, "#fbfaf5");
+      const b = parseHexColor(base, "#d7d2c7");
+      const parts = a.map((value, index) => Math.round(value * ratio + b[index] * (1 - ratio)));
+      return `rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+    }
+
+    function pointRadiusFor(point, settings) {
+      if (point.type === "route" && point.helper) {
+        return Math.max(6, Math.min(16, (parseInt(settings.helperPointSizePx, 10) || 24) / 2));
+      }
+      return Math.max(11, Math.min(24, (parseInt(settings.pointSizePx, 10) || 32) / 2));
+    }
+
     function drawPngOverlay(targetCtx, state, rect) {
-      const routeInfo = PM.computeRouteInfo(state.points, state.settings);
+      const routeInfo = PM.computeRoutesInfo ? PM.computeRoutesInfo(state.points, state.settings, state.routes) : PM.computeRouteInfo(state.points, state.settings);
       targetCtx.textAlign = "center";
       targetCtx.textBaseline = "middle";
       for (const point of state.points) {
-        if (!PM.isPointVisible(point, state.settings)) continue;
+        if (!PM.isPointVisible(point, state.settings, state.routes)) continue;
+        const route = PM.routeForPoint ? PM.routeForPoint(point, state.routes) : null;
         const px = rect.x + point.x * rect.w;
         const py = rect.y + point.y * rect.h;
+        const pointRadius = pointRadiusFor(point, state.settings);
+        const fontScale = Number(state.settings.fontScale) || 1;
         targetCtx.beginPath();
-        targetCtx.arc(px, py, 16, 0, Math.PI * 2);
-        targetCtx.fillStyle = point.helper ? "#d7d2c7" : "#fbfaf5";
+        targetCtx.arc(px, py, pointRadius, 0, Math.PI * 2);
+        targetCtx.fillStyle = point.type === "route" && route
+          ? (point.helper ? mixColor(route.color, "#d7d2c7", 0.48) : route.color)
+          : (point.helper ? "#d7d2c7" : "#fbfaf5");
         targetCtx.fill();
         targetCtx.lineWidth = 2;
         targetCtx.strokeStyle = "#111";
@@ -2704,19 +3967,19 @@ button, input, textarea, select {
         targetCtx.fillStyle = "#111";
         if (point.type === "route") {
           const step = routeInfo.displayById.get(point.id) || "";
-          targetCtx.font = "700 15px system-ui, sans-serif";
+          targetCtx.font = `700 ${Math.max(10, Math.round(pointRadius * 0.95 * fontScale))}px system-ui, sans-serif`;
           targetCtx.fillText(String(step), px, py + 1);
         } else {
-          targetCtx.font = "20px system-ui, sans-serif";
+          targetCtx.font = `${Math.max(14, Math.round(pointRadius * 1.22 * fontScale))}px system-ui, sans-serif`;
           targetCtx.fillText(PM.getPointType(point.type).icon, px, py + 1);
         }
 
-        let labelY = py + 28;
+        let labelY = py + pointRadius + 12;
         const drawBubble = (value, enabled, fill) => {
           if (!enabled || !value) return;
-          targetCtx.font = "600 12px system-ui, sans-serif";
+          targetCtx.font = `600 ${Math.max(10, Math.round(12 * fontScale))}px system-ui, sans-serif`;
           const text = String(value);
-          const width = Math.min(320, Math.max(40, targetCtx.measureText(text).width + 14));
+          const width = Math.min(260, Math.max(40, targetCtx.measureText(text).width + 14));
           const height = 20;
           targetCtx.fillStyle = fill;
           targetCtx.fillRect(px - width / 2, labelY - 10, width, height);
@@ -2727,18 +3990,20 @@ button, input, textarea, select {
         drawBubble(point.label, state.settings.showLabels, "rgba(0,0,0,.72)");
         drawBubble(point.location, state.settings.showLocation, "rgba(36,62,78,.82)");
         if (state.settings.showNotes && point.note) {
-          targetCtx.font = "500 12px system-ui, sans-serif";
-          const linesHeight = drawWrappedText(targetCtx, point.note, -9999, -9999, 300, 15);
+          const noteWidth = 230;
+          const noteLineHeight = Math.max(13, Math.round(15 * fontScale));
+          targetCtx.font = `500 ${Math.max(10, Math.round(12 * fontScale))}px system-ui, sans-serif`;
+          const linesHeight = wrapTextLines(targetCtx, point.note, noteWidth).length * noteLineHeight;
           const bubbleHeight = Math.max(22, linesHeight + 8);
           targetCtx.fillStyle = "rgba(0,0,0,.72)";
-          targetCtx.fillRect(px - 160, labelY - 10, 320, bubbleHeight);
+          targetCtx.fillRect(px - (noteWidth + 20) / 2, labelY - 10, noteWidth + 20, bubbleHeight);
           targetCtx.fillStyle = "#fff";
           targetCtx.textBaseline = "top";
-          drawWrappedText(targetCtx, point.note, px, labelY - 5, 300, 15);
+          drawWrappedText(targetCtx, point.note, px, labelY - 5, noteWidth, noteLineHeight);
           targetCtx.textBaseline = "middle";
           labelY += bubbleHeight + 4;
         }
-        drawBubble(point.duration, state.settings.showDuration, "rgba(74,57,30,.86)");
+        drawBubble(PM.formatDurationLabel(point.duration), state.settings.showDuration, "rgba(74,57,30,.86)");
       }
     }
 
@@ -2865,14 +4130,43 @@ button, input, textarea, select {
       const state = store.getLiveState();
       const locale = state.settings.locale;
       menu = document.createElement("div");
-      menu.className = "context-menu";
+      menu.className = "context-menu type-menu";
       menu.setAttribute("role", "menu");
+      const activeRoute = PM.getActiveRoute ? PM.getActiveRoute(state.settings, state.routes) : null;
+      const header = document.createElement("div");
+      header.className = "type-menu-head";
+      const title = document.createElement("strong");
+      title.className = "type-menu-title";
+      title.textContent = PM.I18n.t(locale, "chooseType");
+      header.appendChild(title);
+      if (activeRoute) {
+        const routePill = document.createElement("span");
+        routePill.className = "type-menu-route";
+        routePill.title = activeRoute.name;
+        routePill.innerHTML = "<span class=\"type-menu-route-swatch\" aria-hidden=\"true\"></span><span></span>";
+        routePill.style.setProperty("--route-choice-color", activeRoute.color);
+        routePill.querySelector("span:last-child").textContent = activeRoute.name;
+        header.appendChild(routePill);
+      }
+      menu.appendChild(header);
       for (const type of PM.POINT_TYPES) {
-        addButton(menu, `${type.icon ? `${type.icon} ` : ""}${PM.I18n.pointLabel(locale, type.type)}`, () => {
+        const label = type.type === "route" ? PM.I18n.t(locale, "routePoint") : PM.I18n.pointLabel(locale, type.type);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.innerHTML = "<span class=\"type-menu-option-icon\" aria-hidden=\"true\"></span><span class=\"type-menu-option-label\"></span>";
+        button.querySelector(".type-menu-option-icon").textContent = type.type === "route" ? "\uD83D\uDDFA\uFE0F" : type.icon;
+        button.querySelector(".type-menu-option-label").textContent = label;
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
           const selected = type.type;
           close();
           onType(selected);
         });
+        menu.appendChild(button);
+        if (type.type === "route" && activeRoute) {
+          button.classList.add("route-type-choice");
+          button.style.setProperty("--route-choice-color", activeRoute.color);
+        }
       }
       layer.appendChild(menu);
       place(menu, x, y);
@@ -3045,7 +4339,8 @@ button, input, textarea, select {
       const element = pointNodes.get(point.id) || makePointNode(point);
       pointNodes.set(point.id, element);
       const settings = latestState.settings;
-      const visible = PM.isPointVisible(point, settings) && (!revealInfo || PM.isPointRevealed(point, latestState.points, settings, revealInfo));
+      const route = PM.routeForPoint ? PM.routeForPoint(point, latestState.routes) : null;
+      const visible = PM.isPointVisible(point, settings, latestState.routes) && (!revealInfo || PM.isPointRevealed(point, latestState.points, settings, revealInfo, latestState.routes));
       element.classList.toggle("hidden", !visible);
       element.classList.toggle("helper", point.helper);
       element.classList.toggle("route", point.type === "route");
@@ -3056,6 +4351,7 @@ button, input, textarea, select {
       const screen = renderer.mapToClient(point.x, point.y);
       element.style.left = `${screen.x}px`;
       element.style.top = `${screen.y}px`;
+      element.style.setProperty("--route-color", route ? route.color : "#fbfaf5");
       element.querySelector(".point-icon").textContent = point.type === "route" ? "" : PM.getPointType(point.type).icon;
       element.querySelector(".point-number").textContent = point.type === "route" ? (routeInfo.displayById.get(point.id) || "") : "";
       const label = element.querySelector(".point-label");
@@ -3065,7 +4361,7 @@ button, input, textarea, select {
       const hidden = hiddenFor(point.id);
       location.textContent = settings.showLocation && !hidden.location ? point.location : "";
       note.textContent = settings.showNotes && !hidden.note ? point.note : "";
-      element.querySelector(".point-duration").textContent = settings.showDuration ? point.duration : "";
+      element.querySelector(".point-duration").textContent = settings.showDuration ? PM.formatDurationLabel(point.duration) : "";
       element.querySelector(".point-menu-button").hidden = !settings.showEdit;
       updateStackVars(element, label, location, note);
     }
@@ -3083,59 +4379,133 @@ button, input, textarea, select {
       element.style.setProperty("--note-h", `${stackHeight(note)}px`);
     }
 
-    function updateMidpoints(routePoints) {
+    function updateMidpoints(routeSets) {
       midLayer.textContent = "";
       const settings = latestState.settings;
       const revealInfo = PM.getPresentationReveal ? PM.getPresentationReveal() : null;
       if ((revealInfo && revealInfo.active) || !settings.showLines || !settings.showEdit || !settings.filters.route) return;
+      routeSets.forEach(({ points: routePoints }) => {
+        for (let index = 1; index < routePoints.length; index += 1) {
+          const a = routePoints[index - 1];
+          const b = routePoints[index];
+          const mx = (a.x + b.x) / 2;
+          const my = (a.y + b.y) / 2;
+          const screen = renderer.mapToClient(mx, my);
+          const midpoint = document.createElement("button");
+          midpoint.type = "button";
+          midpoint.className = "midpoint";
+          midpoint.title = "Insert route point";
+          midpoint.style.left = `${screen.x}px`;
+          midpoint.style.top = `${screen.y}px`;
+          midpoint.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            store.insertRoutePointAfter(a.id, mx, my);
+          });
+          midLayer.appendChild(midpoint);
+        }
+      });
+    }
+
+    function routeDash(route) {
+      if (route.lineStyle === "dashed") return "14 10";
+      if (route.lineStyle === "dotted") return `1 ${Math.max(6, route.width * 2)}`;
+      return "";
+    }
+
+    function routeArrowMode(route) {
+      return route.arrowMode || (route.showArrows ? "middle" : "none");
+    }
+
+    function arrowPlacements(from, to, mode) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      if (!length || mode === "none") return [];
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const at = (t, kind) => ({ x: from.x + dx * t, y: from.y + dy * t, angle, kind });
+      if (mode === "target") {
+        return [at(Math.max(0.34, Math.min(0.82, 1 - 28 / length)), "triangle")];
+      }
+      if (mode === "repeated") {
+        const count = Math.max(1, Math.min(4, Math.floor(length / 84)));
+        return Array.from({ length: count }, (_value, index) => at((index + 1) / (count + 1), "chevron"));
+      }
+      return [at(0.5, "triangle")];
+    }
+
+    function appendArrowPath(parent, route, placement, shadow) {
+      const size = Math.max(8, route.width * 1.9 + 7);
+      const side = size * 0.62;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      if (placement.kind === "chevron") {
+        path.setAttribute("d", `M${-size * 0.48},${-side} L${size * 0.26},0 L${-size * 0.48},${side}`);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", shadow ? "rgba(0,0,0,.64)" : route.color);
+        path.setAttribute("stroke-width", shadow ? "5" : "3");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+      } else {
+        path.setAttribute("d", `M${-size},${-side} L${size * 0.85},0 L${-size},${side} Z`);
+        path.setAttribute("fill", shadow ? "rgba(0,0,0,.64)" : route.color);
+        if (!shadow) {
+          path.setAttribute("stroke", "rgba(255,255,255,.65)");
+          path.setAttribute("stroke-width", "1");
+        }
+      }
+      path.setAttribute(
+        "transform",
+        `translate(${placement.x + (shadow ? 2 : 0)} ${placement.y + (shadow ? 2 : 0)}) rotate(${placement.angle})`
+      );
+      parent.appendChild(path);
+    }
+
+    function appendRouteArrows(parent, route, routePoints) {
+      const mode = routeArrowMode(route);
+      if (mode === "none" || routePoints.length < 2) return;
       for (let index = 1; index < routePoints.length; index += 1) {
-        const a = routePoints[index - 1];
-        const b = routePoints[index];
-        const mx = (a.x + b.x) / 2;
-        const my = (a.y + b.y) / 2;
-        const screen = renderer.mapToClient(mx, my);
-        const midpoint = document.createElement("button");
-        midpoint.type = "button";
-        midpoint.className = "midpoint";
-        midpoint.title = "Insert route point";
-        midpoint.style.left = `${screen.x}px`;
-        midpoint.style.top = `${screen.y}px`;
-        midpoint.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          store.insertRoutePointAfter(a.id, mx, my);
-        });
-        midLayer.appendChild(midpoint);
+        const from = renderer.mapToClient(routePoints[index - 1].x, routePoints[index - 1].y);
+        const to = renderer.mapToClient(routePoints[index].x, routePoints[index].y);
+        arrowPlacements(from, to, mode).forEach((placement) => appendArrowPath(parent, route, placement, true));
+        arrowPlacements(from, to, mode).forEach((placement) => appendArrowPath(parent, route, placement, false));
       }
     }
 
-    function updateRouteLayer(routePoints) {
+    function updateRouteLayer(routeSets) {
       routeLayer.textContent = "";
       const settings = latestState.settings;
       const width = Math.max(innerWidth, document.documentElement.clientWidth || 0);
       const height = Math.max(innerHeight, document.documentElement.clientHeight || 0);
       routeLayer.setAttribute("viewBox", `0 0 ${width} ${height}`);
-      if (!settings.showLines || routePoints.length < 2) return;
-      const pointsAttr = routePoints.map((point) => {
-        const screen = renderer.mapToClient(point.x, point.y);
-        return `${screen.x},${screen.y}`;
-      }).join(" ");
-      const shadow = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-      shadow.setAttribute("points", pointsAttr);
-      shadow.setAttribute("stroke", "rgba(0,0,0,.56)");
-      shadow.setAttribute("stroke-width", String(Math.max(1, settings.routeWidth) + 2));
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-      line.setAttribute("points", pointsAttr);
-      line.setAttribute("stroke", settings.routeColor);
-      line.setAttribute("stroke-width", String(Math.max(1, settings.routeWidth)));
-      routeLayer.append(shadow, line);
+      if (!settings.showLines) return;
+      routeSets.forEach(({ route, points: routePoints }) => {
+        if (routePoints.length < 2) return;
+        const pointsAttr = routePoints.map((point) => {
+          const screen = renderer.mapToClient(point.x, point.y);
+          return `${screen.x},${screen.y}`;
+        }).join(" ");
+        const shadow = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        shadow.setAttribute("points", pointsAttr);
+        shadow.setAttribute("stroke", "rgba(0,0,0,.56)");
+        shadow.setAttribute("stroke-width", String(Math.max(1, route.width) + 2));
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        line.setAttribute("points", pointsAttr);
+        line.setAttribute("stroke", route.color);
+        line.setAttribute("stroke-width", String(Math.max(1, route.width)));
+        const dash = routeDash(route);
+        if (dash) line.setAttribute("stroke-dasharray", dash);
+        routeLayer.append(shadow, line);
+        appendRouteArrows(routeLayer, route, routePoints);
+      });
     }
 
     function render(state) {
       latestState = state;
       document.documentElement.style.setProperty("--font-scale", String(state.settings.fontScale));
+      document.documentElement.style.setProperty("--point-size", `${state.settings.pointSizePx}px`);
+      document.documentElement.style.setProperty("--helper-point-size", `${state.settings.helperPointSizePx}px`);
       const revealInfo = PM.getPresentationReveal ? PM.getPresentationReveal() : null;
-      const routeInfo = revealInfo ? revealInfo.routeInfo : PM.computeRouteInfo(state.points, state.settings);
+      const routeInfo = revealInfo ? revealInfo.routeInfo : PM.computeRoutesInfo(state.points, state.settings, state.routes);
       const liveIds = new Set(state.points.map((point) => point.id));
       for (const [id, node] of pointNodes) {
         if (!liveIds.has(id)) {
@@ -3144,11 +4514,17 @@ button, input, textarea, select {
         }
       }
       state.points.forEach((point) => updatePointNode(point, routeInfo, revealInfo));
-      const visibleRoutes = revealInfo && revealInfo.active
-        ? revealInfo.routePoints
-        : state.points.filter((point) => point.type === "route" && PM.isPointVisible(point, state.settings));
-      updateRouteLayer(visibleRoutes);
-      updateMidpoints(visibleRoutes);
+      const routeSets = revealInfo && revealInfo.active
+        ? (revealInfo.routeReveals || [{ route: revealInfo.activeRoute || PM.getActiveRoute(state.settings, state.routes), points: revealInfo.routePoints }])
+          .map((entry) => ({ route: entry.route, points: entry.routePoints || entry.points || [] }))
+        : state.routes
+          .filter((route) => route.visible)
+          .map((route) => ({
+            route,
+            points: state.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, state.settings, state.routes))
+          }));
+      updateRouteLayer(routeSets);
+      updateMidpoints(routeSets);
     }
 
     store.subscribe(render);
@@ -3285,7 +4661,7 @@ button, input, textarea, select {
         if (point.duration) {
           const pill = document.createElement("span");
           pill.className = "pill";
-          pill.textContent = point.duration;
+          pill.textContent = PM.formatDurationLabel(point.duration);
           head.appendChild(pill);
         }
         const form = editForm(point, locale);
@@ -3319,7 +4695,7 @@ button, input, textarea, select {
             if (extra.duration) {
               const dur = document.createElement("span");
               dur.className = "pill";
-              dur.textContent = extra.duration;
+              dur.textContent = PM.formatDurationLabel(extra.duration);
               body.appendChild(dur);
             }
             const extraForm = editForm(extra, locale);
@@ -3339,8 +4715,8 @@ button, input, textarea, select {
       const chapters = PM.Exporters.buildReaderChapters(state);
       const body = chapters.map((chapter) => {
         const point = chapter.point;
-        const extras = chapter.extras.map((extra) => `<li><span class="pill">${PM.escapeHtml(PM.I18n.pointLabel(locale, extra.type))}</span> <strong>${PM.escapeHtml(extra.label || PM.I18n.pointLabel(locale, extra.type))}</strong>${extra.note ? `<div class="note">${PM.escapeHtml(extra.note)}</div>` : ""}${extra.duration ? ` <span class="pill">${PM.escapeHtml(extra.duration)}</span>` : ""}</li>`).join("");
-        return `<section class="card"><div class="step"><span class="num">${PM.escapeHtml(chapter.step)}</span><h2>${PM.escapeHtml(point.label || `${PM.I18n.t(locale, "chapter")} ${chapter.step}`)}</h2>${point.duration ? `<span class="pill">${PM.escapeHtml(point.duration)}</span>` : ""}</div>${point.note ? `<div class="note">${PM.escapeHtml(point.note)}</div>` : ""}${extras ? `<ul class="extras">${extras}</ul>` : ""}</section>`;
+        const extras = chapter.extras.map((extra) => `<li><span class="pill">${PM.escapeHtml(PM.I18n.pointLabel(locale, extra.type))}</span> <strong>${PM.escapeHtml(extra.label || PM.I18n.pointLabel(locale, extra.type))}</strong>${extra.note ? `<div class="note">${PM.escapeHtml(extra.note)}</div>` : ""}${extra.duration ? ` <span class="pill">${PM.escapeHtml(PM.formatDurationLabel(extra.duration))}</span>` : ""}</li>`).join("");
+        return `<section class="card"><div class="step"><span class="num">${PM.escapeHtml(chapter.step)}</span><h2>${PM.escapeHtml(point.label || `${PM.I18n.t(locale, "chapter")} ${chapter.step}`)}</h2>${point.duration ? `<span class="pill">${PM.escapeHtml(PM.formatDurationLabel(point.duration))}</span>` : ""}</div>${point.note ? `<div class="note">${PM.escapeHtml(point.note)}</div>` : ""}${extras ? `<ul class="extras">${extras}</ul>` : ""}</section>`;
       }).join("");
       return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="source-app" content="PlotMapper Tool"><meta name="source-version" content="${PM.APP_VERSION}"><title>PlotReader Export</title><style>${css}</style></head><body><main class="cards">${body}</main></body></html>`;
     }
@@ -3430,6 +4806,28 @@ button, input, textarea, select {
   function boot() {
     const initialLocale = PM.I18n.normalizeLocale(new URLSearchParams(location.search).get("lang") || navigator.language || "en");
     const initialTheme = PM.Theme.savedTheme() || "deep";
+    const UI_PREFS_KEY = "pmUiPrefsV1";
+    function normalizeUiPrefs(input) {
+      const raw = input || {};
+      return {
+        toolbarCollapsed: Boolean(raw.toolbarCollapsed),
+        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100)
+      };
+    }
+    function loadUiPrefs() {
+      try {
+        return normalizeUiPrefs(JSON.parse(localStorage.getItem(UI_PREFS_KEY) || "{}"));
+      } catch (_error) {
+        return normalizeUiPrefs();
+      }
+    }
+    function saveUiPrefs(prefs) {
+      try {
+        localStorage.setItem(UI_PREFS_KEY, JSON.stringify(prefs));
+      } catch (_error) {
+        // localStorage may be unavailable for file URLs in hardened browser setups.
+      }
+    }
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
     const menu = PM.createMenuController($("menuLayer"), store);
@@ -3449,6 +4847,7 @@ button, input, textarea, select {
 
     PM.store = store;
     PM.renderer = renderer;
+    let uiPrefs = loadUiPrefs();
 
     const controls = {
       imageLoadLabel: document.querySelector("label[for='imageInput']"),
@@ -3459,6 +4858,9 @@ button, input, textarea, select {
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
       themeToggle: $("themeToggle"),
+      toolbarCollapse: $("toolbarCollapse"),
+      toolbarRestore: $("toolbarRestore"),
+      toolbarRestoreLabel: $("toolbarRestoreLabel"),
       helpButton: $("helpButton"),
       infoPanel: $("infoPanel"),
       infoButton: $("infoButton"),
@@ -3482,6 +4884,7 @@ button, input, textarea, select {
       readerButton: $("readerButton"),
       presentationButton: $("presentationButton"),
       presentationDock: $("presentationDock"),
+      presentationRoutes: $("presentationRoutes"),
       presentationStep: $("presentationStep"),
       presentationPrev: $("presentationPrev"),
       presentationNext: $("presentationNext"),
@@ -3507,6 +4910,28 @@ button, input, textarea, select {
       focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
       chapterStart: $("chapterStart"),
+      routePanelToggle: $("routePanelToggle"),
+      activeRouteLabel: $("activeRouteLabel"),
+      routePanel: $("routePanel"),
+      routePanelTitle: $("routePanelTitle"),
+      routePanelCaret: $("routePanelCaret"),
+      routeRows: $("routeRows"),
+      addRouteButton: $("addRouteButton"),
+      routeActiveHead: $("routeActiveHead"),
+      routeColorHead: $("routeColorHead"),
+      routeVisibleHead: $("routeVisibleHead"),
+      routeNumbersHead: $("routeNumbersHead"),
+      routeArrowsHead: $("routeArrowsHead"),
+      routeStartHead: $("routeStartHead"),
+      routeStyleHead: $("routeStyleHead"),
+      routeWidthHead: $("routeWidthHead"),
+      routeDeleteHead: $("routeDeleteHead"),
+      routeNameHead: $("routeNameHead"),
+      routeColorPopover: $("routeColorPopover"),
+      routeColorPopoverLabel: $("routeColorPopoverLabel"),
+      routeColorPicker: $("routeColorPicker"),
+      routeColorOk: $("routeColorOk"),
+      routeColorCancel: $("routeColorCancel"),
       showLines: $("showLines"),
       showLabels: $("showLabels"),
       showLocation: $("showLocation"),
@@ -3515,8 +4940,9 @@ button, input, textarea, select {
       showEdit: $("showEdit"),
       zoom: $("zoomControl"),
       opacity: $("opacityControl"),
-      routeColor: $("routeColor"),
-      routeWidth: $("routeWidth"),
+      pointSize: $("pointSizeControl"),
+      helperPointSize: $("helperPointSizeControl"),
+      toolbarOpacity: $("toolbarOpacityControl"),
       fontScale: $("fontScale"),
       filters: {
         route: $("filter-route"),
@@ -3531,10 +4957,158 @@ button, input, textarea, select {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
     }
 
+    let routePanelOpen = false;
+    let routeColorEdit = null;
+
+    function applyUiPrefs() {
+      const root = document.documentElement;
+      root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
+      root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
+      controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
+      controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
+    }
+
+    function persistUiPrefs(patch) {
+      uiPrefs = normalizeUiPrefs({ ...uiPrefs, ...patch });
+      saveUiPrefs(uiPrefs);
+      applyUiPrefs();
+    }
+
+    function activeRoute() {
+      const state = store.getLiveState();
+      return PM.getActiveRoute(state.settings, state.routes);
+    }
+
+    function patchActiveRoute(patch) {
+      const route = activeRoute();
+      if (route) store.patchRoute(route.id, patch, { history: false });
+    }
+
+    function routeStyleOptions(locale, selected) {
+      return PM.LINE_STYLES.map((style) => `<option value="${style}"${style === selected ? " selected" : ""}>${PM.escapeHtml(PM.I18n.t(locale, `route${style[0].toUpperCase()}${style.slice(1)}`))}</option>`).join("");
+    }
+
+    function routeArrowOptions(locale, selected) {
+      return PM.ARROW_MODES.map((mode) => `<option value="${mode}"${mode === selected ? " selected" : ""}>${PM.escapeHtml(PM.I18n.t(locale, `routeArrow${mode[0].toUpperCase()}${mode.slice(1)}`))}</option>`).join("");
+    }
+
+    function routeHeadHtml(label, iconHtml) {
+      if (!iconHtml) return `<strong>${PM.escapeHtml(label)}</strong>`;
+      return `<span class="route-head-icon" aria-hidden="true">${iconHtml}</span><span>${PM.escapeHtml(label)}</span>`;
+    }
+
+    function setRouteHead(control, label, iconHtml) {
+      control.innerHTML = routeHeadHtml(label, iconHtml);
+    }
+
+    function routeTrashIcon() {
+      return [
+        `<svg class="route-trash-icon" aria-hidden="true" viewBox="0 0 24 24">`,
+        `<path d="M4 7h16"></path>`,
+        `<path d="M10 11v6"></path>`,
+        `<path d="M14 11v6"></path>`,
+        `<path d="M6 7l1 14h10l1-14"></path>`,
+        `<path d="M9 7V4h6v3"></path>`,
+        `</svg>`
+      ].join("");
+    }
+
+    function routeWidthValue(value, fallback) {
+      return PM.clamp(parseInt(value, 10) || fallback || 2, 1, 12);
+    }
+
+    function validColor(value, fallback) {
+      return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
+    }
+
+    function setRouteColorPreview(value) {
+      const color = validColor(value, "#cc3333");
+      controls.routeColorPicker.value = color;
+    }
+
+    function closeRouteColorPopover() {
+      controls.routeColorPopover.hidden = true;
+      routeColorEdit = null;
+    }
+
+    function commitRouteColorPopover() {
+      if (routeColorEdit) {
+        store.patchRoute(routeColorEdit.routeId, { color: controls.routeColorPicker.value }, { history: false });
+      }
+      closeRouteColorPopover();
+    }
+
+    function openRouteColorPopover(routeId, color, trigger) {
+      routeColorEdit = { routeId, trigger };
+      setRouteColorPreview(color);
+      controls.routeColorPopover.hidden = false;
+      const rect = trigger.getBoundingClientRect();
+      const popover = controls.routeColorPopover;
+      const left = Math.max(8, Math.min(rect.left, innerWidth - popover.offsetWidth - 8));
+      const top = Math.max(8, Math.min(rect.bottom + 6, innerHeight - popover.offsetHeight - 8));
+      popover.style.left = `${left}px`;
+      popover.style.top = `${top}px`;
+      controls.routeColorPicker.focus();
+    }
+
+    function renderRoutePanel(state) {
+      const locale = state.settings.locale;
+      const active = PM.getActiveRoute(state.settings, state.routes);
+      controls.routePanel.hidden = !routePanelOpen;
+      controls.routePanelToggle.setAttribute("aria-expanded", String(routePanelOpen));
+      controls.routePanelCaret.textContent = routePanelOpen ? "\u25b4" : "\u25be";
+      controls.activeRouteLabel.textContent = `${PM.I18n.t(locale, "activeRoute")}: ${active.name}`;
+      controls.routePanelToggle.querySelector(".active-route-swatch").style.background = active.color;
+      controls.routeRows.textContent = "";
+      state.routes.forEach((route) => {
+        const row = document.createElement("div");
+        row.className = `route-row${route.id === state.settings.activeRouteId ? " is-active" : ""}`;
+        row.dataset.routeId = route.id;
+        row.innerHTML = [
+          `<label class="route-active-cell"><input type="radio" name="activeRoute" value="${PM.escapeHtml(route.id)}"${route.id === state.settings.activeRouteId ? " checked" : ""}><span></span></label>`,
+          `<button class="route-color-button" type="button" style="--swatch-color:${PM.escapeHtml(route.color)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "colorChoice"))}" title="${PM.escapeHtml(PM.I18n.t(locale, "colorChoice"))}"></button>`,
+          `<label class="route-check"><input class="route-visible-input" type="checkbox"${route.visible ? " checked" : ""}><span>${PM.escapeHtml(PM.I18n.t(locale, "routeVisible"))}</span></label>`,
+          `<label class="route-check"><input class="route-numbers-input" type="checkbox"${route.showNumbers ? " checked" : ""}><span>${PM.escapeHtml(PM.I18n.t(locale, "routeNumbers"))}</span></label>`,
+          `<select class="route-arrow-mode-input" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeArrows"))}">${routeArrowOptions(locale, route.arrowMode)}</select>`,
+          `<input class="route-start-input" type="number" min="1" step="1" value="${PM.escapeHtml(route.startNumber)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeStart"))}">`,
+          `<select class="route-style-input" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeLineStyle"))}">${routeStyleOptions(locale, route.lineStyle)}</select>`,
+          `<div class="route-width-stepper" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "width"))}"><button class="route-width-button route-width-decrease" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeWidthDown"))}">&#8249;</button><input class="route-width-input" type="number" min="1" max="12" step="1" value="${PM.escapeHtml(route.width)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "width"))}"><button class="route-width-button route-width-increase" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeWidthUp"))}">&#8250;</button></div>`,
+          `<input class="route-name-input" value="${PM.escapeHtml(route.name)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeName"))}">`,
+          `<button class="route-delete-input" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeDelete"))}" title="${PM.escapeHtml(PM.I18n.t(locale, "routeDelete"))}">${routeTrashIcon()}</button>`
+        ].join("");
+        row.querySelector("input[name='activeRoute']").addEventListener("change", () => store.setActiveRoute(route.id));
+        row.querySelector(".route-color-button").addEventListener("click", (event) => openRouteColorPopover(route.id, route.color, event.currentTarget));
+        row.querySelector(".route-visible-input").addEventListener("change", (event) => store.patchRoute(route.id, { visible: event.target.checked }));
+        row.querySelector(".route-numbers-input").addEventListener("change", (event) => store.patchRoute(route.id, { showNumbers: event.target.checked }));
+        row.querySelector(".route-arrow-mode-input").addEventListener("change", (event) => store.patchRoute(route.id, { arrowMode: event.target.value }));
+        row.querySelector(".route-start-input").addEventListener("change", (event) => store.patchRoute(route.id, { startNumber: event.target.value }));
+        row.querySelector(".route-style-input").addEventListener("change", (event) => store.patchRoute(route.id, { lineStyle: event.target.value }));
+        const widthInput = row.querySelector(".route-width-input");
+        const setRouteWidth = (value) => {
+          const width = routeWidthValue(value, route.width);
+          widthInput.value = String(width);
+          store.patchRoute(route.id, { width }, { history: false });
+        };
+        widthInput.addEventListener("change", (event) => setRouteWidth(event.target.value));
+        row.querySelector(".route-width-decrease").addEventListener("click", () => setRouteWidth(Number(widthInput.value) - 1));
+        row.querySelector(".route-width-increase").addEventListener("click", () => setRouteWidth(Number(widthInput.value) + 1));
+        row.querySelector(".route-name-input").addEventListener("change", (event) => store.patchRoute(route.id, { name: event.target.value.trim() || route.name }));
+        row.querySelector(".route-delete-input").addEventListener("click", () => {
+          if (store.getLiveState().routes.length <= 1) {
+            alert(PM.I18n.t(locale, "routeLastDeleteBlocked"));
+            return;
+          }
+          if (confirm(PM.I18n.t(locale, "deleteRouteConfirm"))) store.deleteRoute(route.id);
+        });
+        controls.routeRows.appendChild(row);
+      });
+    }
+
     PM.createPresentationController({
       root: document.documentElement,
       button: controls.presentationButton,
       dock: controls.presentationDock,
+      routeList: controls.presentationRoutes,
       step: controls.presentationStep,
       previousButton: controls.presentationPrev,
       nextButton: controls.presentationNext,
@@ -3568,11 +5142,16 @@ button, input, textarea, select {
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
+      controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
+      controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));
+      controls.toolbarRestore.setAttribute("title", PM.I18n.t(locale, "expandMenu"));
       controls.undo.textContent = PM.I18n.t(locale, "undo");
       controls.redo.textContent = PM.I18n.t(locale, "redo");
       controls.readerButton.textContent = `\uD83D\uDCD6 ${PM.I18n.t(locale, "reader")}`;
       controls.presentationButton.textContent = PM.I18n.t(locale, "present");
       controls.presentationDock.setAttribute("aria-label", PM.I18n.t(locale, "presentation"));
+      controls.presentationRoutes.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
       controls.presentationPrev.setAttribute("aria-label", PM.I18n.t(locale, "presentationPrevious"));
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
@@ -3591,6 +5170,25 @@ button, input, textarea, select {
       controls.presentationFogSoftnessLabel.textContent = PM.I18n.t(locale, "presentationFogSoftness");
       controls.presentationFogMemoryLabel.textContent = PM.I18n.t(locale, "presentationFogMemory");
       controls.presentationExit.textContent = PM.I18n.t(locale, "presentationExit");
+      controls.routePanelToggle.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
+      controls.routePanel.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
+      controls.routePanelTitle.textContent = PM.I18n.t(locale, "routes");
+      controls.addRouteButton.textContent = PM.I18n.t(locale, "addRoute");
+      setRouteHead(controls.routeActiveHead, PM.I18n.t(locale, "routeActive"));
+      setRouteHead(controls.routeColorHead, PM.I18n.t(locale, "routeColor"));
+      setRouteHead(controls.routeVisibleHead, PM.I18n.t(locale, "routeVisible"), "&#128065;");
+      setRouteHead(controls.routeNumbersHead, PM.I18n.t(locale, "routeNumbers"), "&#128290;");
+      setRouteHead(controls.routeArrowsHead, PM.I18n.t(locale, "routeArrows"), "&#8599;");
+      setRouteHead(controls.routeStartHead, PM.I18n.t(locale, "routeStart"));
+      setRouteHead(controls.routeStyleHead, PM.I18n.t(locale, "routeLineStyle"));
+      setRouteHead(controls.routeWidthHead, PM.I18n.t(locale, "width"));
+      setRouteHead(controls.routeNameHead, PM.I18n.t(locale, "routeName"));
+      setRouteHead(controls.routeDeleteHead, PM.I18n.t(locale, "routeDelete"), routeTrashIcon());
+      controls.routeColorPopover.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
+      controls.routeColorPopoverLabel.textContent = PM.I18n.t(locale, "colorChoice");
+      controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
+      controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
+      controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
@@ -3616,14 +5214,20 @@ button, input, textarea, select {
         if (span) span.textContent = PM.I18n.t(locale, key);
       });
       const fieldLabels = [
-        [controls.zoom, "zoom"],
-        [controls.opacity, "opacity"],
-        [controls.routeColor, "line"],
-        [controls.routeWidth, "width"],
-        [controls.fontScale, "font"]
+        [controls.zoom, "zoom", "zoom"],
+        [controls.opacity, "opacity", "opacity"],
+        [controls.pointSize, "pointSize", "pointSizeFull"],
+        [controls.helperPointSize, "helperPointSize", "helperPointSizeFull"],
+        [controls.toolbarOpacity, "menuOpacity", "menuOpacity"],
+        [controls.fontScale, "font", "font"]
       ];
-      fieldLabels.forEach(([input, key]) => {
-        if (input && input.parentElement) input.parentElement.firstChild.nodeValue = PM.I18n.t(locale, key);
+      fieldLabels.forEach(([input, key, titleKey]) => {
+        if (!input || !input.parentElement) return;
+        const label = input.parentElement.querySelector(".control-field-label");
+        const title = PM.I18n.t(locale, titleKey || key);
+        if (label) label.textContent = PM.I18n.t(locale, key);
+        input.setAttribute("aria-label", title);
+        input.parentElement.setAttribute("title", title);
       });
       controls.emptySub.textContent = PM.I18n.t(locale, "empty");
       controls.emptyStep1.textContent = PM.I18n.t(locale, "emptyStep1");
@@ -3638,6 +5242,8 @@ button, input, textarea, select {
     function syncControls(state) {
       document.documentElement.lang = state.settings.locale;
       document.documentElement.classList.toggle("focus-mode", state.settings.focusMode);
+      document.documentElement.style.setProperty("--point-size", `${state.settings.pointSizePx}px`);
+      document.documentElement.style.setProperty("--helper-point-size", `${state.settings.helperPointSizePx}px`);
       PM.Theme.applyTheme(state.settings.theme);
       controls.emptyHint.hidden = Boolean(state.map.dataUrl);
       controls.fileName.textContent = state.map.name || t("noProject");
@@ -3649,16 +5255,21 @@ button, input, textarea, select {
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
       controls.focusMode.checked = state.settings.focusMode;
-      controls.chapterMode.checked = state.settings.chapterMode;
-      controls.chapterStart.value = String(state.settings.chapterStart);
+      const route = PM.getActiveRoute(state.settings, state.routes);
+      controls.chapterMode.checked = route.showNumbers !== false;
+      controls.chapterStart.value = String(route.startNumber);
       controls.zoom.value = String(state.settings.zoom);
       controls.opacity.value = String(state.settings.opacity);
-      controls.routeColor.value = state.settings.routeColor;
-      controls.routeWidth.value = String(state.settings.routeWidth);
+      controls.pointSize.value = String(state.settings.pointSizePx);
+      controls.helperPointSize.value = String(state.settings.helperPointSizePx);
       controls.fontScale.value = String(state.settings.fontScale);
       controls.undo.disabled = !store.canUndo();
       controls.redo.disabled = !store.canRedo();
+      controls.toolbarRestore.querySelector(".active-route-swatch").style.background = route.color;
+      controls.toolbarRestoreLabel.textContent = `${PM.I18n.t(state.settings.locale, "expandMenu")}: ${route.name}`;
+      applyUiPrefs();
       setButtonText();
+      renderRoutePanel(state);
     }
 
     store.subscribe(syncControls);
@@ -3739,6 +5350,31 @@ button, input, textarea, select {
     controls.infoClose.addEventListener("click", () => {
       controls.infoPanel.hidden = true;
     });
+    controls.toolbarCollapse.addEventListener("click", () => {
+      closeRouteColorPopover();
+      persistUiPrefs({ toolbarCollapsed: true });
+    });
+    controls.toolbarRestore.addEventListener("click", () => persistUiPrefs({ toolbarCollapsed: false }));
+    controls.routeColorPicker.addEventListener("input", () => setRouteColorPreview(controls.routeColorPicker.value));
+    controls.routeColorOk.addEventListener("click", commitRouteColorPopover);
+    controls.routeColorCancel.addEventListener("click", closeRouteColorPopover);
+    document.addEventListener("pointerdown", (event) => {
+      if (controls.routeColorPopover.hidden) return;
+      if (controls.routeColorPopover.contains(event.target)) return;
+      if (event.target.closest(".route-color-button")) return;
+      closeRouteColorPopover();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (controls.routeColorPopover.hidden) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRouteColorPopover();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitRouteColorPopover();
+      }
+    });
 
     function bindSettingCheckbox(input, key) {
       input.addEventListener("change", () => store.setSettings({ [key]: input.checked }));
@@ -3750,12 +5386,21 @@ button, input, textarea, select {
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
     bindSettingCheckbox(controls.focusMode, "focusMode");
-    bindSettingCheckbox(controls.chapterMode, "chapterMode");
-    controls.chapterStart.addEventListener("input", () => store.setSettings({ chapterStart: controls.chapterStart.value }));
+    controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
+    controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
+    controls.routePanelToggle.addEventListener("click", () => {
+      routePanelOpen = !routePanelOpen;
+      renderRoutePanel(store.getState());
+    });
+    controls.addRouteButton.addEventListener("click", () => {
+      routePanelOpen = true;
+      store.addRoute();
+    });
     controls.zoom.addEventListener("input", () => store.setSettings({ zoom: controls.zoom.value }));
     controls.opacity.addEventListener("input", () => store.setSettings({ opacity: controls.opacity.value }));
-    controls.routeColor.addEventListener("input", () => store.setSettings({ routeColor: controls.routeColor.value }));
-    controls.routeWidth.addEventListener("input", () => store.setSettings({ routeWidth: controls.routeWidth.value }));
+    controls.pointSize.addEventListener("input", () => store.setSettings({ pointSizePx: controls.pointSize.value }));
+    controls.helperPointSize.addEventListener("input", () => store.setSettings({ helperPointSizePx: controls.helperPointSize.value }));
+    controls.toolbarOpacity.addEventListener("input", () => persistUiPrefs({ toolbarOpacity: controls.toolbarOpacity.value }));
     controls.fontScale.addEventListener("input", () => store.setSettings({ fontScale: controls.fontScale.value }));
     Object.entries(controls.filters).forEach(([type, input]) => {
       input.addEventListener("change", () => store.setFilter(type, input.checked));
@@ -3812,11 +5457,7 @@ button, input, textarea, select {
       const state = store.getLiveState();
       if (!state.map.dataUrl) return;
       const pos = renderer.clientToMap(event.clientX, event.clientY);
-      if (state.settings.focusMode) {
-        store.addPoint({ ...pos, type: "route" });
-      } else {
-        menu.showTypeMenu(event.clientX, event.clientY, (type) => store.addPoint({ ...pos, type }));
-      }
+      menu.showTypeMenu(event.clientX, event.clientY, (type) => store.addPoint({ ...pos, type }));
     });
 
     window.addEventListener("beforeunload", (event) => {
@@ -3827,6 +5468,7 @@ button, input, textarea, select {
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        closeRouteColorPopover();
         menu.close();
         closeHelp();
         $("pmSplash").classList.add("hide");

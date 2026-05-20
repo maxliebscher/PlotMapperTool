@@ -50,4 +50,10 @@
   PM.formatDateStamp = function formatDateStamp(date) {
     return (date || new Date()).toISOString().slice(0, 10).replace(/-/g, "");
   };
+
+  PM.formatDurationLabel = function formatDurationLabel(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    return /^\u231b\s*/.test(text) ? text : `\u231b ${text}`;
+  };
 })(globalThis.PM);
