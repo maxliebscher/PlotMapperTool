@@ -2,6 +2,7 @@
   "use strict";
 
   const FOG_MODES = ["off", "focus", "all"];
+  const CONTEXT_REVEAL_RADIUS = 0.065;
   const DEFAULT_FOG_SETTINGS = {
     mode: "focus",
     outsideVisibility: 0.22,
@@ -34,51 +35,163 @@
     const raw = input || {};
     const showAll = Boolean(raw.showAll);
     const step = max ? PM.clamp(parseInt(raw.step, 10) || 1, 1, max) : 0;
+    const routeSteps = {};
+    if (raw.routeSteps && typeof raw.routeSteps === "object") {
+      Object.entries(raw.routeSteps).forEach(([routeId, value]) => {
+        const parsed = parseInt(value, 10);
+        if (routeId && Number.isFinite(parsed)) routeSteps[routeId] = Math.max(0, parsed);
+      });
+    }
     return {
       active: Boolean(raw.active),
+      activeRouteId: raw.activeRouteId ? String(raw.activeRouteId) : "",
       step: showAll ? max : step,
-      showAll
+      showAll,
+      routeSteps
     };
   }
 
-  function computePresentationReveal(points, settings, presentationState) {
-    const routeInfo = PM.computeRouteInfo(points, settings);
-    const normalized = normalizePresentationState(presentationState, routeInfo.numberedRoutes.length);
-    if (!normalized.active) {
-      return {
-        ...normalized,
-        routeInfo,
-        routePoints: points.filter((point) => point.type === "route" && PM.isPointVisible(point, settings)),
-        visibleIds: null
-      };
-    }
+  function visibleRoutes(settings, routes) {
+    const list = Array.isArray(routes) && routes.length ? routes : [PM.getActiveRoute(settings, routes)];
+    const visible = list.filter((route) => route && route.visible !== false);
+    return visible.length ? visible : list.filter(Boolean).slice(0, 1);
+  }
 
+  function routeContainsPoint(route, point, settings) {
+    if (!point || point.type !== "route") return false;
+    const routeId = route && route.id ? route.id : settings && settings.activeRouteId;
+    if (!routeId) return true;
+    return !point.routeId || point.routeId === routeId;
+  }
+
+  function routeRevealFor(points, settings, routes, route, requestedStep, showAll) {
+    const routeInfo = PM.computeRouteInfo(points, settings, route);
+    const length = routeInfo.numberedRoutes.length;
+    const step = length ? (showAll ? length : PM.clamp(parseInt(requestedStep, 10) || 1, 1, length)) : 0;
     const visibleIds = new Set();
     const routePoints = [];
     let revealedNumbered = 0;
+
     for (const point of points) {
-      if (point.type !== "route" || !PM.isPointVisible(point, settings)) continue;
+      if (!routeContainsPoint(route, point, settings) || !PM.isPointVisible(point, settings, routes)) continue;
       if (!point.helper) {
-        const step = Number(routeInfo.stepById.get(point.id)) || 0;
-        if (normalized.showAll || step <= normalized.step) {
+        const pointStep = Number(routeInfo.stepById.get(point.id)) || 0;
+        if (showAll || pointStep <= step) {
           visibleIds.add(point.id);
           routePoints.push(point);
-          revealedNumbered = Math.max(revealedNumbered, step);
+          revealedNumbered = Math.max(revealedNumbered, pointStep);
         }
         continue;
       }
-      if (normalized.showAll || (revealedNumbered > 0 && revealedNumbered < normalized.step)) {
+      if (showAll || (revealedNumbered > 0 && revealedNumbered < step)) {
         visibleIds.add(point.id);
         routePoints.push(point);
       }
     }
 
-    return { ...normalized, routeInfo, routePoints, visibleIds };
+    return {
+      route,
+      routeInfo,
+      routePoints,
+      visibleIds,
+      step,
+      length,
+      currentPoint: routeInfo.numberedRoutes[Math.max(0, step - 1)] || routePoints[routePoints.length - 1] || null
+    };
   }
 
-  function isPointRevealed(point, points, settings, revealInfo) {
-    if (!revealInfo || !revealInfo.active) return PM.isPointVisible(point, settings);
-    if (revealInfo.showAll) return PM.isPointVisible(point, settings);
+  function distanceSquared(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
+  function pointToSegmentDistance(point, start, end) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (!lengthSquared) return Math.sqrt(distanceSquared(point, start));
+    const t = PM.clamp(((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared, 0, 1);
+    return Math.sqrt(distanceSquared(point, { x: start.x + dx * t, y: start.y + dy * t }));
+  }
+
+  function distanceToRevealPath(point, routePoints) {
+    if (!routePoints.length) return Infinity;
+    if (routePoints.length === 1) return Math.sqrt(distanceSquared(point, routePoints[0]));
+    let best = Infinity;
+    for (let index = 1; index < routePoints.length; index += 1) {
+      best = Math.min(best, pointToSegmentDistance(point, routePoints[index - 1], routePoints[index]));
+    }
+    return best;
+  }
+
+  function isNearRevealedRoute(point, routeReveals) {
+    return routeReveals.some((entry) => distanceToRevealPath(point, entry.routePoints) <= CONTEXT_REVEAL_RADIUS);
+  }
+
+  function computePresentationReveal(points, settings, presentationState, routes) {
+    const routesVisible = visibleRoutes(settings, routes);
+    const combinedRouteInfo = PM.computeRoutesInfo ? PM.computeRoutesInfo(points, settings, routes) : PM.computeRouteInfo(points, settings, routesVisible[0]);
+    const fallbackActive = PM.getActiveRoute ? PM.getActiveRoute(settings, routesVisible) : routesVisible[0];
+    const fallbackLength = PM.computeRouteInfo(points, settings, fallbackActive).numberedRoutes.length;
+    const normalized = normalizePresentationState(presentationState, fallbackLength);
+    const activeRoute = routesVisible.find((route) => route.id === normalized.activeRouteId)
+      || routesVisible.find((route) => route.id === (settings && settings.activeRouteId))
+      || fallbackActive;
+
+    if (!normalized.active) {
+      const inactiveRouteReveals = routesVisible.map((route) => {
+        const routeInfo = PM.computeRouteInfo(points, settings, route);
+        const routePoints = points.filter((point) => routeContainsPoint(route, point, settings) && PM.isPointVisible(point, settings, routes));
+        return {
+          route,
+          routeInfo,
+          routePoints,
+          visibleIds: new Set(routePoints.map((point) => point.id)),
+          step: routeInfo.numberedRoutes.length,
+          length: routeInfo.numberedRoutes.length,
+          currentPoint: routeInfo.numberedRoutes.at(-1) || routePoints.at(-1) || null
+        };
+      });
+      return {
+        ...normalized,
+        activeRouteId: activeRoute ? activeRoute.id : "",
+        routeInfo: combinedRouteInfo,
+        activeRoute,
+        routePoints: inactiveRouteReveals.find((entry) => entry.route === activeRoute)?.routePoints || [],
+        routeReveals: inactiveRouteReveals,
+        visibleIds: null
+      };
+    }
+
+    const routeReveals = routesVisible.map((route) => {
+      const requestedStep = normalized.routeSteps[route.id] || (route === activeRoute ? normalized.step : 1);
+      return routeRevealFor(points, settings, routes, route, requestedStep, normalized.showAll);
+    });
+    const activeReveal = routeReveals.find((entry) => entry.route === activeRoute) || routeReveals[0] || null;
+    const visibleIds = new Set();
+    routeReveals.forEach((entry) => entry.visibleIds.forEach((id) => visibleIds.add(id)));
+
+    for (const point of points) {
+      if (point.type === "route" || !PM.isPointVisible(point, settings, routes)) continue;
+      if (normalized.showAll || isNearRevealedRoute(point, routeReveals)) visibleIds.add(point.id);
+    }
+
+    return {
+      ...normalized,
+      activeRouteId: activeRoute ? activeRoute.id : "",
+      step: activeReveal ? activeReveal.step : normalized.step,
+      routeInfo: combinedRouteInfo,
+      activeRoute,
+      routePoints: activeReveal ? activeReveal.routePoints : [],
+      routeReveals,
+      visibleIds
+    };
+  }
+
+  function isPointRevealed(point, points, settings, revealInfo, routes) {
+    if (!revealInfo || !revealInfo.active) return PM.isPointVisible(point, settings, routes);
+    if (revealInfo.showAll) return PM.isPointVisible(point, settings, routes);
     return Boolean(revealInfo.visibleIds && revealInfo.visibleIds.has(point.id));
   }
 
@@ -95,6 +208,7 @@
     const elements = {
       button: options.button,
       dock: options.dock,
+      routeList: options.routeList,
       step: options.step,
       previousButton: options.previousButton,
       nextButton: options.nextButton,
@@ -115,23 +229,78 @@
     let fogSettings = normalizePresentationFogSettings();
     let fogPanelOpen = false;
 
-    function routeLength() {
+    function routeSummaries() {
       const live = store.getLiveState();
-      return PM.computeRouteInfo(live.points, live.settings).numberedRoutes.length;
+      return visibleRoutes(live.settings, live.routes).map((route) => {
+        const routeInfo = PM.computeRouteInfo(live.points, live.settings, route);
+        return { route, length: routeInfo.numberedRoutes.length };
+      });
+    }
+
+    function activeSummary(summaries) {
+      return summaries.find((entry) => entry.route.id === state.activeRouteId)
+        || summaries.find((entry) => entry.route.id === store.getLiveState().settings.activeRouteId)
+        || summaries[0]
+        || null;
+    }
+
+    function normalizeForSummaries(rawState, summaries) {
+      const active = summaries.find((entry) => entry.route.id === rawState.activeRouteId)
+        || activeSummary(summaries);
+      const normalized = normalizePresentationState({
+        ...rawState,
+        activeRouteId: active ? active.route.id : rawState.activeRouteId
+      }, active ? active.length : 0);
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        const rawStep = rawState.routeSteps && rawState.routeSteps[route.id];
+        routeSteps[route.id] = length ? (normalized.showAll ? length : PM.clamp(parseInt(rawStep, 10) || 1, 1, length)) : 0;
+      });
+      return {
+        ...normalized,
+        activeRouteId: active ? active.route.id : "",
+        routeSteps,
+        step: active ? routeSteps[active.route.id] : 0
+      };
+    }
+
+    function renderRouteControls(summaries) {
+      if (!elements.routeList) return;
+      elements.routeList.textContent = "";
+      summaries.forEach(({ route, length }) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `presentation-route-pill${route.id === state.activeRouteId ? " is-active" : ""}`;
+        button.style.setProperty("--route-color", route.color);
+        button.disabled = !state.active || length < 1;
+        button.setAttribute("aria-pressed", String(route.id === state.activeRouteId));
+        button.setAttribute("title", route.name);
+        button.innerHTML = [
+          "<span class=\"presentation-route-swatch\" aria-hidden=\"true\"></span>",
+          `<span class="presentation-route-name">${PM.escapeHtml(route.name)}</span>`,
+          `<span class="presentation-route-count">${PM.escapeHtml(String(state.routeSteps[route.id] || 0))}/${PM.escapeHtml(String(length))}</span>`
+        ].join("");
+        button.addEventListener("click", () => {
+          state = normalizeForSummaries({ ...state, activeRouteId: route.id, showAll: false }, routeSummaries());
+          update();
+        });
+        elements.routeList.appendChild(button);
+      });
     }
 
     function update() {
-      const length = routeLength();
-      state = normalizePresentationState(state, length);
+      const summaries = routeSummaries();
+      state = normalizeForSummaries(state, summaries);
       root.classList.toggle("presentation-mode", state.active);
       elements.dock.hidden = !state.active;
       elements.fogPanel.hidden = !state.active || !fogPanelOpen;
-      const hasRoute = length > 0;
-      elements.step.textContent = hasRoute ? `${state.step} / ${length}` : t("presentationEmpty");
-      elements.previousButton.disabled = !state.active || !hasRoute || state.step <= 1;
-      elements.nextButton.disabled = !state.active || !hasRoute || state.step >= length;
-      elements.showAllButton.disabled = !state.active || !hasRoute || state.showAll;
-      elements.resetButton.disabled = !state.active || !hasRoute || (!state.showAll && state.step <= 1);
+      const active = activeSummary(summaries);
+      const hasRoute = Boolean(active && active.length > 0);
+      elements.step.textContent = hasRoute ? `${state.routeSteps[active.route.id]} / ${active.length}` : t("presentationEmpty");
+      elements.previousButton.disabled = !state.active || !hasRoute || state.routeSteps[active.route.id] <= 1;
+      elements.nextButton.disabled = !state.active || !hasRoute || state.routeSteps[active.route.id] >= active.length;
+      elements.showAllButton.disabled = !state.active || !summaries.some((entry) => entry.length > 0) || state.showAll;
+      elements.resetButton.disabled = !state.active || !summaries.some((entry) => entry.length > 0) || (!state.showAll && summaries.every((entry) => state.routeSteps[entry.route.id] <= 1));
       elements.fogToggleButton.disabled = !state.active;
       elements.exitButton.disabled = !state.active;
       elements.fogMode.value = fogSettings.mode;
@@ -140,49 +309,73 @@
       elements.fogTrail.value = String(fogSettings.trailRadius);
       elements.fogSoftness.value = String(fogSettings.edgeSoftness);
       elements.fogMemory.checked = fogSettings.trailMemory;
+      renderRouteControls(summaries);
       onChange();
     }
 
     function enter() {
-      const length = routeLength();
+      const summaries = routeSummaries();
+      const preferred = summaries.find((entry) => entry.route.id === store.getLiveState().settings.activeRouteId) || summaries[0] || null;
       if (menu && typeof menu.close === "function") menu.close();
-      state = normalizePresentationState({ active: true, step: length ? 1 : 0, showAll: false }, length);
+      state = normalizeForSummaries({ active: true, activeRouteId: preferred ? preferred.route.id : "", step: 1, showAll: false }, summaries);
       update();
     }
 
     function exit() {
       fogPanelOpen = false;
-      state = normalizePresentationState({ active: false, step: 0, showAll: false }, routeLength());
+      state = normalizeForSummaries({ active: false, step: 0, showAll: false }, routeSummaries());
+      update();
+    }
+
+    function patchActiveStep(delta) {
+      if (!state.active) return;
+      const summaries = routeSummaries();
+      const active = activeSummary(summaries);
+      if (!active || active.length < 1) return;
+      state = normalizeForSummaries({
+        ...state,
+        showAll: false,
+        routeSteps: {
+          ...state.routeSteps,
+          [active.route.id]: (state.routeSteps[active.route.id] || 1) + delta
+        }
+      }, summaries);
       update();
     }
 
     function previous() {
-      if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: state.step - 1, showAll: false }, routeLength());
-      update();
+      patchActiveStep(-1);
     }
 
     function next() {
-      if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: state.step + 1, showAll: false }, routeLength());
-      update();
+      patchActiveStep(1);
     }
 
     function showAll() {
       if (!state.active) return;
-      state = normalizePresentationState({ ...state, showAll: true }, routeLength());
+      const summaries = routeSummaries();
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        routeSteps[route.id] = length;
+      });
+      state = normalizeForSummaries({ ...state, routeSteps, showAll: true }, summaries);
       update();
     }
 
     function reset() {
       if (!state.active) return;
-      state = normalizePresentationState({ ...state, step: 1, showAll: false }, routeLength());
+      const summaries = routeSummaries();
+      const routeSteps = {};
+      summaries.forEach(({ route, length }) => {
+        routeSteps[route.id] = length ? 1 : 0;
+      });
+      state = normalizeForSummaries({ ...state, routeSteps, showAll: false }, summaries);
       update();
     }
 
     function getPresentationReveal() {
       const live = store.getLiveState();
-      return computePresentationReveal(live.points, live.settings, state);
+      return computePresentationReveal(live.points, live.settings, state, live.routes);
     }
 
     function getPresentationFogSettings() {

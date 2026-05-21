@@ -8,6 +8,7 @@
       appVersion: PM.APP_VERSION,
       map: normalized.map,
       settings: normalized.settings,
+      routes: normalized.routes,
       points: normalized.points
     }, null, 2);
   }

@@ -72,14 +72,43 @@
       const state = store.getLiveState();
       const locale = state.settings.locale;
       menu = document.createElement("div");
-      menu.className = "context-menu";
+      menu.className = "context-menu type-menu";
       menu.setAttribute("role", "menu");
+      const activeRoute = PM.getActiveRoute ? PM.getActiveRoute(state.settings, state.routes) : null;
+      const header = document.createElement("div");
+      header.className = "type-menu-head";
+      const title = document.createElement("strong");
+      title.className = "type-menu-title";
+      title.textContent = PM.I18n.t(locale, "chooseType");
+      header.appendChild(title);
+      if (activeRoute) {
+        const routePill = document.createElement("span");
+        routePill.className = "type-menu-route";
+        routePill.title = activeRoute.name;
+        routePill.innerHTML = "<span class=\"type-menu-route-swatch\" aria-hidden=\"true\"></span><span></span>";
+        routePill.style.setProperty("--route-choice-color", activeRoute.color);
+        routePill.querySelector("span:last-child").textContent = activeRoute.name;
+        header.appendChild(routePill);
+      }
+      menu.appendChild(header);
       for (const type of PM.POINT_TYPES) {
-        addButton(menu, `${type.icon ? `${type.icon} ` : ""}${PM.I18n.pointLabel(locale, type.type)}`, () => {
+        const label = type.type === "route" ? PM.I18n.t(locale, "routePoint") : PM.I18n.pointLabel(locale, type.type);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.innerHTML = "<span class=\"type-menu-option-icon\" aria-hidden=\"true\"></span><span class=\"type-menu-option-label\"></span>";
+        button.querySelector(".type-menu-option-icon").textContent = type.type === "route" ? "\uD83D\uDDFA\uFE0F" : type.icon;
+        button.querySelector(".type-menu-option-label").textContent = label;
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
           const selected = type.type;
           close();
           onType(selected);
         });
+        menu.appendChild(button);
+        if (type.type === "route" && activeRoute) {
+          button.classList.add("route-type-choice");
+          button.style.setProperty("--route-choice-color", activeRoute.color);
+        }
       }
       layer.appendChild(menu);
       place(menu, x, y);

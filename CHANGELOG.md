@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-05-20
+### Added
+- Optional multi-route groundwork with a collapsible route management panel.
+- Route-specific color, visibility, numbering, arrows, start number, line style, width, name, and deletion controls.
+- Active-route assignment for new route points while keeping the map click point-type chooser as the main story flow.
+- Confirmed route color picker with OK/Cancel, normal-mode main menu collapse, point size, helper point size, and menu opacity controls.
+- Presentation route progress pills so each visible route can advance independently.
+- Reveal logic for nearby non-route context points along the already uncovered route corridor.
+- Separate non-release Multi-Fog concept demo for comparing single-route, per-route, and combined reveal masks.
+- Static and browser smoke coverage for route normalization, active-route presentation/reader behavior, and route panel interactions.
+
+### Changed
+- Removed redundant global line color/width controls from the main toolbar; route line styling now lives in the route panel.
+- Compacted the Story Picker while keeping the high-contrast map overlay style, and restored Item with a key icon.
+- Updated the in-app tutorial for multi-route controls, color confirmation, arrow modes, point sizing, menu collapse, PNG export, and offline use.
+
+### Fixed
+- Duration labels now show an hourglass prefix without changing stored project data.
+- Notes wrap earlier in the browser view and PNG export.
+- PNG export better matches route colors, line styles, arrows, point sizes, note wrapping, and duration labels.
+- Added checks to keep the generated release free of runtime CDN/script/style/image dependencies.
+
 ### Planned
 - Separate converter for legacy Markdown/old JSON projects.
 

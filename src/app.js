@@ -35,6 +35,28 @@
   function boot() {
     const initialLocale = PM.I18n.normalizeLocale(new URLSearchParams(location.search).get("lang") || navigator.language || "en");
     const initialTheme = PM.Theme.savedTheme() || "deep";
+    const UI_PREFS_KEY = "pmUiPrefsV1";
+    function normalizeUiPrefs(input) {
+      const raw = input || {};
+      return {
+        toolbarCollapsed: Boolean(raw.toolbarCollapsed),
+        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100)
+      };
+    }
+    function loadUiPrefs() {
+      try {
+        return normalizeUiPrefs(JSON.parse(localStorage.getItem(UI_PREFS_KEY) || "{}"));
+      } catch (_error) {
+        return normalizeUiPrefs();
+      }
+    }
+    function saveUiPrefs(prefs) {
+      try {
+        localStorage.setItem(UI_PREFS_KEY, JSON.stringify(prefs));
+      } catch (_error) {
+        // localStorage may be unavailable for file URLs in hardened browser setups.
+      }
+    }
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
     const menu = PM.createMenuController($("menuLayer"), store);
@@ -54,6 +76,7 @@
 
     PM.store = store;
     PM.renderer = renderer;
+    let uiPrefs = loadUiPrefs();
 
     const controls = {
       imageLoadLabel: document.querySelector("label[for='imageInput']"),
@@ -64,6 +87,9 @@
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
       themeToggle: $("themeToggle"),
+      toolbarCollapse: $("toolbarCollapse"),
+      toolbarRestore: $("toolbarRestore"),
+      toolbarRestoreLabel: $("toolbarRestoreLabel"),
       helpButton: $("helpButton"),
       infoPanel: $("infoPanel"),
       infoButton: $("infoButton"),
@@ -87,6 +113,7 @@
       readerButton: $("readerButton"),
       presentationButton: $("presentationButton"),
       presentationDock: $("presentationDock"),
+      presentationRoutes: $("presentationRoutes"),
       presentationStep: $("presentationStep"),
       presentationPrev: $("presentationPrev"),
       presentationNext: $("presentationNext"),
@@ -112,6 +139,28 @@
       focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
       chapterStart: $("chapterStart"),
+      routePanelToggle: $("routePanelToggle"),
+      activeRouteLabel: $("activeRouteLabel"),
+      routePanel: $("routePanel"),
+      routePanelTitle: $("routePanelTitle"),
+      routePanelCaret: $("routePanelCaret"),
+      routeRows: $("routeRows"),
+      addRouteButton: $("addRouteButton"),
+      routeActiveHead: $("routeActiveHead"),
+      routeColorHead: $("routeColorHead"),
+      routeVisibleHead: $("routeVisibleHead"),
+      routeNumbersHead: $("routeNumbersHead"),
+      routeArrowsHead: $("routeArrowsHead"),
+      routeStartHead: $("routeStartHead"),
+      routeStyleHead: $("routeStyleHead"),
+      routeWidthHead: $("routeWidthHead"),
+      routeDeleteHead: $("routeDeleteHead"),
+      routeNameHead: $("routeNameHead"),
+      routeColorPopover: $("routeColorPopover"),
+      routeColorPopoverLabel: $("routeColorPopoverLabel"),
+      routeColorPicker: $("routeColorPicker"),
+      routeColorOk: $("routeColorOk"),
+      routeColorCancel: $("routeColorCancel"),
       showLines: $("showLines"),
       showLabels: $("showLabels"),
       showLocation: $("showLocation"),
@@ -120,8 +169,9 @@
       showEdit: $("showEdit"),
       zoom: $("zoomControl"),
       opacity: $("opacityControl"),
-      routeColor: $("routeColor"),
-      routeWidth: $("routeWidth"),
+      pointSize: $("pointSizeControl"),
+      helperPointSize: $("helperPointSizeControl"),
+      toolbarOpacity: $("toolbarOpacityControl"),
       fontScale: $("fontScale"),
       filters: {
         route: $("filter-route"),
@@ -136,10 +186,158 @@
       return PM.I18n.t(store.getLiveState().settings.locale, key);
     }
 
+    let routePanelOpen = false;
+    let routeColorEdit = null;
+
+    function applyUiPrefs() {
+      const root = document.documentElement;
+      root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
+      root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
+      controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
+      controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
+    }
+
+    function persistUiPrefs(patch) {
+      uiPrefs = normalizeUiPrefs({ ...uiPrefs, ...patch });
+      saveUiPrefs(uiPrefs);
+      applyUiPrefs();
+    }
+
+    function activeRoute() {
+      const state = store.getLiveState();
+      return PM.getActiveRoute(state.settings, state.routes);
+    }
+
+    function patchActiveRoute(patch) {
+      const route = activeRoute();
+      if (route) store.patchRoute(route.id, patch, { history: false });
+    }
+
+    function routeStyleOptions(locale, selected) {
+      return PM.LINE_STYLES.map((style) => `<option value="${style}"${style === selected ? " selected" : ""}>${PM.escapeHtml(PM.I18n.t(locale, `route${style[0].toUpperCase()}${style.slice(1)}`))}</option>`).join("");
+    }
+
+    function routeArrowOptions(locale, selected) {
+      return PM.ARROW_MODES.map((mode) => `<option value="${mode}"${mode === selected ? " selected" : ""}>${PM.escapeHtml(PM.I18n.t(locale, `routeArrow${mode[0].toUpperCase()}${mode.slice(1)}`))}</option>`).join("");
+    }
+
+    function routeHeadHtml(label, iconHtml) {
+      if (!iconHtml) return `<strong>${PM.escapeHtml(label)}</strong>`;
+      return `<span class="route-head-icon" aria-hidden="true">${iconHtml}</span><span>${PM.escapeHtml(label)}</span>`;
+    }
+
+    function setRouteHead(control, label, iconHtml) {
+      control.innerHTML = routeHeadHtml(label, iconHtml);
+    }
+
+    function routeTrashIcon() {
+      return [
+        `<svg class="route-trash-icon" aria-hidden="true" viewBox="0 0 24 24">`,
+        `<path d="M4 7h16"></path>`,
+        `<path d="M10 11v6"></path>`,
+        `<path d="M14 11v6"></path>`,
+        `<path d="M6 7l1 14h10l1-14"></path>`,
+        `<path d="M9 7V4h6v3"></path>`,
+        `</svg>`
+      ].join("");
+    }
+
+    function routeWidthValue(value, fallback) {
+      return PM.clamp(parseInt(value, 10) || fallback || 2, 1, 12);
+    }
+
+    function validColor(value, fallback) {
+      return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
+    }
+
+    function setRouteColorPreview(value) {
+      const color = validColor(value, "#cc3333");
+      controls.routeColorPicker.value = color;
+    }
+
+    function closeRouteColorPopover() {
+      controls.routeColorPopover.hidden = true;
+      routeColorEdit = null;
+    }
+
+    function commitRouteColorPopover() {
+      if (routeColorEdit) {
+        store.patchRoute(routeColorEdit.routeId, { color: controls.routeColorPicker.value }, { history: false });
+      }
+      closeRouteColorPopover();
+    }
+
+    function openRouteColorPopover(routeId, color, trigger) {
+      routeColorEdit = { routeId, trigger };
+      setRouteColorPreview(color);
+      controls.routeColorPopover.hidden = false;
+      const rect = trigger.getBoundingClientRect();
+      const popover = controls.routeColorPopover;
+      const left = Math.max(8, Math.min(rect.left, innerWidth - popover.offsetWidth - 8));
+      const top = Math.max(8, Math.min(rect.bottom + 6, innerHeight - popover.offsetHeight - 8));
+      popover.style.left = `${left}px`;
+      popover.style.top = `${top}px`;
+      controls.routeColorPicker.focus();
+    }
+
+    function renderRoutePanel(state) {
+      const locale = state.settings.locale;
+      const active = PM.getActiveRoute(state.settings, state.routes);
+      controls.routePanel.hidden = !routePanelOpen;
+      controls.routePanelToggle.setAttribute("aria-expanded", String(routePanelOpen));
+      controls.routePanelCaret.textContent = routePanelOpen ? "\u25b4" : "\u25be";
+      controls.activeRouteLabel.textContent = `${PM.I18n.t(locale, "activeRoute")}: ${active.name}`;
+      controls.routePanelToggle.querySelector(".active-route-swatch").style.background = active.color;
+      controls.routeRows.textContent = "";
+      state.routes.forEach((route) => {
+        const row = document.createElement("div");
+        row.className = `route-row${route.id === state.settings.activeRouteId ? " is-active" : ""}`;
+        row.dataset.routeId = route.id;
+        row.innerHTML = [
+          `<label class="route-active-cell"><input type="radio" name="activeRoute" value="${PM.escapeHtml(route.id)}"${route.id === state.settings.activeRouteId ? " checked" : ""}><span></span></label>`,
+          `<button class="route-color-button" type="button" style="--swatch-color:${PM.escapeHtml(route.color)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "colorChoice"))}" title="${PM.escapeHtml(PM.I18n.t(locale, "colorChoice"))}"></button>`,
+          `<label class="route-check"><input class="route-visible-input" type="checkbox"${route.visible ? " checked" : ""}><span>${PM.escapeHtml(PM.I18n.t(locale, "routeVisible"))}</span></label>`,
+          `<label class="route-check"><input class="route-numbers-input" type="checkbox"${route.showNumbers ? " checked" : ""}><span>${PM.escapeHtml(PM.I18n.t(locale, "routeNumbers"))}</span></label>`,
+          `<select class="route-arrow-mode-input" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeArrows"))}">${routeArrowOptions(locale, route.arrowMode)}</select>`,
+          `<input class="route-start-input" type="number" min="1" step="1" value="${PM.escapeHtml(route.startNumber)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeStart"))}">`,
+          `<select class="route-style-input" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeLineStyle"))}">${routeStyleOptions(locale, route.lineStyle)}</select>`,
+          `<div class="route-width-stepper" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "width"))}"><button class="route-width-button route-width-decrease" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeWidthDown"))}">&#8249;</button><input class="route-width-input" type="number" min="1" max="12" step="1" value="${PM.escapeHtml(route.width)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "width"))}"><button class="route-width-button route-width-increase" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeWidthUp"))}">&#8250;</button></div>`,
+          `<input class="route-name-input" value="${PM.escapeHtml(route.name)}" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeName"))}">`,
+          `<button class="route-delete-input" type="button" aria-label="${PM.escapeHtml(PM.I18n.t(locale, "routeDelete"))}" title="${PM.escapeHtml(PM.I18n.t(locale, "routeDelete"))}">${routeTrashIcon()}</button>`
+        ].join("");
+        row.querySelector("input[name='activeRoute']").addEventListener("change", () => store.setActiveRoute(route.id));
+        row.querySelector(".route-color-button").addEventListener("click", (event) => openRouteColorPopover(route.id, route.color, event.currentTarget));
+        row.querySelector(".route-visible-input").addEventListener("change", (event) => store.patchRoute(route.id, { visible: event.target.checked }));
+        row.querySelector(".route-numbers-input").addEventListener("change", (event) => store.patchRoute(route.id, { showNumbers: event.target.checked }));
+        row.querySelector(".route-arrow-mode-input").addEventListener("change", (event) => store.patchRoute(route.id, { arrowMode: event.target.value }));
+        row.querySelector(".route-start-input").addEventListener("change", (event) => store.patchRoute(route.id, { startNumber: event.target.value }));
+        row.querySelector(".route-style-input").addEventListener("change", (event) => store.patchRoute(route.id, { lineStyle: event.target.value }));
+        const widthInput = row.querySelector(".route-width-input");
+        const setRouteWidth = (value) => {
+          const width = routeWidthValue(value, route.width);
+          widthInput.value = String(width);
+          store.patchRoute(route.id, { width }, { history: false });
+        };
+        widthInput.addEventListener("change", (event) => setRouteWidth(event.target.value));
+        row.querySelector(".route-width-decrease").addEventListener("click", () => setRouteWidth(Number(widthInput.value) - 1));
+        row.querySelector(".route-width-increase").addEventListener("click", () => setRouteWidth(Number(widthInput.value) + 1));
+        row.querySelector(".route-name-input").addEventListener("change", (event) => store.patchRoute(route.id, { name: event.target.value.trim() || route.name }));
+        row.querySelector(".route-delete-input").addEventListener("click", () => {
+          if (store.getLiveState().routes.length <= 1) {
+            alert(PM.I18n.t(locale, "routeLastDeleteBlocked"));
+            return;
+          }
+          if (confirm(PM.I18n.t(locale, "deleteRouteConfirm"))) store.deleteRoute(route.id);
+        });
+        controls.routeRows.appendChild(row);
+      });
+    }
+
     PM.createPresentationController({
       root: document.documentElement,
       button: controls.presentationButton,
       dock: controls.presentationDock,
+      routeList: controls.presentationRoutes,
       step: controls.presentationStep,
       previousButton: controls.presentationPrev,
       nextButton: controls.presentationNext,
@@ -173,11 +371,16 @@
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
+      controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
+      controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));
+      controls.toolbarRestore.setAttribute("title", PM.I18n.t(locale, "expandMenu"));
       controls.undo.textContent = PM.I18n.t(locale, "undo");
       controls.redo.textContent = PM.I18n.t(locale, "redo");
       controls.readerButton.textContent = `\uD83D\uDCD6 ${PM.I18n.t(locale, "reader")}`;
       controls.presentationButton.textContent = PM.I18n.t(locale, "present");
       controls.presentationDock.setAttribute("aria-label", PM.I18n.t(locale, "presentation"));
+      controls.presentationRoutes.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
       controls.presentationPrev.setAttribute("aria-label", PM.I18n.t(locale, "presentationPrevious"));
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
@@ -196,6 +399,25 @@
       controls.presentationFogSoftnessLabel.textContent = PM.I18n.t(locale, "presentationFogSoftness");
       controls.presentationFogMemoryLabel.textContent = PM.I18n.t(locale, "presentationFogMemory");
       controls.presentationExit.textContent = PM.I18n.t(locale, "presentationExit");
+      controls.routePanelToggle.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
+      controls.routePanel.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
+      controls.routePanelTitle.textContent = PM.I18n.t(locale, "routes");
+      controls.addRouteButton.textContent = PM.I18n.t(locale, "addRoute");
+      setRouteHead(controls.routeActiveHead, PM.I18n.t(locale, "routeActive"));
+      setRouteHead(controls.routeColorHead, PM.I18n.t(locale, "routeColor"));
+      setRouteHead(controls.routeVisibleHead, PM.I18n.t(locale, "routeVisible"), "&#128065;");
+      setRouteHead(controls.routeNumbersHead, PM.I18n.t(locale, "routeNumbers"), "&#128290;");
+      setRouteHead(controls.routeArrowsHead, PM.I18n.t(locale, "routeArrows"), "&#8599;");
+      setRouteHead(controls.routeStartHead, PM.I18n.t(locale, "routeStart"));
+      setRouteHead(controls.routeStyleHead, PM.I18n.t(locale, "routeLineStyle"));
+      setRouteHead(controls.routeWidthHead, PM.I18n.t(locale, "width"));
+      setRouteHead(controls.routeNameHead, PM.I18n.t(locale, "routeName"));
+      setRouteHead(controls.routeDeleteHead, PM.I18n.t(locale, "routeDelete"), routeTrashIcon());
+      controls.routeColorPopover.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
+      controls.routeColorPopoverLabel.textContent = PM.I18n.t(locale, "colorChoice");
+      controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
+      controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
+      controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
@@ -221,14 +443,20 @@
         if (span) span.textContent = PM.I18n.t(locale, key);
       });
       const fieldLabels = [
-        [controls.zoom, "zoom"],
-        [controls.opacity, "opacity"],
-        [controls.routeColor, "line"],
-        [controls.routeWidth, "width"],
-        [controls.fontScale, "font"]
+        [controls.zoom, "zoom", "zoom"],
+        [controls.opacity, "opacity", "opacity"],
+        [controls.pointSize, "pointSize", "pointSizeFull"],
+        [controls.helperPointSize, "helperPointSize", "helperPointSizeFull"],
+        [controls.toolbarOpacity, "menuOpacity", "menuOpacity"],
+        [controls.fontScale, "font", "font"]
       ];
-      fieldLabels.forEach(([input, key]) => {
-        if (input && input.parentElement) input.parentElement.firstChild.nodeValue = PM.I18n.t(locale, key);
+      fieldLabels.forEach(([input, key, titleKey]) => {
+        if (!input || !input.parentElement) return;
+        const label = input.parentElement.querySelector(".control-field-label");
+        const title = PM.I18n.t(locale, titleKey || key);
+        if (label) label.textContent = PM.I18n.t(locale, key);
+        input.setAttribute("aria-label", title);
+        input.parentElement.setAttribute("title", title);
       });
       controls.emptySub.textContent = PM.I18n.t(locale, "empty");
       controls.emptyStep1.textContent = PM.I18n.t(locale, "emptyStep1");
@@ -243,6 +471,8 @@
     function syncControls(state) {
       document.documentElement.lang = state.settings.locale;
       document.documentElement.classList.toggle("focus-mode", state.settings.focusMode);
+      document.documentElement.style.setProperty("--point-size", `${state.settings.pointSizePx}px`);
+      document.documentElement.style.setProperty("--helper-point-size", `${state.settings.helperPointSizePx}px`);
       PM.Theme.applyTheme(state.settings.theme);
       controls.emptyHint.hidden = Boolean(state.map.dataUrl);
       controls.fileName.textContent = state.map.name || t("noProject");
@@ -254,16 +484,21 @@
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
       controls.focusMode.checked = state.settings.focusMode;
-      controls.chapterMode.checked = state.settings.chapterMode;
-      controls.chapterStart.value = String(state.settings.chapterStart);
+      const route = PM.getActiveRoute(state.settings, state.routes);
+      controls.chapterMode.checked = route.showNumbers !== false;
+      controls.chapterStart.value = String(route.startNumber);
       controls.zoom.value = String(state.settings.zoom);
       controls.opacity.value = String(state.settings.opacity);
-      controls.routeColor.value = state.settings.routeColor;
-      controls.routeWidth.value = String(state.settings.routeWidth);
+      controls.pointSize.value = String(state.settings.pointSizePx);
+      controls.helperPointSize.value = String(state.settings.helperPointSizePx);
       controls.fontScale.value = String(state.settings.fontScale);
       controls.undo.disabled = !store.canUndo();
       controls.redo.disabled = !store.canRedo();
+      controls.toolbarRestore.querySelector(".active-route-swatch").style.background = route.color;
+      controls.toolbarRestoreLabel.textContent = `${PM.I18n.t(state.settings.locale, "expandMenu")}: ${route.name}`;
+      applyUiPrefs();
       setButtonText();
+      renderRoutePanel(state);
     }
 
     store.subscribe(syncControls);
@@ -344,6 +579,31 @@
     controls.infoClose.addEventListener("click", () => {
       controls.infoPanel.hidden = true;
     });
+    controls.toolbarCollapse.addEventListener("click", () => {
+      closeRouteColorPopover();
+      persistUiPrefs({ toolbarCollapsed: true });
+    });
+    controls.toolbarRestore.addEventListener("click", () => persistUiPrefs({ toolbarCollapsed: false }));
+    controls.routeColorPicker.addEventListener("input", () => setRouteColorPreview(controls.routeColorPicker.value));
+    controls.routeColorOk.addEventListener("click", commitRouteColorPopover);
+    controls.routeColorCancel.addEventListener("click", closeRouteColorPopover);
+    document.addEventListener("pointerdown", (event) => {
+      if (controls.routeColorPopover.hidden) return;
+      if (controls.routeColorPopover.contains(event.target)) return;
+      if (event.target.closest(".route-color-button")) return;
+      closeRouteColorPopover();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (controls.routeColorPopover.hidden) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRouteColorPopover();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitRouteColorPopover();
+      }
+    });
 
     function bindSettingCheckbox(input, key) {
       input.addEventListener("change", () => store.setSettings({ [key]: input.checked }));
@@ -355,12 +615,21 @@
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
     bindSettingCheckbox(controls.focusMode, "focusMode");
-    bindSettingCheckbox(controls.chapterMode, "chapterMode");
-    controls.chapterStart.addEventListener("input", () => store.setSettings({ chapterStart: controls.chapterStart.value }));
+    controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
+    controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
+    controls.routePanelToggle.addEventListener("click", () => {
+      routePanelOpen = !routePanelOpen;
+      renderRoutePanel(store.getState());
+    });
+    controls.addRouteButton.addEventListener("click", () => {
+      routePanelOpen = true;
+      store.addRoute();
+    });
     controls.zoom.addEventListener("input", () => store.setSettings({ zoom: controls.zoom.value }));
     controls.opacity.addEventListener("input", () => store.setSettings({ opacity: controls.opacity.value }));
-    controls.routeColor.addEventListener("input", () => store.setSettings({ routeColor: controls.routeColor.value }));
-    controls.routeWidth.addEventListener("input", () => store.setSettings({ routeWidth: controls.routeWidth.value }));
+    controls.pointSize.addEventListener("input", () => store.setSettings({ pointSizePx: controls.pointSize.value }));
+    controls.helperPointSize.addEventListener("input", () => store.setSettings({ helperPointSizePx: controls.helperPointSize.value }));
+    controls.toolbarOpacity.addEventListener("input", () => persistUiPrefs({ toolbarOpacity: controls.toolbarOpacity.value }));
     controls.fontScale.addEventListener("input", () => store.setSettings({ fontScale: controls.fontScale.value }));
     Object.entries(controls.filters).forEach(([type, input]) => {
       input.addEventListener("change", () => store.setFilter(type, input.checked));
@@ -417,11 +686,7 @@
       const state = store.getLiveState();
       if (!state.map.dataUrl) return;
       const pos = renderer.clientToMap(event.clientX, event.clientY);
-      if (state.settings.focusMode) {
-        store.addPoint({ ...pos, type: "route" });
-      } else {
-        menu.showTypeMenu(event.clientX, event.clientY, (type) => store.addPoint({ ...pos, type }));
-      }
+      menu.showTypeMenu(event.clientX, event.clientY, (type) => store.addPoint({ ...pos, type }));
     });
 
     window.addEventListener("beforeunload", (event) => {
@@ -432,6 +697,7 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        closeRouteColorPopover();
         menu.close();
         closeHelp();
         $("pmSplash").classList.add("hide");
