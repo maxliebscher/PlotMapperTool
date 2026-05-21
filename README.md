@@ -1,4 +1,4 @@
-ï»¿# PlotMapper
+# PlotMapper
 
 PlotMapper is a lightweight browser tool for planning story routes, locations, characters, events, items, notes, and reading flow directly on a map. It runs as a standalone HTML app and can be used locally or via GitHub Pages.
 
@@ -8,63 +8,63 @@ Live version: https://maxliebscher.github.io/PlotMapperTool/
 
 ## Screenshots
 
-Click any screenshot to open it full size. Zum VergrÃ¶ÃŸern anklicken.
+Click any screenshot to open it full size. Zum Vergrößern anklicken.
 
 <p align="center">
-  <a href="assets/screenshots/v1.2.0-presentation-multi-route-fog.png">
-    <img src="assets/screenshots/v1.2.0-presentation-multi-route-fog.png" alt="PlotMapper v1.2.0 multi-route presentation with independent route progress and Focus Fog" width="900">
+  <a href="assets/screenshots/v1.2.0-presentation-multi-route-fog.jpg">
+    <img src="assets/screenshots/v1.2.0-presentation-multi-route-fog.jpg" alt="PlotMapper v1.2.0 multi-route presentation with independent route progress and Focus Fog" width="900">
   </a>
 </p>
 
 <table>
   <tr>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-focus-fog-route-reveal.png">
-        <img src="assets/screenshots/v1.2.0-focus-fog-route-reveal.png" alt="Focus Fog revealing the explored route while the rest of the map stays readable">
+      <a href="assets/screenshots/v1.2.0-focus-fog-route-reveal.jpg">
+        <img src="assets/screenshots/v1.2.0-focus-fog-route-reveal.jpg" alt="Focus Fog revealing the explored route while the rest of the map stays readable">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-route-management-de.png">
-        <img src="assets/screenshots/v1.2.0-route-management-de.png" alt="German route management panel with colors, arrows, line styles, and helper point controls">
+      <a href="assets/screenshots/v1.2.0-route-management-de.jpg">
+        <img src="assets/screenshots/v1.2.0-route-management-de.jpg" alt="German route management panel with colors, arrows, line styles, and helper point controls">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-route-management-en.png">
-        <img src="assets/screenshots/v1.2.0-route-management-en.png" alt="English route management panel with multiple routes and compact controls">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-story-picker-de.png">
-        <img src="assets/screenshots/v1.2.0-story-picker-de.png" alt="German Story Picker for choosing the next point type directly on the map">
-      </a>
-    </td>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-story-picker-en.png">
-        <img src="assets/screenshots/v1.2.0-story-picker-en.png" alt="English high-contrast Story Picker with route, place, character, event, and item choices">
-      </a>
-    </td>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-reader-context.png">
-        <img src="assets/screenshots/v1.2.0-reader-context.png" alt="Reader view with context points assigned to the nearest route chapters">
+      <a href="assets/screenshots/v1.2.0-route-management-en.jpg">
+        <img src="assets/screenshots/v1.2.0-route-management-en.jpg" alt="English route management panel with multiple routes and compact controls">
       </a>
     </td>
   </tr>
   <tr>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-tutorial-help.png">
-        <img src="assets/screenshots/v1.2.0-tutorial-help.png" alt="Tutorial modal with quick start, editing, filters, export, keyboard, and tips">
+      <a href="assets/screenshots/v1.2.0-story-picker-de.jpg">
+        <img src="assets/screenshots/v1.2.0-story-picker-de.jpg" alt="German Story Picker for choosing the next point type directly on the map">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-editor-burgund-theme.png">
-        <img src="assets/screenshots/v1.2.0-editor-burgund-theme.png" alt="Full editor map view in the burgund theme with two visible routes">
+      <a href="assets/screenshots/v1.2.0-story-picker-en.jpg">
+        <img src="assets/screenshots/v1.2.0-story-picker-en.jpg" alt="English high-contrast Story Picker with route, place, character, event, and item choices">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-editor-autumn-theme.png">
-        <img src="assets/screenshots/v1.2.0-editor-autumn-theme.png" alt="Full editor map view in the autumn theme with two visible routes">
+      <a href="assets/screenshots/v1.2.0-reader-context.jpg">
+        <img src="assets/screenshots/v1.2.0-reader-context.jpg" alt="Reader view with context points assigned to the nearest route chapters">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.2.0-tutorial-help.jpg">
+        <img src="assets/screenshots/v1.2.0-tutorial-help.jpg" alt="Tutorial modal with quick start, editing, filters, export, keyboard, and tips">
+      </a>
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.2.0-editor-burgund-theme.jpg">
+        <img src="assets/screenshots/v1.2.0-editor-burgund-theme.jpg" alt="Full editor map view in the burgund theme with two visible routes">
+      </a>
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.2.0-editor-autumn-theme.jpg">
+        <img src="assets/screenshots/v1.2.0-editor-autumn-theme.jpg" alt="Full editor map view in the autumn theme with two visible routes">
       </a>
     </td>
   </tr>
@@ -140,25 +140,25 @@ Indie devs and small studios may use and adapt this freely. Commercial use by la
 
 ### Was ist PlotMapper?
 
-PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrenden und allen mit kartenbasierten Projekten, einen Handlungsweg direkt auf einer Karte zu strukturieren. Du setzt Routenpunkte, Hilfspunkte, Kontextpunkte, Notizen, Handlungsorte, Labels und Dauerangaben und kannst die Route im Reader linear prÃ¼fen.
+PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrenden und allen mit kartenbasierten Projekten, einen Handlungsweg direkt auf einer Karte zu strukturieren. Du setzt Routenpunkte, Hilfspunkte, Kontextpunkte, Notizen, Handlungsorte, Labels und Dauerangaben und kannst die Route im Reader linear prüfen.
 
 ### Funktionen
 
 - Beliebige Karte oder Bilddatei als Hintergrund laden.
 - Routen-, Orts-, Charakter-, Ereignis- und Item-Punkte setzen.
-- Eine oder mehrere Routenlinien mit einstellbarer Farbe, StÃ¤rke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
+- Eine oder mehrere Routenlinien mit einstellbarer Farbe, Stärke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
 - Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
-- Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und LÃ¶schen Ã¼ber das PunktmenÃ¼ bearbeiten.
+- Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
 - Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Kapitel-Nummerierung und Fokus-Modus umschalten.
 - Multi-Routen-Steuerung eingeklappt lassen, bis alternative Pfade verwaltet werden sollen.
-- PunktgrÃ¶ÃŸe, HilfspunktgrÃ¶ÃŸe, Karten-Deckkraft, SchriftgrÃ¶ÃŸe und MenÃ¼deckkraft direkt im HauptmenÃ¼ einstellen.
-- Sichtbare Routen im PrÃ¤sentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive Tastatursteuerung und konfigurierbarem Focus Fog.
-- Undo/Redo fÃ¼r Punkt- und Bearbeitungsschritte.
+- Punktgröße, Hilfspunktgröße, Karten-Deckkraft, Schriftgröße und Menüdeckkraft direkt im Hauptmenü einstellen.
+- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive Tastatursteuerung und konfigurierbarem Focus Fog.
+- Undo/Redo für Punkt- und Bearbeitungsschritte.
 - Themes und Sprache live zwischen Deutsch und Englisch wechseln.
 - Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
 - Aktuelle Ansicht als PNG exportieren.
-- Aus der generierten Standalone-`index.html` ohne Runtime-CDN-AbhÃ¤ngigkeiten laufen lassen.
-- Reader-Modal fÃ¼r lineare Routenansicht, Bearbeitung, Sprung zur Karte, HTML-Export und PDF-Druck nutzen.
+- Aus der generierten Standalone-`index.html` ohne Runtime-CDN-Abhängigkeiten laufen lassen.
+- Reader-Modal für lineare Routenansicht, Bearbeitung, Sprung zur Karte, HTML-Export und PDF-Druck nutzen.
 
 ### Projektformat
 
@@ -175,18 +175,18 @@ Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstell
 }
 ```
 
-Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App. Alte Projekte kÃ¶nnen spÃ¤ter mit einem separaten Converter Ã¼bertragen werden.
+Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App. Alte Projekte können später mit einem separaten Converter übertragen werden.
 
 ### Nutzung
 
-1. `index.html` oder die GitHub-Pages-Version Ã¶ffnen.
+1. `index.html` oder die GitHub-Pages-Version öffnen.
 2. Karte laden.
 3. Mit Doppelklick Punkte setzen.
-4. Punkte Ã¼ber das PunktmenÃ¼ `(=)` bearbeiten.
+4. Punkte über das Punktmenü `(=)` bearbeiten.
 5. Arbeit als `.plotmap.json` speichern.
 6. Bei Bedarf PNG oder Reader HTML/PDF exportieren.
 
-Der PrÃ¤sentationsmodus kann mehrere sichtbare Routen Schritt fÃ¼r Schritt freilegen. Jeder Pfad behÃ¤lt eigenen Fortschritt, nahe Kontextpunkte kÃ¶nnen entlang des aufgedeckten Bereichs erscheinen, und Focus Fog hÃ¤lt unerforschte Bereiche lesbar, aber visuell zurÃ¼ckgenommen.
+Der Präsentationsmodus kann mehrere sichtbare Routen Schritt für Schritt freilegen. Jeder Pfad behält eigenen Fortschritt, nahe Kontextpunkte können entlang des aufgedeckten Bereichs erscheinen, und Focus Fog hält unerforschte Bereiche lesbar, aber visuell zurückgenommen.
 
 ### Entwicklung
 
@@ -200,7 +200,7 @@ Der Quellcode liegt in `src/`; `scripts/build.mjs` erzeugt die Standalone-Datei 
 
 ### Lizenz
 
-Indie-Entwickler, Studierende und kleine Studios dÃ¼rfen PlotMapper frei verwenden und anpassen. Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeitern nur mit Genehmigung. Siehe [LICENSE.md](LICENSE.md).
+Indie-Entwickler, Studierende und kleine Studios dürfen PlotMapper frei verwenden und anpassen. Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeitern nur mit Genehmigung. Siehe [LICENSE.md](LICENSE.md).
 
 ---
 
