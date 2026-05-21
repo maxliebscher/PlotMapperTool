@@ -25,5 +25,5 @@ Feature release for multi-route planning, presentation, and Focus Fog workflows.
 - `v1.2.0-presentation-multi-route-fog.png` is the release screenshot.
 
 ## Live Demo
-- The GitHub Pages demo uses the repository `index.html` from `main`.
-- After the v1.2.0 branch is merged, https://maxliebscher.github.io/PlotMapperTool/ serves this release.
+- Live version: https://maxliebscher.github.io/PlotMapperTool/
+- The GitHub Pages demo is built from `main:/index.html`.
