@@ -85,6 +85,10 @@ assert(!html.includes("midpointSizeControl"), "Edit midpoint sizing should not b
 requireHtml("toolbarOpacityControl", "Menu opacity control");
 requireHtml("toolbarCollapse", "Normal-mode menu collapse control");
 requireHtml("toolbarRestore", "Collapsed menu restore control");
+requireHtml("commandPalette", "Command palette dialog");
+requireHtml("commandInput", "Command palette search input");
+requireHtml("commandResults", "Command palette results");
+assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
 requireHtml("routeLineStyle", "Route line style i18n key");
 requireHtml("routePoint", "Route point story picker i18n key");
 requireHtml("routePointFor", "Route point active route i18n key");
@@ -113,6 +117,7 @@ const coreFiles = [
   "src/utils.js",
   "src/state.js",
   "src/presentation.js",
+  "src/command-palette.js",
   "src/serialization.js",
   "src/exporters.js"
 ];
@@ -130,6 +135,41 @@ for (const file of coreFiles) {
 }
 
 const PM = context.PM;
+assert(typeof PM.buildCommandPaletteEntries === "function", "Command palette search builder should be registered.");
+assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette filtering helper should be registered.");
+
+const paletteProject = PM.createEmptyProject({ locale: "de" });
+paletteProject.routes.push(PM.normalizeRoute({
+  id: "route-two",
+  name: "Nebenpfad",
+  color: "#22bbbb"
+}, PM.DEFAULT_ROUTE, new Set([PM.DEFAULT_ROUTE_ID])));
+paletteProject.points.push(
+  PM.normalizePoint({ id: "route-start", x: 0.1, y: 0.2, type: "route", label: "Torwache", note: "Start an der Mauer", routeId: PM.DEFAULT_ROUTE_ID }),
+  PM.normalizePoint({ id: "helper-curve", x: 0.2, y: 0.3, type: "route", helper: true, routeId: PM.DEFAULT_ROUTE_ID }),
+  PM.normalizePoint({ id: "market", x: 0.4, y: 0.5, type: "place", label: "Alter Markt", location: "Nordviertel", note: "Kontakt bei Sonnenuntergang" }),
+  PM.normalizePoint({ id: "npc", x: 0.6, y: 0.7, type: "char", label: "Mira", duration: "3 Tage" })
+);
+const paletteEntries = PM.buildCommandPaletteEntries(paletteProject, "de");
+assert(paletteEntries.some((entry) => entry.id === "action:reader" && entry.kind === "action"), "Command palette should include app actions.");
+assert(paletteEntries.some((entry) => entry.id === "point:market" && entry.kind === "point"), "Command palette should include points.");
+assert(paletteEntries.some((entry) => entry.id === "route:route-two" && entry.kind === "route"), "Command palette should include routes.");
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "sonnenuntergang")[0].id,
+  "point:market",
+  "Command palette should search point notes."
+);
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "neben")[0].id,
+  "route:route-two",
+  "Command palette should search route names."
+);
+assertDeepEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "   ").slice(0, 3).map((entry) => entry.kind),
+  ["action", "action", "action"],
+  "Empty command palette query should prioritize actions."
+);
+
 const fixturesDir = join(root, "testdata", "fixtures");
 const fixtureNames = (await readdir(fixturesDir)).filter((name) => name.endsWith(".plotmap.json")).sort();
 

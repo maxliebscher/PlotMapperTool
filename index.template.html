@@ -177,6 +177,23 @@
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
 
+  <div id="commandBackdrop" class="command-backdrop" hidden></div>
+  <section id="commandPalette" class="command-palette" role="dialog" aria-modal="true" aria-labelledby="commandTitle" hidden>
+    <header class="command-head">
+      <div>
+        <strong id="commandTitle">Search</strong>
+        <span id="commandHint">Ctrl+K</span>
+      </div>
+      <button id="commandClose" class="close" type="button">x</button>
+    </header>
+    <label class="command-input-wrap">
+      <span id="commandSearchLabel">Search commands, points, routes</span>
+      <input id="commandInput" type="search" autocomplete="off" spellcheck="false">
+    </label>
+    <div id="commandResults" class="command-results" role="listbox"></div>
+    <p id="commandEmpty" class="command-empty" hidden>No results.</p>
+  </section>
+
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
     <div id="presentationRoutes" class="presentation-routes" aria-label="Routes"></div>
     <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>

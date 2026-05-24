@@ -103,6 +103,15 @@
       helpBackdrop: $("helpBackdrop"),
       helpClose: $("helpClose"),
       helpBody: $("helpBody"),
+      commandBackdrop: $("commandBackdrop"),
+      commandPalette: $("commandPalette"),
+      commandTitle: $("commandTitle"),
+      commandHint: $("commandHint"),
+      commandClose: $("commandClose"),
+      commandSearchLabel: $("commandSearchLabel"),
+      commandInput: $("commandInput"),
+      commandResults: $("commandResults"),
+      commandEmpty: $("commandEmpty"),
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
@@ -188,6 +197,9 @@
 
     let routePanelOpen = false;
     let routeColorEdit = null;
+    let commandOpen = false;
+    let commandSelection = 0;
+    let commandMatches = [];
 
     function applyUiPrefs() {
       const root = document.documentElement;
@@ -248,6 +260,122 @@
 
     function validColor(value, fallback) {
       return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
+    }
+
+    function commandKindLabel(kind, locale) {
+      const key = kind === "route" ? "commandKindRoute" : kind === "point" ? "commandKindPoint" : "commandKindAction";
+      return PM.I18n.t(locale, key);
+    }
+
+    function commandIconHtml(entry) {
+      if (entry.kind === "route" && entry.color) {
+        return `<span class="command-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
+      }
+      return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
+    }
+
+    function currentCommandEntries() {
+      const state = store.getLiveState();
+      return PM.buildCommandPaletteEntries(state, state.settings.locale);
+    }
+
+    function renderCommandPalette() {
+      if (!commandOpen) return;
+      const locale = store.getLiveState().settings.locale;
+      commandMatches = PM.filterCommandPaletteEntries(currentCommandEntries(), controls.commandInput.value, 10);
+      commandSelection = PM.clamp(commandSelection, 0, Math.max(0, commandMatches.length - 1));
+      controls.commandResults.textContent = "";
+      controls.commandEmpty.hidden = commandMatches.length > 0;
+      commandMatches.forEach((entry, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `command-result${index === commandSelection ? " is-selected" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(index === commandSelection));
+        button.innerHTML = [
+          `<span class="command-icon">${commandIconHtml(entry)}</span>`,
+          `<span class="command-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || commandKindLabel(entry.kind, locale))}</span></span>`,
+          `<span class="command-kind">${PM.escapeHtml(commandKindLabel(entry.kind, locale))}</span>`
+        ].join("");
+        button.addEventListener("mouseenter", () => {
+          commandSelection = index;
+          renderCommandPalette();
+        });
+        button.addEventListener("click", () => executeCommandEntry(entry));
+        controls.commandResults.appendChild(button);
+      });
+    }
+
+    function openCommandPalette(seed) {
+      commandOpen = true;
+      commandSelection = 0;
+      closeRouteColorPopover();
+      menu.close();
+      controls.commandBackdrop.hidden = false;
+      controls.commandPalette.hidden = false;
+      controls.commandInput.value = seed || "";
+      renderCommandPalette();
+      controls.commandInput.focus();
+      controls.commandInput.select();
+    }
+
+    function closeCommandPalette() {
+      commandOpen = false;
+      controls.commandBackdrop.hidden = true;
+      controls.commandPalette.hidden = true;
+      controls.commandResults.textContent = "";
+    }
+
+    async function exportCurrentPng() {
+      try {
+        const blob = await renderer.exportPng();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
+      } catch (_error) {
+        alert(t("exportFailed"));
+      }
+    }
+
+    function executeCommandEntry(entry) {
+      if (!entry) return;
+      const state = store.getLiveState();
+      if (entry.kind === "point") {
+        const point = state.points.find((candidate) => candidate.id === entry.pointId);
+        if (!point) return;
+        if (point.type === "route" && point.routeId) {
+          store.setActiveRoute(point.routeId);
+        } else if (state.settings.filters[point.type] === false) {
+          store.setFilter(point.type, true);
+        }
+        if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+        renderer.centerOnPoint(point);
+        closeCommandPalette();
+        return;
+      }
+      if (entry.kind === "route") {
+        store.setActiveRoute(entry.routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false });
+        closeCommandPalette();
+        return;
+      }
+      if (entry.action === "reader") reader.open();
+      if (entry.action === "present") presentation.enter();
+      if (entry.action === "export-png") exportCurrentPng();
+      if (entry.action === "routes") {
+        routePanelOpen = true;
+        persistUiPrefs({ toolbarCollapsed: false });
+        renderRoutePanel(store.getState());
+      }
+      if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
+      if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
+      closeCommandPalette();
     }
 
     function setRouteColorPreview(value) {
@@ -465,6 +593,13 @@
       controls.helpModal.querySelector("h2").textContent = PM.I18n.t(locale, "helpTitle");
       controls.helpClose.textContent = PM.I18n.t(locale, "close");
       controls.helpBody.innerHTML = PM.I18n.t(locale, "helpHtml");
+      controls.commandTitle.textContent = PM.I18n.t(locale, "commandSearch");
+      controls.commandHint.textContent = PM.I18n.t(locale, "commandSearchHint");
+      controls.commandSearchLabel.textContent = PM.I18n.t(locale, "commandSearchPlaceholder");
+      controls.commandInput.setAttribute("aria-label", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandClose.textContent = PM.I18n.t(locale, "close");
+      controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
     }
 
@@ -543,20 +678,7 @@
       }
     });
 
-    controls.exportPng.addEventListener("click", async () => {
-      try {
-        const blob = await renderer.exportPng();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
-      } catch (_error) {
-        alert(t("exportFailed"));
-      }
-    });
+    controls.exportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
       if (confirm(t("clearConfirm"))) store.clearPoints();
@@ -646,6 +768,28 @@
     controls.helpButton.addEventListener("click", openHelp);
     controls.helpClose.addEventListener("click", closeHelp);
     controls.helpBackdrop.addEventListener("click", closeHelp);
+    controls.commandClose.addEventListener("click", closeCommandPalette);
+    controls.commandBackdrop.addEventListener("click", closeCommandPalette);
+    controls.commandInput.addEventListener("input", () => {
+      commandSelection = 0;
+      renderCommandPalette();
+    });
+    controls.commandInput.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection + 1, 0, Math.max(0, commandMatches.length - 1));
+        renderCommandPalette();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection - 1, 0, Math.max(0, commandMatches.length - 1));
+        renderCommandPalette();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        executeCommandEntry(commandMatches[commandSelection]);
+      }
+    });
 
     const canvas = $("mapCanvas");
     let pan = null;
@@ -696,13 +840,29 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      const eventTarget = event.target instanceof Element ? event.target : document.body;
+      const inTextField = eventTarget.matches("input, textarea, select");
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
+      if (event.key === "/" && !inTextField && !commandOpen) {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
       if (event.key === "Escape") {
+        if (commandOpen) {
+          closeCommandPalette();
+          return;
+        }
         closeRouteColorPopover();
         menu.close();
         closeHelp();
         $("pmSplash").classList.add("hide");
       }
-      if (event.key.toLowerCase() === "t" && !event.target.matches("input, textarea")) {
+      if (event.key.toLowerCase() === "t" && !inTextField) {
         const current = store.getLiveState().settings.theme;
         store.setSettings({ theme: PM.Theme.nextTheme(current) });
       }

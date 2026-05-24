@@ -10,6 +10,7 @@ const sourceFiles = [
   "src/utils.js",
   "src/state.js",
   "src/presentation.js",
+  "src/command-palette.js",
   "src/serialization.js",
   "src/exporters.js",
   "src/theme.js",

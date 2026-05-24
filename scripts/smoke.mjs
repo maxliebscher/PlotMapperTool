@@ -102,6 +102,43 @@ async function loadProject(page, fixturePath) {
   await waitForImage(page);
 }
 
+async function exerciseCommandPalette(page) {
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.waitForFunction(() => document.querySelectorAll(".command-result").length >= 3, null, { timeout: 5000 });
+  const pointSearch = await page.evaluate(() => {
+    const point = PM.store.getLiveState().points.find((entry) => entry.type === "route");
+    return { query: String(point.note || point.label).split(/\s+/)[0], label: point.label };
+  });
+  await page.locator("#commandInput").fill(pointSearch.query);
+  await page.waitForFunction((label) => document.querySelector(".command-result strong")?.textContent === label, pointSearch.label, { timeout: 5000 });
+  const before = await page.evaluate(() => ({
+    zoom: PM.store.getLiveState().settings.zoom,
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.zoom > prev.zoom || settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, before, { timeout: 5000 });
+
+  await page.keyboard.press("Control+K");
+  await page.locator("#commandInput").fill("routes");
+  await page.waitForFunction(() => document.querySelector(".command-result strong")?.textContent?.match(/Routes|Routen/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#routePanel:not([hidden])");
+  await page.click("#routePanelToggle");
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+}
+
 async function addRoutePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
   const wasFocused = await page.locator("#focusMode").isChecked();
@@ -236,8 +273,10 @@ async function editFirstPointLabel(page) {
 }
 
 async function insertMidpointAndUndoRedo(page) {
+  await page.evaluate(() => PM.store.setSettings({ zoom: 1, panX: 0, panY: 0 }));
+  await page.waitForFunction(() => document.querySelectorAll(".midpoint").length > 0, null, { timeout: 5000 });
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  await page.locator(".midpoint").last().click({ force: true });
+  await page.locator(".midpoint").last().evaluate((button) => button.click());
   await waitForPointCount(page, before + 1);
   await page.click("#undoButton");
   await waitForPointCount(page, before);
@@ -430,6 +469,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.click("#pmSplash");
   await loadProject(page, fixturePath);
+  await exerciseCommandPalette(page);
   await addRoutePoint(page);
   await addPlacePoint(page);
   await exerciseRouteManagement(page);

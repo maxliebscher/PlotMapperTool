@@ -1413,6 +1413,182 @@ button, input, textarea, select {
   overflow-wrap: anywhere;
 }
 
+.command-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 82;
+  background: rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(1px);
+}
+
+.command-palette {
+  position: fixed;
+  left: 50%;
+  top: 86px;
+  z-index: 88;
+  width: min(620px, calc(100vw - 28px));
+  max-height: min(72vh, 650px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(var(--panel-rgb), 0.96);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.command-backdrop[hidden],
+.command-palette[hidden] {
+  display: none;
+}
+
+.command-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.command-head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.command-head strong {
+  font-size: 17px;
+}
+
+#commandHint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.command-input-wrap {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.command-input-wrap span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#commandInput {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 11px;
+  font: inherit;
+  outline: none;
+}
+
+#commandInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74, 172, 255, 0.22);
+}
+
+.command-results {
+  display: grid;
+  gap: 5px;
+  padding: 0 8px 10px;
+  overflow: auto;
+}
+
+.command-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  padding: 7px 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.command-result.is-selected,
+.command-result:hover,
+.command-result:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 74%, var(--border));
+  background: color-mix(in srgb, var(--surface) 78%, var(--accent) 12%);
+}
+
+.command-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 18px;
+}
+
+.command-route-swatch {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.68);
+  border-radius: 5px;
+  background: var(--route-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.command-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.command-copy strong,
+.command-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-copy strong {
+  font-size: 14px;
+}
+
+.command-copy span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.command-kind {
+  align-self: center;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+.command-empty {
+  margin: 0;
+  padding: 0 14px 16px;
+  color: var(--muted);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2001,6 +2177,23 @@ button, input, textarea, select {
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
 
+  <div id="commandBackdrop" class="command-backdrop" hidden></div>
+  <section id="commandPalette" class="command-palette" role="dialog" aria-modal="true" aria-labelledby="commandTitle" hidden>
+    <header class="command-head">
+      <div>
+        <strong id="commandTitle">Search</strong>
+        <span id="commandHint">Ctrl+K</span>
+      </div>
+      <button id="commandClose" class="close" type="button">x</button>
+    </header>
+    <label class="command-input-wrap">
+      <span id="commandSearchLabel">Search commands, points, routes</span>
+      <input id="commandInput" type="search" autocomplete="off" spellcheck="false">
+    </label>
+    <div id="commandResults" class="command-results" role="listbox"></div>
+    <p id="commandEmpty" class="command-empty" hidden>No results.</p>
+  </section>
+
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
     <div id="presentationRoutes" class="presentation-routes" aria-label="Routes"></div>
     <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>
@@ -2283,6 +2476,13 @@ button, input, textarea, select {
       save: "Save",
       ok: "OK",
       cancel: "Cancel",
+      commandSearch: "Search",
+      commandSearchPlaceholder: "Search commands, points, routes",
+      commandSearchHint: "Ctrl+K",
+      commandNoResults: "No results.",
+      commandKindAction: "Action",
+      commandKindPoint: "Point",
+      commandKindRoute: "Route",
       jump: "Jump to map",
       chapter: "Chapter",
       untitled: "Untitled",
@@ -2291,7 +2491,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -2411,6 +2611,13 @@ button, input, textarea, select {
       save: "Speichern",
       ok: "OK",
       cancel: "Abbrechen",
+      commandSearch: "Suche",
+      commandSearchPlaceholder: "Befehle, Punkte, Routen suchen",
+      commandSearchHint: "Ctrl+K",
+      commandNoResults: "Keine Treffer.",
+      commandKindAction: "Aktion",
+      commandKindPoint: "Punkt",
+      commandKindRoute: "Route",
       jump: "Zur Karte",
       chapter: "Kapitel",
       untitled: "Ohne Titel",
@@ -2419,7 +2626,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -3440,6 +3647,139 @@ button, input, textarea, select {
   PM.computePresentationReveal = computePresentationReveal;
   PM.isPointRevealed = isPointRevealed;
   PM.createPresentationController = createPresentationController;
+})(globalThis.PM);
+
+
+/* src/command-palette.js */
+(function commandPaletteModule(PM) {
+  "use strict";
+
+  function normalizeSearchText(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function paletteAction(id, label, detail, icon, keywords) {
+    return {
+      id: `action:${id}`,
+      kind: "action",
+      action: id,
+      icon,
+      label,
+      detail,
+      keywords: keywords || ""
+    };
+  }
+
+  function pointLabel(point, locale) {
+    const type = PM.getPointType(point.type);
+    if (point.label) return point.label;
+    if (point.location) return point.location;
+    return PM.I18n.t(locale, point.type) || type.fallbackLabel || PM.I18n.t(locale, "untitled");
+  }
+
+  function pointDetail(point, project, locale) {
+    const typeLabel = PM.I18n.t(locale, point.type);
+    if (point.type !== "route") {
+      return [typeLabel, point.location, PM.formatDurationLabel(point.duration)].filter(Boolean).join(" · ");
+    }
+    const route = PM.routeForPoint(point, project.routes);
+    const routeInfo = route ? PM.computeRouteInfo(project.points, project.settings, route) : PM.computeRoutesInfo(project.points, project.settings, project.routes);
+    const step = routeInfo.displayById.get(point.id) || "";
+    const helper = point.helper ? PM.I18n.t(locale, "helperPointSize") : "";
+    return [route ? route.name : PM.I18n.t(locale, "route"), step ? `#${step}` : helper].filter(Boolean).join(" · ");
+  }
+
+  function buildCommandPaletteEntries(project, localeInput) {
+    const locale = PM.I18n.normalizeLocale(localeInput || (project && project.settings && project.settings.locale) || "en");
+    const state = PM.normalizeProject(project);
+    const actions = [
+      paletteAction("reader", PM.I18n.t(locale, "reader"), locale === "de" ? "Lineare Story-Ansicht öffnen" : "Open linear story view", "\uD83D\uDCD6", "read lesen kapitel chapter"),
+      paletteAction("present", PM.I18n.t(locale, "present"), locale === "de" ? "Präsentationsmodus starten" : "Start presentation mode", "\u25B6", "presentation reveal fog präsentation"),
+      paletteAction("export-png", PM.I18n.t(locale, "png"), locale === "de" ? "Aktuelle Ansicht als Bild exportieren" : "Export current view as image", "\uD83D\uDCF7", "export png bild image"),
+      paletteAction("routes", PM.I18n.t(locale, "routes"), locale === "de" ? "Routenverwaltung öffnen" : "Open route management", "\u21C4", "route pfad panel farbe linie"),
+      paletteAction("focus", PM.I18n.t(locale, "focus"), locale === "de" ? "Fokus-Modus umschalten" : "Toggle focus mode", "\u25C9", "focus fokus filter"),
+      paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
+    ];
+
+    const points = state.points.map((point) => {
+      const type = PM.getPointType(point.type);
+      const route = PM.routeForPoint(point, state.routes);
+      const label = pointLabel(point, locale);
+      return {
+        id: `point:${point.id}`,
+        kind: "point",
+        pointId: point.id,
+        icon: point.type === "route" ? "\uD83D\uDDFA\uFE0F" : type.icon,
+        label,
+        detail: pointDetail(point, state, locale),
+        keywords: [
+          point.type,
+          PM.I18n.t(locale, point.type),
+          point.label,
+          point.location,
+          point.note,
+          point.duration,
+          route && route.name,
+          point.helper ? "helper hilfspunkt" : ""
+        ].filter(Boolean).join(" ")
+      };
+    });
+
+    const routes = state.routes.map((route) => ({
+      id: `route:${route.id}`,
+      kind: "route",
+      routeId: route.id,
+      icon: "\u25A0",
+      label: route.name,
+      detail: [
+        PM.I18n.t(locale, "route"),
+        route.visible ? PM.I18n.t(locale, "routeVisible") : PM.I18n.t(locale, "presentationFogOff"),
+        PM.I18n.t(locale, `routeArrow${(route.arrowMode || "none")[0].toUpperCase()}${(route.arrowMode || "none").slice(1)}`)
+      ].filter(Boolean).join(" · "),
+      color: route.color,
+      keywords: [route.name, PM.I18n.t(locale, "route"), PM.I18n.t(locale, "activeRoute"), route.lineStyle, route.arrowMode].filter(Boolean).join(" ")
+    }));
+
+    return [...actions, ...points, ...routes].map((entry, index) => ({
+      ...entry,
+      rank: entry.kind === "action" ? index : entry.kind === "point" ? 100 + index : 200 + index,
+      searchText: normalizeSearchText([entry.label, entry.detail, entry.keywords].filter(Boolean).join(" "))
+    }));
+  }
+
+  function scoreEntry(entry, query) {
+    if (!query) return -entry.rank / 1000;
+    const haystack = entry.searchText || normalizeSearchText([entry.label, entry.detail, entry.keywords].join(" "));
+    const terms = normalizeSearchText(query).split(" ").filter(Boolean);
+    let score = 0;
+    for (const term of terms) {
+      const index = haystack.indexOf(term);
+      if (index < 0) return -Infinity;
+      score += index === 0 ? 40 : haystack.includes(` ${term}`) ? 24 : 12;
+    }
+    if (normalizeSearchText(entry.label).startsWith(normalizeSearchText(query))) score += 50;
+    if (entry.kind === "action") score += 4;
+    return score - entry.rank / 1000;
+  }
+
+  function filterCommandPaletteEntries(entries, query, limit) {
+    const max = limit || 12;
+    return (entries || [])
+      .map((entry) => ({ entry, score: scoreEntry(entry, query) }))
+      .filter((item) => item.score > -Infinity)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, max)
+      .map((item) => item.entry);
+  }
+
+  PM.normalizeSearchText = normalizeSearchText;
+  PM.buildCommandPaletteEntries = buildCommandPaletteEntries;
+  PM.filterCommandPaletteEntries = filterCommandPaletteEntries;
 })(globalThis.PM);
 
 
@@ -4874,6 +5214,15 @@ button, input, textarea, select {
       helpBackdrop: $("helpBackdrop"),
       helpClose: $("helpClose"),
       helpBody: $("helpBody"),
+      commandBackdrop: $("commandBackdrop"),
+      commandPalette: $("commandPalette"),
+      commandTitle: $("commandTitle"),
+      commandHint: $("commandHint"),
+      commandClose: $("commandClose"),
+      commandSearchLabel: $("commandSearchLabel"),
+      commandInput: $("commandInput"),
+      commandResults: $("commandResults"),
+      commandEmpty: $("commandEmpty"),
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
@@ -4959,6 +5308,9 @@ button, input, textarea, select {
 
     let routePanelOpen = false;
     let routeColorEdit = null;
+    let commandOpen = false;
+    let commandSelection = 0;
+    let commandMatches = [];
 
     function applyUiPrefs() {
       const root = document.documentElement;
@@ -5019,6 +5371,122 @@ button, input, textarea, select {
 
     function validColor(value, fallback) {
       return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
+    }
+
+    function commandKindLabel(kind, locale) {
+      const key = kind === "route" ? "commandKindRoute" : kind === "point" ? "commandKindPoint" : "commandKindAction";
+      return PM.I18n.t(locale, key);
+    }
+
+    function commandIconHtml(entry) {
+      if (entry.kind === "route" && entry.color) {
+        return `<span class="command-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
+      }
+      return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
+    }
+
+    function currentCommandEntries() {
+      const state = store.getLiveState();
+      return PM.buildCommandPaletteEntries(state, state.settings.locale);
+    }
+
+    function renderCommandPalette() {
+      if (!commandOpen) return;
+      const locale = store.getLiveState().settings.locale;
+      commandMatches = PM.filterCommandPaletteEntries(currentCommandEntries(), controls.commandInput.value, 10);
+      commandSelection = PM.clamp(commandSelection, 0, Math.max(0, commandMatches.length - 1));
+      controls.commandResults.textContent = "";
+      controls.commandEmpty.hidden = commandMatches.length > 0;
+      commandMatches.forEach((entry, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `command-result${index === commandSelection ? " is-selected" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(index === commandSelection));
+        button.innerHTML = [
+          `<span class="command-icon">${commandIconHtml(entry)}</span>`,
+          `<span class="command-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || commandKindLabel(entry.kind, locale))}</span></span>`,
+          `<span class="command-kind">${PM.escapeHtml(commandKindLabel(entry.kind, locale))}</span>`
+        ].join("");
+        button.addEventListener("mouseenter", () => {
+          commandSelection = index;
+          renderCommandPalette();
+        });
+        button.addEventListener("click", () => executeCommandEntry(entry));
+        controls.commandResults.appendChild(button);
+      });
+    }
+
+    function openCommandPalette(seed) {
+      commandOpen = true;
+      commandSelection = 0;
+      closeRouteColorPopover();
+      menu.close();
+      controls.commandBackdrop.hidden = false;
+      controls.commandPalette.hidden = false;
+      controls.commandInput.value = seed || "";
+      renderCommandPalette();
+      controls.commandInput.focus();
+      controls.commandInput.select();
+    }
+
+    function closeCommandPalette() {
+      commandOpen = false;
+      controls.commandBackdrop.hidden = true;
+      controls.commandPalette.hidden = true;
+      controls.commandResults.textContent = "";
+    }
+
+    async function exportCurrentPng() {
+      try {
+        const blob = await renderer.exportPng();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
+      } catch (_error) {
+        alert(t("exportFailed"));
+      }
+    }
+
+    function executeCommandEntry(entry) {
+      if (!entry) return;
+      const state = store.getLiveState();
+      if (entry.kind === "point") {
+        const point = state.points.find((candidate) => candidate.id === entry.pointId);
+        if (!point) return;
+        if (point.type === "route" && point.routeId) {
+          store.setActiveRoute(point.routeId);
+        } else if (state.settings.filters[point.type] === false) {
+          store.setFilter(point.type, true);
+        }
+        if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+        renderer.centerOnPoint(point);
+        closeCommandPalette();
+        return;
+      }
+      if (entry.kind === "route") {
+        store.setActiveRoute(entry.routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false });
+        closeCommandPalette();
+        return;
+      }
+      if (entry.action === "reader") reader.open();
+      if (entry.action === "present") presentation.enter();
+      if (entry.action === "export-png") exportCurrentPng();
+      if (entry.action === "routes") {
+        routePanelOpen = true;
+        persistUiPrefs({ toolbarCollapsed: false });
+        renderRoutePanel(store.getState());
+      }
+      if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
+      if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
+      closeCommandPalette();
     }
 
     function setRouteColorPreview(value) {
@@ -5236,6 +5704,13 @@ button, input, textarea, select {
       controls.helpModal.querySelector("h2").textContent = PM.I18n.t(locale, "helpTitle");
       controls.helpClose.textContent = PM.I18n.t(locale, "close");
       controls.helpBody.innerHTML = PM.I18n.t(locale, "helpHtml");
+      controls.commandTitle.textContent = PM.I18n.t(locale, "commandSearch");
+      controls.commandHint.textContent = PM.I18n.t(locale, "commandSearchHint");
+      controls.commandSearchLabel.textContent = PM.I18n.t(locale, "commandSearchPlaceholder");
+      controls.commandInput.setAttribute("aria-label", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandClose.textContent = PM.I18n.t(locale, "close");
+      controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
     }
 
@@ -5314,20 +5789,7 @@ button, input, textarea, select {
       }
     });
 
-    controls.exportPng.addEventListener("click", async () => {
-      try {
-        const blob = await renderer.exportPng();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
-      } catch (_error) {
-        alert(t("exportFailed"));
-      }
-    });
+    controls.exportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
       if (confirm(t("clearConfirm"))) store.clearPoints();
@@ -5417,6 +5879,28 @@ button, input, textarea, select {
     controls.helpButton.addEventListener("click", openHelp);
     controls.helpClose.addEventListener("click", closeHelp);
     controls.helpBackdrop.addEventListener("click", closeHelp);
+    controls.commandClose.addEventListener("click", closeCommandPalette);
+    controls.commandBackdrop.addEventListener("click", closeCommandPalette);
+    controls.commandInput.addEventListener("input", () => {
+      commandSelection = 0;
+      renderCommandPalette();
+    });
+    controls.commandInput.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection + 1, 0, Math.max(0, commandMatches.length - 1));
+        renderCommandPalette();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection - 1, 0, Math.max(0, commandMatches.length - 1));
+        renderCommandPalette();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        executeCommandEntry(commandMatches[commandSelection]);
+      }
+    });
 
     const canvas = $("mapCanvas");
     let pan = null;
@@ -5467,13 +5951,29 @@ button, input, textarea, select {
     });
 
     document.addEventListener("keydown", (event) => {
+      const eventTarget = event.target instanceof Element ? event.target : document.body;
+      const inTextField = eventTarget.matches("input, textarea, select");
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
+      if (event.key === "/" && !inTextField && !commandOpen) {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
       if (event.key === "Escape") {
+        if (commandOpen) {
+          closeCommandPalette();
+          return;
+        }
         closeRouteColorPopover();
         menu.close();
         closeHelp();
         $("pmSplash").classList.add("hide");
       }
-      if (event.key.toLowerCase() === "t" && !event.target.matches("input, textarea")) {
+      if (event.key.toLowerCase() === "t" && !inTextField) {
         const current = store.getLiveState().settings.theme;
         store.setSettings({ theme: PM.Theme.nextTheme(current) });
       }
