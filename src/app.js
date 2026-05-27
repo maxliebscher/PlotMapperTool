@@ -87,6 +87,16 @@
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
       themeToggle: $("themeToggle"),
+      minimapToggle: $("minimapToggle"),
+      minimapPanel: $("minimapPanel"),
+      minimapDrag: $("minimapDrag"),
+      minimapCanvas: $("minimapCanvas"),
+      minimapSvg: $("minimapSvg"),
+      minimapViewport: $("minimapViewport"),
+      minimapResize: $("minimapResize"),
+      minimapAuto: $("minimapAuto"),
+      minimapPin: $("minimapPin"),
+      minimapClose: $("minimapClose"),
       toolbarCollapse: $("toolbarCollapse"),
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
@@ -190,6 +200,22 @@
         item: $("filter-item")
       }
     };
+    const minimap = PM.createMinimap({
+      panel: controls.minimapPanel,
+      canvas: controls.minimapCanvas,
+      viewport: controls.minimapViewport,
+      svg: controls.minimapSvg,
+      dragHandle: controls.minimapDrag,
+      resizeHandle: controls.minimapResize,
+      autoButton: controls.minimapAuto,
+      pinButton: controls.minimapPin,
+      closeButton: controls.minimapClose,
+      toggleButton: controls.minimapToggle,
+      mainCanvas: $("mapCanvas"),
+      store,
+      renderer
+    });
+    PM.minimap = minimap;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -384,6 +410,7 @@
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
+      if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();
     }
 
@@ -508,6 +535,9 @@
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.minimapToggle.textContent = "\u25A3";
+      controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
+      controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
       controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));

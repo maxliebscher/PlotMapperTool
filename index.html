@@ -536,6 +536,146 @@ button, input, textarea, select {
   white-space: nowrap;
 }
 
+.minimap-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 46;
+  width: 270px;
+  max-width: calc(100vw - 16px);
+  min-width: 190px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.minimap-panel[hidden],
+:root.presentation-mode .minimap-panel {
+  display: none !important;
+}
+
+.minimap-drag {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  cursor: move;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.minimap-panel.is-moving .minimap-drag {
+  cursor: grabbing;
+}
+
+#minimapHint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.minimap-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.minimap-action {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.minimap-action:hover,
+.minimap-action.is-active {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--surface-2) 78%, var(--accent) 16%);
+}
+
+.minimap-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: #101112;
+  background-position: center;
+  background-size: cover;
+  cursor: crosshair;
+}
+
+.minimap-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.74));
+  pointer-events: none;
+}
+
+.minimap-viewport {
+  position: absolute;
+  min-width: 14px;
+  min-height: 14px;
+  border: 2px solid #f8ffff;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow:
+    0 0 0 999px rgba(0, 0, 0, 0.25),
+    0 0 0 3px color-mix(in srgb, var(--accent) 38%, transparent);
+  pointer-events: none;
+}
+
+.minimap-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.minimap-footer strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.minimap-resize {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-right: 2px solid color-mix(in srgb, var(--text) 64%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--text) 64%, transparent);
+  border-radius: 0 0 7px 0;
+  background: transparent;
+  cursor: nwse-resize;
+}
+
 .toolbar-head {
   display: flex;
   align-items: center;
@@ -2084,6 +2224,7 @@ button, input, textarea, select {
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
+        <button id="minimapToggle" class="btn icon" type="button" title="Minimap" aria-label="Minimap">&#9635;</button>
         <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
@@ -2167,6 +2308,27 @@ button, input, textarea, select {
     <span id="toolbarRestoreLabel">Menu</span>
     <span aria-hidden="true">&#9662;</span>
   </button>
+
+  <section id="minimapPanel" class="minimap-panel" aria-label="Minimap" hidden>
+    <header id="minimapDrag" class="minimap-drag">
+      <span id="minimapTitle">Minimap</span>
+      <span id="minimapHint">Auto</span>
+      <span class="minimap-actions">
+        <button id="minimapAuto" class="minimap-action" type="button" title="Auto">A</button>
+        <button id="minimapPin" class="minimap-action" type="button" title="Pin">P</button>
+        <button id="minimapClose" class="minimap-action" type="button" title="Close">x</button>
+      </span>
+    </header>
+    <div id="minimapCanvas" class="minimap-canvas" role="button" tabindex="0" aria-label="Jump on the map">
+      <svg id="minimapSvg" class="minimap-svg" viewBox="0 0 1000 562.5" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <span id="minimapViewport" class="minimap-viewport"></span>
+    </div>
+    <footer class="minimap-footer">
+      <span>Viewport</span>
+      <strong id="minimapMetric">-</strong>
+    </footer>
+    <button id="minimapResize" class="minimap-resize" type="button" aria-label="Resize minimap"></button>
+  </section>
 
   <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
     <div class="color-popover-header">
@@ -2449,6 +2611,14 @@ button, input, textarea, select {
       helperPointSize: "Helper",
       helperPointSizeFull: "Helper point size",
       menuOpacity: "Menu",
+      minimap: "Minimap",
+      minimapAuto: "Auto at zoom",
+      minimapPinned: "Pinned",
+      minimapOff: "Off",
+      minimapAutoShort: "A",
+      minimapPinShort: "P",
+      minimapResize: "Resize minimap",
+      minimapJump: "Click jumps to this map area",
       collapseMenu: "Collapse menu",
       expandMenu: "Open menu",
       focus: "Focus",
@@ -2524,7 +2694,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -2583,6 +2753,14 @@ button, input, textarea, select {
       pointSizeFull: "Punktgröße",
       helperPointSize: "Hilfspunkte",
       helperPointSizeFull: "Hilfspunkte (unnummerierte Routenpunkte)",
+      minimap: "Minimap",
+      minimapAuto: "Auto bei Zoom",
+      minimapPinned: "Fixiert",
+      minimapOff: "Aus",
+      minimapAutoShort: "A",
+      minimapPinShort: "P",
+      minimapResize: "Minimap skalieren",
+      minimapJump: "Klick springt zu diesem Kartenausschnitt",
       menuOpacity: "Menü",
       collapseMenu: "Menü einklappen",
       expandMenu: "Menü ausklappen",
@@ -2659,7 +2837,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -3736,6 +3914,7 @@ button, input, textarea, select {
       paletteAction("export-png", PM.I18n.t(locale, "png"), locale === "de" ? "Aktuelle Ansicht als Bild exportieren" : "Export current view as image", "\uD83D\uDCF7", "export png bild image"),
       paletteAction("routes", PM.I18n.t(locale, "routes"), locale === "de" ? "Routenverwaltung öffnen" : "Open route management", "\u21C4", "route pfad panel farbe linie"),
       paletteAction("focus", PM.I18n.t(locale, "focus"), locale === "de" ? "Fokus-Modus umschalten" : "Toggle focus mode", "\u25C9", "focus fokus filter"),
+      paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\u25A3", "minimap overview ausschnitt viewport orientierung"),
       paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
     ];
 
@@ -4425,6 +4604,296 @@ button, input, textarea, select {
   }
 
   PM.createRenderer = createRenderer;
+})(globalThis.PM);
+
+
+/* src/minimap.js */
+(function minimapModule(PM) {
+  "use strict";
+
+  const PREF_KEY = "pmMinimapPrefsV1";
+
+  function clampNumber(value, fallback, min, max) {
+    return PM.clamp(Number.isFinite(Number(value)) ? Number(value) : fallback, min, max);
+  }
+
+  function normalizePrefs(input) {
+    const raw = input || {};
+    return {
+      mode: ["auto", "pin", "off"].includes(raw.mode) ? raw.mode : "auto",
+      width: clampNumber(raw.width, 270, 190, 420),
+      x: raw.x === null || raw.x === undefined ? null : clampNumber(raw.x, 0, 0, innerWidth),
+      y: raw.y === null || raw.y === undefined ? null : clampNumber(raw.y, 0, 0, innerHeight)
+    };
+  }
+
+  function loadPrefs() {
+    try {
+      return normalizePrefs(JSON.parse(localStorage.getItem(PREF_KEY) || "{}"));
+    } catch (_error) {
+      return normalizePrefs();
+    }
+  }
+
+  function savePrefs(prefs) {
+    try {
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+    } catch (_error) {
+      // Minimap preferences are UI-only niceties; the app works without localStorage.
+    }
+  }
+
+  function routeDash(route) {
+    if (route.lineStyle === "dashed") return "12 8";
+    if (route.lineStyle === "dotted") return `2 ${Math.max(5, route.width * 1.6)}`;
+    return "";
+  }
+
+  function createSvgElement(name) {
+    return document.createElementNS("http://www.w3.org/2000/svg", name);
+  }
+
+  function createMinimap(options) {
+    const panel = options.panel;
+    const canvas = options.canvas;
+    const viewport = options.viewport;
+    const svg = options.svg;
+    const dragHandle = options.dragHandle;
+    const resizeHandle = options.resizeHandle;
+    const autoButton = options.autoButton;
+    const pinButton = options.pinButton;
+    const closeButton = options.closeButton;
+    const toggleButton = options.toggleButton;
+    const store = options.store;
+    const renderer = options.renderer;
+    const mainCanvas = options.mainCanvas;
+    let prefs = loadPrefs();
+    let drag = null;
+    let resize = null;
+    let latestState = store.getState();
+
+    function persist(patch) {
+      prefs = normalizePrefs({ ...prefs, ...patch });
+      savePrefs(prefs);
+      render(latestState);
+    }
+
+    function clampPanelPosition() {
+      if (prefs.x === null || prefs.y === null) return;
+      const rect = panel.getBoundingClientRect();
+      prefs.x = PM.clamp(prefs.x, 8, Math.max(8, innerWidth - rect.width - 8));
+      prefs.y = PM.clamp(prefs.y, 8, Math.max(8, innerHeight - rect.height - 8));
+      panel.style.left = `${prefs.x}px`;
+      panel.style.top = `${prefs.y}px`;
+      panel.style.right = "auto";
+      panel.style.bottom = "auto";
+    }
+
+    function applyPanelPrefs() {
+      panel.style.width = `${PM.clamp(prefs.width, 190, Math.min(420, Math.max(190, innerWidth - 16)))}px`;
+      if (prefs.x === null || prefs.y === null) {
+        panel.style.left = "auto";
+        panel.style.top = "auto";
+        panel.style.right = "18px";
+        panel.style.bottom = innerWidth <= 760 ? "74px" : "18px";
+      } else {
+        clampPanelPosition();
+      }
+    }
+
+    function visibleBounds() {
+      const rect = renderer.getImageRect();
+      const width = mainCanvas.clientWidth || innerWidth;
+      const height = mainCanvas.clientHeight || innerHeight;
+      if (!rect.w || !rect.h) return { left: 0, top: 0, width: 1, height: 1 };
+      const left = PM.clamp((0 - rect.x) / rect.w, 0, 1);
+      const top = PM.clamp((0 - rect.y) / rect.h, 0, 1);
+      const right = PM.clamp((width - rect.x) / rect.w, 0, 1);
+      const bottom = PM.clamp((height - rect.y) / rect.h, 0, 1);
+      return {
+        left,
+        top,
+        width: Math.max(0.04, right - left),
+        height: Math.max(0.04, bottom - top)
+      };
+    }
+
+    function drawRoutes(state) {
+      svg.textContent = "";
+      const visibleRoutes = state.routes.filter((route) => route.visible);
+      visibleRoutes.forEach((route) => {
+        const points = state.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, state.settings, state.routes));
+        if (points.length >= 2) {
+          const path = createSvgElement("path");
+          path.setAttribute("d", points.map((point, index) => `${index ? "L" : "M"}${(point.x * 1000).toFixed(1)} ${(point.y * 562.5).toFixed(1)}`).join(" "));
+          path.setAttribute("stroke", route.color);
+          path.setAttribute("stroke-width", String(Math.max(2.5, route.width * 1.2)));
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke-linecap", "round");
+          path.setAttribute("stroke-linejoin", "round");
+          const dash = routeDash(route);
+          if (dash) path.setAttribute("stroke-dasharray", dash);
+          svg.appendChild(path);
+        }
+        points.forEach((point) => {
+          const circle = createSvgElement("circle");
+          circle.setAttribute("cx", String(point.x * 1000));
+          circle.setAttribute("cy", String(point.y * 562.5));
+          circle.setAttribute("r", point.helper ? "7" : "9");
+          circle.setAttribute("fill", point.helper ? "rgba(230,235,228,.82)" : route.color);
+          circle.setAttribute("stroke", "rgba(0,0,0,.72)");
+          circle.setAttribute("stroke-width", "3");
+          svg.appendChild(circle);
+        });
+      });
+    }
+
+    function updateLabels(state) {
+      const locale = state.settings.locale;
+      panel.querySelector("#minimapTitle").textContent = PM.I18n.t(locale, "minimap");
+      panel.querySelector("#minimapHint").textContent = prefs.mode === "auto"
+        ? PM.I18n.t(locale, "minimapAuto")
+        : prefs.mode === "pin"
+          ? PM.I18n.t(locale, "minimapPinned")
+          : PM.I18n.t(locale, "minimapOff");
+      autoButton.textContent = PM.I18n.t(locale, "minimapAutoShort");
+      pinButton.textContent = PM.I18n.t(locale, "minimapPinShort");
+      closeButton.textContent = "x";
+      autoButton.setAttribute("title", PM.I18n.t(locale, "minimapAuto"));
+      pinButton.setAttribute("title", PM.I18n.t(locale, "minimapPinned"));
+      closeButton.setAttribute("title", PM.I18n.t(locale, "close"));
+      resizeHandle.setAttribute("aria-label", PM.I18n.t(locale, "minimapResize"));
+      canvas.setAttribute("aria-label", PM.I18n.t(locale, "minimapJump"));
+      if (toggleButton) {
+        toggleButton.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
+        toggleButton.setAttribute("title", PM.I18n.t(locale, "minimap"));
+        toggleButton.setAttribute("aria-pressed", String(prefs.mode !== "off"));
+      }
+    }
+
+    function render(stateInput) {
+      latestState = stateInput || latestState;
+      const state = latestState;
+      applyPanelPrefs();
+      updateLabels(state);
+      autoButton.classList.toggle("is-active", prefs.mode === "auto");
+      pinButton.classList.toggle("is-active", prefs.mode === "pin");
+      const hasMap = Boolean(state.map.dataUrl) && renderer.hasImage();
+      const shouldShow = hasMap && (prefs.mode === "pin" || (prefs.mode === "auto" && state.settings.zoom >= 1.3));
+      panel.hidden = !shouldShow;
+      if (!hasMap) return;
+      canvas.style.backgroundImage = `linear-gradient(rgba(3,7,9,.12), rgba(3,7,9,.12)), url("${state.map.dataUrl}")`;
+      drawRoutes(state);
+      const bounds = visibleBounds();
+      viewport.style.left = `${bounds.left * 100}%`;
+      viewport.style.top = `${bounds.top * 100}%`;
+      viewport.style.width = `${bounds.width * 100}%`;
+      viewport.style.height = `${bounds.height * 100}%`;
+      panel.querySelector("#minimapMetric").textContent = `${Math.round(bounds.width * 100)}% x ${Math.round(bounds.height * 100)}%`;
+    }
+
+    function jumpTo(clientX, clientY) {
+      if (!renderer.hasImage()) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = PM.clamp((clientX - rect.left) / rect.width, 0, 1);
+      const y = PM.clamp((clientY - rect.top) / rect.height, 0, 1);
+      renderer.centerOnPoint({ x, y }, store.getLiveState().settings.zoom);
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      jumpTo(event.clientX, event.clientY);
+    });
+    canvas.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      jumpTo(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    dragHandle.addEventListener("pointerdown", (event) => {
+      if (event.target.closest("button")) return;
+      const rect = panel.getBoundingClientRect();
+      drag = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        left: rect.left,
+        top: rect.top
+      };
+      panel.setPointerCapture(event.pointerId);
+      panel.classList.add("is-moving");
+      event.preventDefault();
+    });
+    panel.addEventListener("pointermove", (event) => {
+      if (drag && event.pointerId === drag.pointerId) {
+        prefs.x = drag.left + event.clientX - drag.x;
+        prefs.y = drag.top + event.clientY - drag.y;
+        clampPanelPosition();
+      }
+      if (resize && event.pointerId === resize.pointerId) {
+        prefs.width = PM.clamp(resize.width + event.clientX - resize.x, 190, Math.min(420, innerWidth - 16));
+        panel.style.width = `${prefs.width}px`;
+      }
+    });
+    panel.addEventListener("pointerup", (event) => {
+      if (drag && event.pointerId === drag.pointerId) {
+        panel.releasePointerCapture(event.pointerId);
+        panel.classList.remove("is-moving");
+        persist({ x: prefs.x, y: prefs.y });
+        drag = null;
+      }
+      if (resize && event.pointerId === resize.pointerId) {
+        panel.releasePointerCapture(event.pointerId);
+        persist({ width: prefs.width });
+        resize = null;
+      }
+    });
+    panel.addEventListener("pointercancel", () => {
+      drag = null;
+      resize = null;
+      panel.classList.remove("is-moving");
+    });
+    resizeHandle.addEventListener("pointerdown", (event) => {
+      const rect = panel.getBoundingClientRect();
+      resize = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        width: rect.width
+      };
+      panel.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    autoButton.addEventListener("click", () => persist({ mode: "auto" }));
+    pinButton.addEventListener("click", () => persist({ mode: "pin" }));
+    closeButton.addEventListener("click", () => persist({ mode: "off" }));
+    if (toggleButton) {
+      toggleButton.addEventListener("click", () => {
+        persist({ mode: prefs.mode === "off" ? "pin" : "off" });
+      });
+    }
+
+    store.subscribe(render);
+    globalThis.addEventListener("resize", () => {
+      prefs = normalizePrefs(prefs);
+      clampPanelPosition();
+      render(latestState);
+    });
+    globalThis.addEventListener("pm:image-ready", () => render(store.getState()));
+
+    return {
+      render,
+      setMode(mode) {
+        persist({ mode });
+      },
+      getPrefs() {
+        return { ...prefs };
+      }
+    };
+  }
+
+  PM.createMinimap = createMinimap;
 })(globalThis.PM);
 
 
@@ -5266,6 +5735,16 @@ button, input, textarea, select {
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
       themeToggle: $("themeToggle"),
+      minimapToggle: $("minimapToggle"),
+      minimapPanel: $("minimapPanel"),
+      minimapDrag: $("minimapDrag"),
+      minimapCanvas: $("minimapCanvas"),
+      minimapSvg: $("minimapSvg"),
+      minimapViewport: $("minimapViewport"),
+      minimapResize: $("minimapResize"),
+      minimapAuto: $("minimapAuto"),
+      minimapPin: $("minimapPin"),
+      minimapClose: $("minimapClose"),
       toolbarCollapse: $("toolbarCollapse"),
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
@@ -5369,6 +5848,22 @@ button, input, textarea, select {
         item: $("filter-item")
       }
     };
+    const minimap = PM.createMinimap({
+      panel: controls.minimapPanel,
+      canvas: controls.minimapCanvas,
+      viewport: controls.minimapViewport,
+      svg: controls.minimapSvg,
+      dragHandle: controls.minimapDrag,
+      resizeHandle: controls.minimapResize,
+      autoButton: controls.minimapAuto,
+      pinButton: controls.minimapPin,
+      closeButton: controls.minimapClose,
+      toggleButton: controls.minimapToggle,
+      mainCanvas: $("mapCanvas"),
+      store,
+      renderer
+    });
+    PM.minimap = minimap;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -5563,6 +6058,7 @@ button, input, textarea, select {
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
+      if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();
     }
 
@@ -5687,6 +6183,9 @@ button, input, textarea, select {
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.minimapToggle.textContent = "\u25A3";
+      controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
+      controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
       controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));

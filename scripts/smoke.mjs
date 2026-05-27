@@ -141,6 +141,59 @@ async function exerciseCommandPalette(page) {
   await page.waitForSelector("#commandPalette", { state: "hidden" });
 }
 
+async function exerciseMinimap(page) {
+  await setInputValue(page, "#zoomControl", "2");
+  await page.waitForSelector("#minimapPanel:not([hidden])");
+  await page.waitForFunction(() => {
+    const panel = document.querySelector("#minimapPanel");
+    const canvas = document.querySelector("#minimapCanvas");
+    const viewport = document.querySelector("#minimapViewport");
+    return panel
+      && canvas
+      && viewport
+      && canvas.getBoundingClientRect().width > 120
+      && viewport.getBoundingClientRect().width > 10
+      && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+  }, null, { timeout: 5000 });
+
+  const beforeDrag = await page.locator("#minimapPanel").boundingBox();
+  const dragHandle = await page.locator("#minimapDrag").boundingBox();
+  assert(beforeDrag && dragHandle, "Minimap drag handle should be measurable.");
+  await page.mouse.move(dragHandle.x + dragHandle.width / 2, dragHandle.y + dragHandle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(dragHandle.x + dragHandle.width / 2 - 36, dragHandle.y + dragHandle.height / 2 - 28, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForFunction((left) => Math.abs(document.querySelector("#minimapPanel").getBoundingClientRect().left - left) > 8, beforeDrag.x, { timeout: 5000 });
+
+  const beforeResize = await page.locator("#minimapPanel").boundingBox();
+  const resize = await page.locator("#minimapResize").boundingBox();
+  assert(beforeResize && resize, "Minimap resize handle should be measurable.");
+  await page.mouse.move(resize.x + resize.width / 2, resize.y + resize.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(resize.x + resize.width / 2 + 52, resize.y + resize.height / 2, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForFunction((width) => document.querySelector("#minimapPanel").getBoundingClientRect().width > width + 20, beforeResize.width, { timeout: 5000 });
+
+  const beforeJump = await page.evaluate(() => ({
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  const mini = await page.locator("#minimapCanvas").boundingBox();
+  assert(mini, "Minimap click target should be measurable.");
+  await page.mouse.click(mini.x + mini.width * 0.82, mini.y + mini.height * 0.72);
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, beforeJump, { timeout: 5000 });
+
+  await page.click("#minimapClose");
+  await page.waitForSelector("#minimapPanel", { state: "hidden" });
+  await page.click("#minimapToggle");
+  await page.waitForSelector("#minimapPanel:not([hidden])");
+  await page.click("#minimapClose");
+  await page.waitForSelector("#minimapPanel", { state: "hidden" });
+}
+
 async function addRoutePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
   const wasFocused = await page.locator("#focusMode").isChecked();
@@ -474,6 +527,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.click("#pmSplash");
   await loadProject(page, fixturePath);
+  await exerciseMinimap(page);
   await exerciseCommandPalette(page);
   await addRoutePoint(page);
   await addPlacePoint(page);
