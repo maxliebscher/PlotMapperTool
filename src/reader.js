@@ -67,6 +67,23 @@
       return button;
     }
 
+    function jumpToPoint(point) {
+      close();
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
+    function makeJumpButton(point, locale) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-jump";
+      button.textContent = text(locale, "jump");
+      button.addEventListener("click", () => jumpToPoint(point));
+      return button;
+    }
+
     function render() {
       const state = store.getState();
       const locale = state.settings.locale;
@@ -96,10 +113,7 @@
         number.className = "reader-num";
         number.title = text(locale, "jump");
         number.textContent = String(chapter.step);
-        number.addEventListener("click", () => {
-          close();
-          renderer.centerOnPoint(point);
-        });
+        number.addEventListener("click", () => jumpToPoint(point));
         const heading = document.createElement("h3");
         heading.textContent = point.label || `${text(locale, "chapter")} ${chapter.step}`;
         head.append(number, heading);
@@ -110,6 +124,7 @@
           head.appendChild(pill);
         }
         const form = editForm(point, locale);
+        head.appendChild(makeJumpButton(point, locale));
         head.appendChild(makeEditButton(form, locale));
         card.append(head, form);
         if (point.note) {
@@ -144,7 +159,10 @@
               body.appendChild(dur);
             }
             const extraForm = editForm(extra, locale);
-            item.append(type, body, makeEditButton(extraForm, locale), extraForm);
+            const actions = document.createElement("div");
+            actions.className = "reader-extra-actions";
+            actions.append(makeJumpButton(extra, locale), makeEditButton(extraForm, locale));
+            item.append(type, body, actions, extraForm);
             list.appendChild(item);
           }
           card.appendChild(list);

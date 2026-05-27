@@ -4,6 +4,7 @@
   function createPointUi(pointLayer, midLayer, routeLayer, store, renderer, menuController) {
     const pointNodes = new Map();
     const fieldHidden = new Map();
+    const flashTimers = new Map();
     let latestState = store.getState();
 
     function hiddenFor(pointId) {
@@ -259,6 +260,20 @@
       updateMidpoints(routeSets);
     }
 
+    function flashPoint(pointId) {
+      const node = pointNodes.get(pointId);
+      if (!node) return false;
+      node.classList.remove("is-jump-target");
+      void node.offsetWidth;
+      node.classList.add("is-jump-target");
+      if (flashTimers.has(pointId)) clearTimeout(flashTimers.get(pointId));
+      flashTimers.set(pointId, setTimeout(() => {
+        node.classList.remove("is-jump-target");
+        flashTimers.delete(pointId);
+      }, 1800));
+      return true;
+    }
+
     store.subscribe(render);
     globalThis.addEventListener("resize", () => render(store.getState()));
     globalThis.addEventListener("pm:image-ready", () => render(store.getState()));
@@ -274,9 +289,11 @@
       hiddenFor(pointId)[field] = Boolean(isHidden);
       render(store.getState());
     };
+    PM.flashPoint = flashPoint;
 
     return {
-      render
+      render,
+      flashPoint
     };
   }
 

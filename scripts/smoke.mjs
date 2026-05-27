@@ -112,6 +112,7 @@ async function exerciseCommandPalette(page) {
   });
   await page.locator("#commandInput").fill(pointSearch.query);
   await page.waitForFunction((label) => document.querySelector(".command-result strong")?.textContent === label, pointSearch.label, { timeout: 5000 });
+  await page.waitForFunction(() => /Jump|Zur Karte/.test(document.querySelector(".command-result .command-action")?.textContent || ""), null, { timeout: 5000 });
   const before = await page.evaluate(() => ({
     zoom: PM.store.getLiveState().settings.zoom,
     panX: PM.store.getLiveState().settings.panX,
@@ -119,6 +120,7 @@ async function exerciseCommandPalette(page) {
   }));
   await page.keyboard.press("Enter");
   await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector(".point.is-jump-target");
   await page.waitForFunction((prev) => {
     const settings = PM.store.getLiveState().settings;
     return settings.zoom > prev.zoom || settings.panX !== prev.panX || settings.panY !== prev.panY;
@@ -424,8 +426,11 @@ async function exercisePresentation(page) {
 async function exerciseReader(page) {
   await page.click("#readerButton");
   await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
+  await page.waitForSelector(".reader-jump");
   const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
-  await page.locator(".reader-num").first().click();
+  await page.locator(".reader-jump").first().click();
+  await page.waitForSelector("#readerModal", { state: "hidden" });
+  await page.waitForSelector(".point.is-jump-target");
   await page.waitForFunction((before) => PM.store.getLiveState().settings.panX !== before || PM.store.getLiveState().settings.zoom > 1, panBefore, { timeout: 5000 });
 }
 

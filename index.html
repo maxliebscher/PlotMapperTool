@@ -362,6 +362,30 @@ button, input, textarea, select {
   display: none;
 }
 
+.point.is-jump-target {
+  animation: pointJumpTarget 1.8s ease-out;
+  z-index: 18;
+}
+
+@keyframes pointJumpTarget {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(57, 214, 195, 0.98),
+      0 9px 15px rgba(0, 0, 0, 0.46);
+  }
+  38% {
+    box-shadow:
+      0 0 0 20px rgba(57, 214, 195, 0.18),
+      0 0 0 3px rgba(255, 255, 255, 0.9),
+      0 9px 15px rgba(0, 0, 0, 0.46);
+  }
+  100% {
+    box-shadow:
+      0 0 0 30px rgba(57, 214, 195, 0),
+      0 9px 15px rgba(0, 0, 0, 0.46);
+  }
+}
+
 .point-icon {
   font-size: calc(18px * var(--font-scale));
   line-height: 1;
@@ -1570,7 +1594,7 @@ button, input, textarea, select {
   font-size: 12px;
 }
 
-.command-kind {
+.command-action {
   align-self: center;
   max-width: 96px;
   overflow: hidden;
@@ -1749,6 +1773,10 @@ button, input, textarea, select {
   cursor: pointer;
 }
 
+.reader-jump {
+  white-space: nowrap;
+}
+
 .reader-card h3 {
   flex: 1;
   margin: 0;
@@ -1788,6 +1816,11 @@ button, input, textarea, select {
   gap: 8px;
   padding-left: 10px;
   border-left: 3px solid var(--border);
+}
+
+.reader-extra-actions {
+  display: grid;
+  gap: 6px;
 }
 
 .reader-edit {
@@ -4612,6 +4645,7 @@ button, input, textarea, select {
   function createPointUi(pointLayer, midLayer, routeLayer, store, renderer, menuController) {
     const pointNodes = new Map();
     const fieldHidden = new Map();
+    const flashTimers = new Map();
     let latestState = store.getState();
 
     function hiddenFor(pointId) {
@@ -4867,6 +4901,20 @@ button, input, textarea, select {
       updateMidpoints(routeSets);
     }
 
+    function flashPoint(pointId) {
+      const node = pointNodes.get(pointId);
+      if (!node) return false;
+      node.classList.remove("is-jump-target");
+      void node.offsetWidth;
+      node.classList.add("is-jump-target");
+      if (flashTimers.has(pointId)) clearTimeout(flashTimers.get(pointId));
+      flashTimers.set(pointId, setTimeout(() => {
+        node.classList.remove("is-jump-target");
+        flashTimers.delete(pointId);
+      }, 1800));
+      return true;
+    }
+
     store.subscribe(render);
     globalThis.addEventListener("resize", () => render(store.getState()));
     globalThis.addEventListener("pm:image-ready", () => render(store.getState()));
@@ -4882,9 +4930,11 @@ button, input, textarea, select {
       hiddenFor(pointId)[field] = Boolean(isHidden);
       render(store.getState());
     };
+    PM.flashPoint = flashPoint;
 
     return {
-      render
+      render,
+      flashPoint
     };
   }
 
@@ -4962,6 +5012,23 @@ button, input, textarea, select {
       return button;
     }
 
+    function jumpToPoint(point) {
+      close();
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
+    function makeJumpButton(point, locale) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-jump";
+      button.textContent = text(locale, "jump");
+      button.addEventListener("click", () => jumpToPoint(point));
+      return button;
+    }
+
     function render() {
       const state = store.getState();
       const locale = state.settings.locale;
@@ -4991,10 +5058,7 @@ button, input, textarea, select {
         number.className = "reader-num";
         number.title = text(locale, "jump");
         number.textContent = String(chapter.step);
-        number.addEventListener("click", () => {
-          close();
-          renderer.centerOnPoint(point);
-        });
+        number.addEventListener("click", () => jumpToPoint(point));
         const heading = document.createElement("h3");
         heading.textContent = point.label || `${text(locale, "chapter")} ${chapter.step}`;
         head.append(number, heading);
@@ -5005,6 +5069,7 @@ button, input, textarea, select {
           head.appendChild(pill);
         }
         const form = editForm(point, locale);
+        head.appendChild(makeJumpButton(point, locale));
         head.appendChild(makeEditButton(form, locale));
         card.append(head, form);
         if (point.note) {
@@ -5039,7 +5104,10 @@ button, input, textarea, select {
               body.appendChild(dur);
             }
             const extraForm = editForm(extra, locale);
-            item.append(type, body, makeEditButton(extraForm, locale), extraForm);
+            const actions = document.createElement("div");
+            actions.className = "reader-extra-actions";
+            actions.append(makeJumpButton(extra, locale), makeEditButton(extraForm, locale));
+            item.append(type, body, actions, extraForm);
             list.appendChild(item);
           }
           card.appendChild(list);
@@ -5385,6 +5453,12 @@ button, input, textarea, select {
       return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
     }
 
+    function commandActionLabel(entry, locale) {
+      if (entry.kind === "point") return PM.I18n.t(locale, "jump");
+      if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+      return commandKindLabel(entry.kind, locale);
+    }
+
     function currentCommandEntries() {
       const state = store.getLiveState();
       return PM.buildCommandPaletteEntries(state, state.settings.locale);
@@ -5406,7 +5480,7 @@ button, input, textarea, select {
         button.innerHTML = [
           `<span class="command-icon">${commandIconHtml(entry)}</span>`,
           `<span class="command-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || commandKindLabel(entry.kind, locale))}</span></span>`,
-          `<span class="command-kind">${PM.escapeHtml(commandKindLabel(entry.kind, locale))}</span>`
+          `<span class="command-action">${PM.escapeHtml(commandActionLabel(entry, locale))}</span>`
         ].join("");
         button.addEventListener("mouseenter", () => {
           commandSelection = index;
@@ -5465,6 +5539,9 @@ button, input, textarea, select {
         }
         if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
         renderer.centerOnPoint(point);
+        setTimeout(() => {
+          if (PM.flashPoint) PM.flashPoint(point.id);
+        }, 80);
         closeCommandPalette();
         return;
       }

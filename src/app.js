@@ -274,6 +274,12 @@
       return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
     }
 
+    function commandActionLabel(entry, locale) {
+      if (entry.kind === "point") return PM.I18n.t(locale, "jump");
+      if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+      return commandKindLabel(entry.kind, locale);
+    }
+
     function currentCommandEntries() {
       const state = store.getLiveState();
       return PM.buildCommandPaletteEntries(state, state.settings.locale);
@@ -295,7 +301,7 @@
         button.innerHTML = [
           `<span class="command-icon">${commandIconHtml(entry)}</span>`,
           `<span class="command-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || commandKindLabel(entry.kind, locale))}</span></span>`,
-          `<span class="command-kind">${PM.escapeHtml(commandKindLabel(entry.kind, locale))}</span>`
+          `<span class="command-action">${PM.escapeHtml(commandActionLabel(entry, locale))}</span>`
         ].join("");
         button.addEventListener("mouseenter", () => {
           commandSelection = index;
@@ -354,6 +360,9 @@
         }
         if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
         renderer.centerOnPoint(point);
+        setTimeout(() => {
+          if (PM.flashPoint) PM.flashPoint(point.id);
+        }, 80);
         closeCommandPalette();
         return;
       }
