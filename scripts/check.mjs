@@ -90,6 +90,9 @@ requireHtml("minimapPanel", "Optional viewport minimap panel");
 requireHtml("minimapCanvas", "Minimap overview canvas");
 requireHtml("minimapViewport", "Minimap viewport marker");
 requireHtml("minimapResize", "Minimap resize handle");
+requireHtml("pointInspector", "Optional point inspector panel");
+requireHtml("pointInspectorMode", "Point inspector dock/floating mode toggle");
+requireHtml("pointInspectorSave", "Point inspector apply button");
 requireHtml("commandPalette", "Command palette dialog");
 requireHtml("commandInput", "Command palette search input");
 requireHtml("commandResults", "Command palette results");
@@ -97,6 +100,8 @@ assert(html.includes("flashPoint"), "Point UI should expose a visible point jump
 assert(html.includes("commandAction"), "Command palette should label point results with explicit jump actions.");
 assert(html.includes("reader-jump"), "Reader should expose explicit jump-to-map controls.");
 assert(html.includes("PM.createMinimap"), "App should create the optional viewport minimap controller.");
+assert(html.includes("PM.createPointInspector"), "App should create the optional point inspector controller.");
+assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
 assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Close controls.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
 requireHtml("routeLineStyle", "Route line style i18n key");

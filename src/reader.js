@@ -1,7 +1,8 @@
 (function readerModule(PM) {
   "use strict";
 
-  function createReader(elements, store, renderer) {
+  function createReader(elements, store, renderer, options) {
+    const hooks = options || {};
     const {
       modal,
       backdrop,
@@ -84,6 +85,19 @@
       return button;
     }
 
+    function makeInspectButton(point, locale) {
+      if (typeof hooks.onInspect !== "function") return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-inspect";
+      button.textContent = text(locale, "inspectPoint");
+      button.addEventListener("click", () => {
+        close();
+        hooks.onInspect(point.id, { mode: "dock" });
+      });
+      return button;
+    }
+
     function render() {
       const state = store.getState();
       const locale = state.settings.locale;
@@ -125,6 +139,8 @@
         }
         const form = editForm(point, locale);
         head.appendChild(makeJumpButton(point, locale));
+        const inspectButton = makeInspectButton(point, locale);
+        if (inspectButton) head.appendChild(inspectButton);
         head.appendChild(makeEditButton(form, locale));
         card.append(head, form);
         if (point.note) {
@@ -161,7 +177,10 @@
             const extraForm = editForm(extra, locale);
             const actions = document.createElement("div");
             actions.className = "reader-extra-actions";
-            actions.append(makeJumpButton(extra, locale), makeEditButton(extraForm, locale));
+            const extraInspect = makeInspectButton(extra, locale);
+            actions.append(makeJumpButton(extra, locale));
+            if (extraInspect) actions.append(extraInspect);
+            actions.append(makeEditButton(extraForm, locale));
             item.append(type, body, actions, extraForm);
             list.appendChild(item);
           }

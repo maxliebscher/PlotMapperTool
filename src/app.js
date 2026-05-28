@@ -59,7 +59,12 @@
     }
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
-    const menu = PM.createMenuController($("menuLayer"), store);
+    let pointInspector = null;
+    const menu = PM.createMenuController($("menuLayer"), store, {
+      onInspect: (pointId, anchor) => {
+        if (pointInspector) pointInspector.open(pointId, { mode: "float", anchor });
+      }
+    });
     const pointUi = PM.createPointUi($("pointLayer"), $("midLayer"), $("routeLayer"), store, renderer, menu);
     const reader = PM.createReader({
       modal: $("readerModal"),
@@ -72,7 +77,11 @@
       title: $("readerTitle"),
       hint: $("readerHint"),
       extrasLabel: $("readerExtras").nextElementSibling
-    }, store, renderer);
+    }, store, renderer, {
+      onInspect: (pointId, options) => {
+        if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
+      }
+    });
 
     PM.store = store;
     PM.renderer = renderer;
@@ -97,6 +106,34 @@
       minimapAuto: $("minimapAuto"),
       minimapPin: $("minimapPin"),
       minimapClose: $("minimapClose"),
+      pointInspector: $("pointInspector"),
+      pointInspectorDrag: $("pointInspectorDrag"),
+      pointInspectorTitle: $("pointInspectorTitle"),
+      pointInspectorSub: $("pointInspectorSub"),
+      pointInspectorRoute: $("pointInspectorRoute"),
+      pointInspectorRouteSwatch: $("pointInspectorRouteSwatch"),
+      pointInspectorRouteName: $("pointInspectorRouteName"),
+      pointInspectorClose: $("pointInspectorClose"),
+      pointInspectorMode: $("pointInspectorMode"),
+      pointInspectorJump: $("pointInspectorJump"),
+      pointInspectorSave: $("pointInspectorSave"),
+      pointInspectorDelete: $("pointInspectorDelete"),
+      pointInspectorType: $("pointInspectorType"),
+      pointInspectorTypeLabel: $("pointInspectorTypeLabel"),
+      pointInspectorRouteField: $("pointInspectorRouteField"),
+      pointInspectorRouteLabel: $("pointInspectorRouteLabel"),
+      pointInspectorRouteSelect: $("pointInspectorRouteSelect"),
+      pointInspectorHelperField: $("pointInspectorHelperField"),
+      pointInspectorHelper: $("pointInspectorHelper"),
+      pointInspectorHelperLabel: $("pointInspectorHelperLabel"),
+      pointInspectorLabel: $("pointInspectorLabel"),
+      pointInspectorLabelLabel: $("pointInspectorLabelLabel"),
+      pointInspectorLocation: $("pointInspectorLocation"),
+      pointInspectorLocationLabel: $("pointInspectorLocationLabel"),
+      pointInspectorDuration: $("pointInspectorDuration"),
+      pointInspectorDurationLabel: $("pointInspectorDurationLabel"),
+      pointInspectorNote: $("pointInspectorNote"),
+      pointInspectorNoteLabel: $("pointInspectorNoteLabel"),
       toolbarCollapse: $("toolbarCollapse"),
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
@@ -216,6 +253,30 @@
       renderer
     });
     PM.minimap = minimap;
+    pointInspector = PM.createPointInspector({
+      panel: controls.pointInspector,
+      dragHandle: controls.pointInspectorDrag,
+      title: controls.pointInspectorTitle,
+      sub: controls.pointInspectorSub,
+      routeChip: controls.pointInspectorRoute,
+      routeSwatch: controls.pointInspectorRouteSwatch,
+      routeName: controls.pointInspectorRouteName,
+      closeButton: controls.pointInspectorClose,
+      modeButton: controls.pointInspectorMode,
+      jumpButton: controls.pointInspectorJump,
+      saveButton: controls.pointInspectorSave,
+      deleteButton: controls.pointInspectorDelete,
+      typeSelect: controls.pointInspectorType,
+      routeField: controls.pointInspectorRouteField,
+      routeSelect: controls.pointInspectorRouteSelect,
+      helperField: controls.pointInspectorHelperField,
+      helperInput: controls.pointInspectorHelper,
+      labelInput: controls.pointInspectorLabel,
+      locationInput: controls.pointInspectorLocation,
+      durationInput: controls.pointInspectorDuration,
+      noteInput: controls.pointInspectorNote
+    }, store, renderer);
+    PM.pointInspector = pointInspector;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -585,6 +646,19 @@
       controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
+      controls.pointInspector.setAttribute("aria-label", PM.I18n.t(locale, "pointInspector"));
+      controls.pointInspectorClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.pointInspectorTypeLabel.textContent = PM.I18n.t(locale, "pointType");
+      controls.pointInspectorRouteLabel.textContent = PM.I18n.t(locale, "route");
+      controls.pointInspectorHelperLabel.textContent = PM.I18n.t(locale, "helperPoint");
+      controls.pointInspectorLabelLabel.textContent = PM.I18n.t(locale, "labels");
+      controls.pointInspectorLocationLabel.textContent = PM.I18n.t(locale, "location");
+      controls.pointInspectorDurationLabel.textContent = PM.I18n.t(locale, "duration");
+      controls.pointInspectorNoteLabel.textContent = PM.I18n.t(locale, "notes");
+      controls.pointInspectorJump.textContent = PM.I18n.t(locale, "jump");
+      controls.pointInspectorSave.textContent = PM.I18n.t(locale, "applyChanges");
+      controls.pointInspectorDelete.textContent = PM.I18n.t(locale, "deletePoint");
+      if (pointInspector && pointInspector.isOpen()) pointInspector.render(false);
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";

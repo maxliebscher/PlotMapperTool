@@ -676,6 +676,199 @@ button, input, textarea, select {
   cursor: nwse-resize;
 }
 
+.point-inspector {
+  position: fixed;
+  z-index: 78;
+  width: min(356px, calc(100vw - 24px));
+  max-height: min(720px, calc(100vh - 24px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel-strong) 91%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.point-inspector[hidden],
+:root.presentation-mode .point-inspector {
+  display: none !important;
+}
+
+.point-inspector.is-docked {
+  right: 18px;
+  top: 94px;
+}
+
+.point-inspector.is-floating {
+  right: auto;
+}
+
+.point-inspector.is-moving .point-inspector-head {
+  cursor: grabbing;
+}
+
+.point-inspector.is-dirty {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+}
+
+.point-inspector-head {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  cursor: move;
+}
+
+.point-inspector-titleblock {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.point-inspector-titleblock strong,
+.point-inspector-titleblock span,
+#pointInspectorRouteName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.point-inspector-titleblock strong {
+  font-size: 16px;
+  line-height: 1.12;
+}
+
+.point-inspector-titleblock span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.point-inspector-route {
+  min-width: 0;
+  max-width: 112px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.point-inspector-route[hidden] {
+  display: none;
+}
+
+#pointInspectorRouteSwatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.42);
+}
+
+.point-inspector-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mini-action {
+  min-width: 28px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.mini-action:hover {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: var(--surface-2);
+}
+
+.point-inspector-body {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  overflow: auto;
+}
+
+.inspector-field,
+.inspector-check {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.inspector-field[hidden],
+.inspector-check[hidden] {
+  display: none;
+}
+
+.inspector-check {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  color: var(--text);
+}
+
+.inspector-field input,
+.inspector-field textarea,
+.inspector-field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 9px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.inspector-field textarea {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.inspector-field input:focus,
+.inspector-field textarea:focus,
+.inspector-field select:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 66%, transparent);
+  outline-offset: 1px;
+}
+
+.point-inspector-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 7px;
+  padding: 9px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+.point-inspector-footer .danger {
+  border-color: color-mix(in srgb, var(--warn) 60%, var(--border));
+}
+
 .toolbar-head {
   display: flex;
   align-items: center;
@@ -1454,6 +1647,9 @@ button, input, textarea, select {
 
 .context-menu button {
   min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   padding: 5px 8px;
   border: 0;
   border-radius: 4px;
@@ -1465,6 +1661,12 @@ button, input, textarea, select {
 
 .context-menu button:hover {
   background: #666;
+}
+
+.context-menu-icon {
+  width: 20px;
+  flex: 0 0 20px;
+  text-align: center;
 }
 
 .context-menu .route-type-choice {
@@ -2179,6 +2381,24 @@ button, input, textarea, select {
     max-width: 100%;
     justify-content: center;
   }
+
+  .point-inspector,
+  .point-inspector.is-docked {
+    left: 8px !important;
+    right: auto;
+    top: auto !important;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    max-height: 58vh;
+  }
+
+  .point-inspector-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .point-inspector-route {
+    display: none;
+  }
 }
   </style>
 </head>
@@ -2329,6 +2549,58 @@ button, input, textarea, select {
     </footer>
     <button id="minimapResize" class="minimap-resize" type="button" aria-label="Resize minimap"></button>
   </section>
+
+  <aside id="pointInspector" class="point-inspector" aria-label="Point inspector" hidden>
+    <header id="pointInspectorDrag" class="point-inspector-head">
+      <div class="point-inspector-titleblock">
+        <strong id="pointInspectorTitle">Point</strong>
+        <span id="pointInspectorSub">Inspector</span>
+      </div>
+      <span id="pointInspectorRoute" class="point-inspector-route" hidden>
+        <span id="pointInspectorRouteSwatch" aria-hidden="true"></span>
+        <span id="pointInspectorRouteName"></span>
+      </span>
+      <div class="point-inspector-actions">
+        <button id="pointInspectorMode" class="mini-action" type="button">Dock</button>
+        <button id="pointInspectorClose" class="mini-action" type="button" aria-label="Close">x</button>
+      </div>
+    </header>
+    <div class="point-inspector-body">
+      <label class="inspector-field">
+        <span id="pointInspectorTypeLabel">Type</span>
+        <select id="pointInspectorType"></select>
+      </label>
+      <label id="pointInspectorRouteField" class="inspector-field">
+        <span id="pointInspectorRouteLabel">Route</span>
+        <select id="pointInspectorRouteSelect"></select>
+      </label>
+      <label id="pointInspectorHelperField" class="inspector-check">
+        <input id="pointInspectorHelper" type="checkbox">
+        <span id="pointInspectorHelperLabel">Helper point</span>
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLabelLabel">Label</span>
+        <input id="pointInspectorLabel" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLocationLabel">Location</span>
+        <input id="pointInspectorLocation" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorDurationLabel">Duration</span>
+        <input id="pointInspectorDuration" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorNoteLabel">Note</span>
+        <textarea id="pointInspectorNote" rows="5"></textarea>
+      </label>
+    </div>
+    <footer class="point-inspector-footer">
+      <button id="pointInspectorJump" class="btn small" type="button">Jump</button>
+      <button id="pointInspectorSave" class="btn small" type="button">Save</button>
+      <button id="pointInspectorDelete" class="btn small danger" type="button">Delete</button>
+    </footer>
+  </aside>
 
   <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
     <div class="color-popover-header">
@@ -2670,6 +2942,13 @@ button, input, textarea, select {
       helperOn: "Skip number (helper point)",
       helperOff: "Use number",
       deletePoint: "Delete",
+      inspectPoint: "Inspect",
+      pointInspector: "Point inspector",
+      dockInspector: "Dock",
+      floatInspector: "Float",
+      pointType: "Type",
+      helperPoint: "Helper point",
+      applyChanges: "Apply",
       chooseType: "Choose point type",
       projectSavedName: "PlotMapper project",
       readerHint: "Linear view of the route. Context points are assigned to the nearest numbered route point.",
@@ -2813,6 +3092,13 @@ button, input, textarea, select {
       helperOn: "Nummer auslassen (Hilfspunkt)",
       helperOff: "Nummer verwenden",
       deletePoint: "Löschen",
+      inspectPoint: "Inspector",
+      pointInspector: "Punkt-Inspector",
+      dockInspector: "Andocken",
+      floatInspector: "Floating",
+      pointType: "Punkttyp",
+      helperPoint: "Hilfspunkt",
+      applyChanges: "Anwenden",
       chooseType: "Punkttyp wählen",
       projectSavedName: "PlotMapper Projekt",
       readerHint: "Lineare Ansicht der Route. Kontextpunkte werden dem nächsten nummerierten Routenpunkt zugeordnet.",
@@ -4897,11 +5183,313 @@ button, input, textarea, select {
 })(globalThis.PM);
 
 
+/* src/point-inspector.js */
+(function pointInspectorModule(PM) {
+  "use strict";
+
+  const PREFS_KEY = "pmPointInspectorPrefsV1";
+  const DEFAULT_FLOAT = { left: 28, top: 120 };
+
+  function loadPrefs() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+      return {
+        mode: raw.mode === "dock" ? "dock" : "float",
+        left: PM.clamp(parseInt(raw.left, 10) || DEFAULT_FLOAT.left, 8, Math.max(8, innerWidth - 320)),
+        top: PM.clamp(parseInt(raw.top, 10) || DEFAULT_FLOAT.top, 8, Math.max(8, innerHeight - 260))
+      };
+    } catch (_error) {
+      return { mode: "float", ...DEFAULT_FLOAT };
+    }
+  }
+
+  function savePrefs(prefs) {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch (_error) {
+      // localStorage can be unavailable for hardened file URL setups.
+    }
+  }
+
+  function createPointInspector(elements, store, renderer) {
+    const {
+      panel,
+      dragHandle,
+      title,
+      sub,
+      routeChip,
+      routeSwatch,
+      routeName,
+      closeButton,
+      modeButton,
+      jumpButton,
+      saveButton,
+      deleteButton,
+      typeSelect,
+      routeField,
+      routeSelect,
+      helperField,
+      helperInput,
+      labelInput,
+      locationInput,
+      durationInput,
+      noteInput
+    } = elements;
+
+    let activePointId = "";
+    let dirty = false;
+    let prefs = loadPrefs();
+    let drag = null;
+
+    function t(key) {
+      return PM.I18n.t(store.getLiveState().settings.locale, key);
+    }
+
+    function activePoint() {
+      return store.getLiveState().points.find((point) => point.id === activePointId) || null;
+    }
+
+    function pointTypeLabel(locale, type) {
+      return type === "route" ? PM.I18n.t(locale, "routePoint") : PM.I18n.pointLabel(locale, type);
+    }
+
+    function currentIcon(point) {
+      if (!point) return "";
+      return point.type === "route" ? "\uD83D\uDDFA\uFE0F" : PM.getPointType(point.type).icon;
+    }
+
+    function clampFloatPosition() {
+      const rect = panel.getBoundingClientRect();
+      prefs.left = PM.clamp(prefs.left, 8, Math.max(8, innerWidth - rect.width - 8));
+      prefs.top = PM.clamp(prefs.top, 8, Math.max(8, innerHeight - rect.height - 8));
+    }
+
+    function applyMode() {
+      panel.dataset.mode = prefs.mode;
+      panel.classList.toggle("is-docked", prefs.mode === "dock");
+      panel.classList.toggle("is-floating", prefs.mode === "float");
+      modeButton.textContent = prefs.mode === "dock" ? t("floatInspector") : t("dockInspector");
+      modeButton.setAttribute("aria-label", modeButton.textContent);
+      if (prefs.mode === "float") {
+        clampFloatPosition();
+        panel.style.left = `${prefs.left}px`;
+        panel.style.top = `${prefs.top}px`;
+        panel.style.right = "auto";
+      } else {
+        panel.style.left = "";
+        panel.style.top = "";
+        panel.style.right = "";
+      }
+      savePrefs(prefs);
+    }
+
+    function setDirty(value) {
+      dirty = Boolean(value);
+      panel.classList.toggle("is-dirty", dirty);
+    }
+
+    function renderTypeOptions(locale, selected) {
+      typeSelect.textContent = "";
+      for (const entry of PM.POINT_TYPES) {
+        const option = document.createElement("option");
+        option.value = entry.type;
+        option.textContent = `${entry.type === "route" ? "\uD83D\uDDFA\uFE0F" : entry.icon} ${pointTypeLabel(locale, entry.type)}`;
+        option.selected = entry.type === selected;
+        typeSelect.appendChild(option);
+      }
+    }
+
+    function renderRouteOptions(routes, selected) {
+      routeSelect.textContent = "";
+      for (const route of routes) {
+        const option = document.createElement("option");
+        option.value = route.id;
+        option.textContent = route.name;
+        option.selected = route.id === selected;
+        routeSelect.appendChild(option);
+      }
+    }
+
+    function syncConditionalFields() {
+      const isRoute = typeSelect.value === "route";
+      routeField.hidden = !isRoute;
+      helperField.hidden = !isRoute;
+    }
+
+    function render(force) {
+      if (panel.hidden) return;
+      const state = store.getLiveState();
+      const locale = state.settings.locale;
+      const point = activePoint();
+      if (!point) {
+        close();
+        return;
+      }
+      if (dirty && !force) return;
+      const route = PM.routeForPoint(point, state.routes) || PM.getActiveRoute(state.settings, state.routes);
+      title.textContent = `${currentIcon(point)} ${point.label || pointTypeLabel(locale, point.type)}`.trim();
+      sub.textContent = point.type === "route" ? t(point.helper ? "helperPoint" : "routePoint") : pointTypeLabel(locale, point.type);
+      routeChip.hidden = point.type !== "route";
+      routeSwatch.style.background = route ? route.color : "#ffffff";
+      routeName.textContent = route ? route.name : "";
+      renderTypeOptions(locale, point.type);
+      renderRouteOptions(state.routes, point.routeId || state.settings.activeRouteId);
+      helperInput.checked = Boolean(point.helper);
+      labelInput.value = point.label || "";
+      locationInput.value = point.location || "";
+      durationInput.value = point.duration || "";
+      noteInput.value = point.note || "";
+      syncConditionalFields();
+      applyMode();
+      setDirty(false);
+    }
+
+    function open(pointId, options) {
+      const point = store.getLiveState().points.find((entry) => entry.id === pointId);
+      if (!point) return;
+      activePointId = pointId;
+      if (options && (options.mode === "dock" || options.mode === "float")) prefs.mode = options.mode;
+      if (options && options.anchor && prefs.mode === "float") {
+        prefs.left = options.anchor.x + 12;
+        prefs.top = options.anchor.y + 12;
+      }
+      panel.hidden = false;
+      render(true);
+      labelInput.focus();
+      labelInput.select();
+    }
+
+    function close() {
+      panel.hidden = true;
+      activePointId = "";
+      setDirty(false);
+    }
+
+    function save() {
+      const point = activePoint();
+      if (!point) return;
+      const type = typeSelect.value;
+      store.patchPoint(point.id, {
+        type,
+        routeId: type === "route" ? routeSelect.value : "",
+        helper: type === "route" ? helperInput.checked : false,
+        label: labelInput.value.trim(),
+        location: locationInput.value.trim(),
+        duration: durationInput.value.trim(),
+        note: noteInput.value
+      });
+      setDirty(false);
+      render(true);
+    }
+
+    function jump() {
+      const point = activePoint();
+      if (!point) return;
+      const state = store.getLiveState();
+      if (point.type === "route" && point.routeId) {
+        store.setActiveRoute(point.routeId);
+      } else if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
+      if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
+    function removePoint() {
+      const point = activePoint();
+      if (!point) return;
+      if (confirm(t("deleteConfirm"))) {
+        store.deletePoint(point.id);
+        close();
+      }
+    }
+
+    function markDirty() {
+      setDirty(true);
+      syncConditionalFields();
+    }
+
+    [typeSelect, routeSelect, helperInput, labelInput, locationInput, durationInput, noteInput].forEach((input) => {
+      input.addEventListener("input", markDirty);
+      input.addEventListener("change", markDirty);
+    });
+    saveButton.addEventListener("click", save);
+    jumpButton.addEventListener("click", jump);
+    deleteButton.addEventListener("click", removePoint);
+    closeButton.addEventListener("click", close);
+    modeButton.addEventListener("click", () => {
+      prefs.mode = prefs.mode === "dock" ? "float" : "dock";
+      applyMode();
+    });
+
+    dragHandle.addEventListener("pointerdown", (event) => {
+      if (event.target.closest("button")) return;
+      event.preventDefault();
+      prefs.mode = "float";
+      applyMode();
+      drag = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        left: prefs.left,
+        top: prefs.top
+      };
+      dragHandle.setPointerCapture(event.pointerId);
+      panel.classList.add("is-moving");
+    });
+    dragHandle.addEventListener("pointermove", (event) => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      prefs.left = drag.left + event.clientX - drag.x;
+      prefs.top = drag.top + event.clientY - drag.y;
+      applyMode();
+    });
+    function stopDrag(event) {
+      if (!drag || (event && event.pointerId !== drag.pointerId)) return;
+      if (event) dragHandle.releasePointerCapture(event.pointerId);
+      drag = null;
+      panel.classList.remove("is-moving");
+    }
+    dragHandle.addEventListener("pointerup", stopDrag);
+    dragHandle.addEventListener("pointercancel", stopDrag);
+
+    document.addEventListener("keydown", (event) => {
+      if (panel.hidden) return;
+      if (event.key === "Escape") close();
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        save();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (!panel.hidden && prefs.mode === "float") applyMode();
+    });
+
+    store.subscribe(() => render(false));
+
+    return {
+      open,
+      close,
+      render,
+      isOpen() {
+        return !panel.hidden;
+      }
+    };
+  }
+
+  PM.createPointInspector = createPointInspector;
+})(globalThis.PM);
+
+
 /* src/menu.js */
 (function menuModule(PM) {
   "use strict";
 
-  function createMenuController(layer, store) {
+  function createMenuController(layer, store, options) {
+    const hooks = options || {};
     let menu = null;
     let editor = null;
 
@@ -4923,10 +5511,16 @@ button, input, textarea, select {
       element.style.top = `${Math.min(y, innerHeight - rect.height - pad)}px`;
     }
 
-    function addButton(parent, label, action) {
+    function addButton(parent, label, action, icon) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = label;
+      if (icon) {
+        button.innerHTML = "<span class=\"context-menu-icon\" aria-hidden=\"true\"></span><span></span>";
+        button.querySelector(".context-menu-icon").textContent = icon;
+        button.querySelector("span:last-child").textContent = label;
+      } else {
+        button.textContent = label;
+      }
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         action();
@@ -5026,6 +5620,12 @@ button, input, textarea, select {
       menu.className = "context-menu";
       menu.setAttribute("role", "menu");
 
+      if (typeof hooks.onInspect === "function") {
+        addButton(menu, PM.I18n.t(locale, "inspectPoint"), () => {
+          close();
+          hooks.onInspect(pointId, { x, y });
+        }, "\u25A3");
+      }
       addButton(menu, PM.I18n.t(locale, point.type === "route" ? "editChapter" : "editLabel"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, point.type === "route" ? "editChapter" : "editLabel"),
@@ -5033,7 +5633,7 @@ button, input, textarea, select {
           value: point.label,
           onSave: (value) => store.patchPoint(pointId, { label: value })
         });
-      });
+      }, "\u270E");
       addButton(menu, PM.I18n.t(locale, "setLocation"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "setLocation"),
@@ -5041,12 +5641,12 @@ button, input, textarea, select {
           value: point.location,
           onSave: (value) => store.patchPoint(pointId, { location: value.trim() })
         });
-      });
+      }, "\uD83D\uDCCD");
       addButton(menu, PM.I18n.t(locale, locationVisible ? "hideLocation" : "showLocation"), () => {
         if (PM.setPointFieldHidden) PM.setPointFieldHidden(pointId, "location", locationVisible);
         else if (PM.togglePointField) PM.togglePointField(pointId, "location");
         close();
-      });
+      }, "\uD83D\uDC41");
       addButton(menu, PM.I18n.t(locale, "editNote"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "editNote"),
@@ -5055,33 +5655,33 @@ button, input, textarea, select {
           multiline: true,
           onSave: (value) => store.patchPoint(pointId, { note: value })
         });
-      });
+      }, "\u270D");
       addButton(menu, PM.I18n.t(locale, noteVisible ? "hideNote" : "showNote"), () => {
         if (PM.setPointFieldHidden) PM.setPointFieldHidden(pointId, "note", noteVisible);
         else if (PM.togglePointField) PM.togglePointField(pointId, "note");
         close();
-      });
+      }, "\uD83D\uDCAC");
       if (point.type === "route") {
         addButton(menu, PM.I18n.t(locale, point.helper ? "helperOff" : "helperOn"), () => {
           store.patchPoint(pointId, { helper: !point.helper });
           close();
-        });
+        }, "\u25CC");
       }
       addButton(menu, PM.I18n.t(locale, "changeType"), () => {
         showTypeMenu(x, y, (type) => store.patchPoint(pointId, { type, helper: type === "route" ? point.helper : false }));
-      });
-      addButton(menu, `⏳ ${PM.I18n.t(locale, "setDuration")}`, () => {
+      }, "\uD83D\uDD00");
+      addButton(menu, PM.I18n.t(locale, "setDuration"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "setDuration"),
           label: PM.I18n.t(locale, "duration"),
           value: point.duration,
           onSave: (value) => store.patchPoint(pointId, { duration: value.trim() })
         });
-      });
+      }, "\u23F3");
       addButton(menu, PM.I18n.t(locale, "deletePoint"), () => {
         if (confirm(PM.I18n.t(locale, "deleteConfirm"))) store.deletePoint(pointId);
         close();
-      });
+      }, "\uD83D\uDDD1");
 
       layer.appendChild(menu);
       place(menu, x, y);
@@ -5415,7 +6015,8 @@ button, input, textarea, select {
 (function readerModule(PM) {
   "use strict";
 
-  function createReader(elements, store, renderer) {
+  function createReader(elements, store, renderer, options) {
+    const hooks = options || {};
     const {
       modal,
       backdrop,
@@ -5498,6 +6099,19 @@ button, input, textarea, select {
       return button;
     }
 
+    function makeInspectButton(point, locale) {
+      if (typeof hooks.onInspect !== "function") return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-inspect";
+      button.textContent = text(locale, "inspectPoint");
+      button.addEventListener("click", () => {
+        close();
+        hooks.onInspect(point.id, { mode: "dock" });
+      });
+      return button;
+    }
+
     function render() {
       const state = store.getState();
       const locale = state.settings.locale;
@@ -5539,6 +6153,8 @@ button, input, textarea, select {
         }
         const form = editForm(point, locale);
         head.appendChild(makeJumpButton(point, locale));
+        const inspectButton = makeInspectButton(point, locale);
+        if (inspectButton) head.appendChild(inspectButton);
         head.appendChild(makeEditButton(form, locale));
         card.append(head, form);
         if (point.note) {
@@ -5575,7 +6191,10 @@ button, input, textarea, select {
             const extraForm = editForm(extra, locale);
             const actions = document.createElement("div");
             actions.className = "reader-extra-actions";
-            actions.append(makeJumpButton(extra, locale), makeEditButton(extraForm, locale));
+            const extraInspect = makeInspectButton(extra, locale);
+            actions.append(makeJumpButton(extra, locale));
+            if (extraInspect) actions.append(extraInspect);
+            actions.append(makeEditButton(extraForm, locale));
             item.append(type, body, actions, extraForm);
             list.appendChild(item);
           }
@@ -5707,7 +6326,12 @@ button, input, textarea, select {
     }
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
-    const menu = PM.createMenuController($("menuLayer"), store);
+    let pointInspector = null;
+    const menu = PM.createMenuController($("menuLayer"), store, {
+      onInspect: (pointId, anchor) => {
+        if (pointInspector) pointInspector.open(pointId, { mode: "float", anchor });
+      }
+    });
     const pointUi = PM.createPointUi($("pointLayer"), $("midLayer"), $("routeLayer"), store, renderer, menu);
     const reader = PM.createReader({
       modal: $("readerModal"),
@@ -5720,7 +6344,11 @@ button, input, textarea, select {
       title: $("readerTitle"),
       hint: $("readerHint"),
       extrasLabel: $("readerExtras").nextElementSibling
-    }, store, renderer);
+    }, store, renderer, {
+      onInspect: (pointId, options) => {
+        if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
+      }
+    });
 
     PM.store = store;
     PM.renderer = renderer;
@@ -5745,6 +6373,34 @@ button, input, textarea, select {
       minimapAuto: $("minimapAuto"),
       minimapPin: $("minimapPin"),
       minimapClose: $("minimapClose"),
+      pointInspector: $("pointInspector"),
+      pointInspectorDrag: $("pointInspectorDrag"),
+      pointInspectorTitle: $("pointInspectorTitle"),
+      pointInspectorSub: $("pointInspectorSub"),
+      pointInspectorRoute: $("pointInspectorRoute"),
+      pointInspectorRouteSwatch: $("pointInspectorRouteSwatch"),
+      pointInspectorRouteName: $("pointInspectorRouteName"),
+      pointInspectorClose: $("pointInspectorClose"),
+      pointInspectorMode: $("pointInspectorMode"),
+      pointInspectorJump: $("pointInspectorJump"),
+      pointInspectorSave: $("pointInspectorSave"),
+      pointInspectorDelete: $("pointInspectorDelete"),
+      pointInspectorType: $("pointInspectorType"),
+      pointInspectorTypeLabel: $("pointInspectorTypeLabel"),
+      pointInspectorRouteField: $("pointInspectorRouteField"),
+      pointInspectorRouteLabel: $("pointInspectorRouteLabel"),
+      pointInspectorRouteSelect: $("pointInspectorRouteSelect"),
+      pointInspectorHelperField: $("pointInspectorHelperField"),
+      pointInspectorHelper: $("pointInspectorHelper"),
+      pointInspectorHelperLabel: $("pointInspectorHelperLabel"),
+      pointInspectorLabel: $("pointInspectorLabel"),
+      pointInspectorLabelLabel: $("pointInspectorLabelLabel"),
+      pointInspectorLocation: $("pointInspectorLocation"),
+      pointInspectorLocationLabel: $("pointInspectorLocationLabel"),
+      pointInspectorDuration: $("pointInspectorDuration"),
+      pointInspectorDurationLabel: $("pointInspectorDurationLabel"),
+      pointInspectorNote: $("pointInspectorNote"),
+      pointInspectorNoteLabel: $("pointInspectorNoteLabel"),
       toolbarCollapse: $("toolbarCollapse"),
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
@@ -5864,6 +6520,30 @@ button, input, textarea, select {
       renderer
     });
     PM.minimap = minimap;
+    pointInspector = PM.createPointInspector({
+      panel: controls.pointInspector,
+      dragHandle: controls.pointInspectorDrag,
+      title: controls.pointInspectorTitle,
+      sub: controls.pointInspectorSub,
+      routeChip: controls.pointInspectorRoute,
+      routeSwatch: controls.pointInspectorRouteSwatch,
+      routeName: controls.pointInspectorRouteName,
+      closeButton: controls.pointInspectorClose,
+      modeButton: controls.pointInspectorMode,
+      jumpButton: controls.pointInspectorJump,
+      saveButton: controls.pointInspectorSave,
+      deleteButton: controls.pointInspectorDelete,
+      typeSelect: controls.pointInspectorType,
+      routeField: controls.pointInspectorRouteField,
+      routeSelect: controls.pointInspectorRouteSelect,
+      helperField: controls.pointInspectorHelperField,
+      helperInput: controls.pointInspectorHelper,
+      labelInput: controls.pointInspectorLabel,
+      locationInput: controls.pointInspectorLocation,
+      durationInput: controls.pointInspectorDuration,
+      noteInput: controls.pointInspectorNote
+    }, store, renderer);
+    PM.pointInspector = pointInspector;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -6233,6 +6913,19 @@ button, input, textarea, select {
       controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
+      controls.pointInspector.setAttribute("aria-label", PM.I18n.t(locale, "pointInspector"));
+      controls.pointInspectorClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.pointInspectorTypeLabel.textContent = PM.I18n.t(locale, "pointType");
+      controls.pointInspectorRouteLabel.textContent = PM.I18n.t(locale, "route");
+      controls.pointInspectorHelperLabel.textContent = PM.I18n.t(locale, "helperPoint");
+      controls.pointInspectorLabelLabel.textContent = PM.I18n.t(locale, "labels");
+      controls.pointInspectorLocationLabel.textContent = PM.I18n.t(locale, "location");
+      controls.pointInspectorDurationLabel.textContent = PM.I18n.t(locale, "duration");
+      controls.pointInspectorNoteLabel.textContent = PM.I18n.t(locale, "notes");
+      controls.pointInspectorJump.textContent = PM.I18n.t(locale, "jump");
+      controls.pointInspectorSave.textContent = PM.I18n.t(locale, "applyChanges");
+      controls.pointInspectorDelete.textContent = PM.I18n.t(locale, "deletePoint");
+      if (pointInspector && pointInspector.isOpen()) pointInspector.render(false);
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";

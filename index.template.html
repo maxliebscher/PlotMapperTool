@@ -157,6 +157,58 @@
     <button id="minimapResize" class="minimap-resize" type="button" aria-label="Resize minimap"></button>
   </section>
 
+  <aside id="pointInspector" class="point-inspector" aria-label="Point inspector" hidden>
+    <header id="pointInspectorDrag" class="point-inspector-head">
+      <div class="point-inspector-titleblock">
+        <strong id="pointInspectorTitle">Point</strong>
+        <span id="pointInspectorSub">Inspector</span>
+      </div>
+      <span id="pointInspectorRoute" class="point-inspector-route" hidden>
+        <span id="pointInspectorRouteSwatch" aria-hidden="true"></span>
+        <span id="pointInspectorRouteName"></span>
+      </span>
+      <div class="point-inspector-actions">
+        <button id="pointInspectorMode" class="mini-action" type="button">Dock</button>
+        <button id="pointInspectorClose" class="mini-action" type="button" aria-label="Close">x</button>
+      </div>
+    </header>
+    <div class="point-inspector-body">
+      <label class="inspector-field">
+        <span id="pointInspectorTypeLabel">Type</span>
+        <select id="pointInspectorType"></select>
+      </label>
+      <label id="pointInspectorRouteField" class="inspector-field">
+        <span id="pointInspectorRouteLabel">Route</span>
+        <select id="pointInspectorRouteSelect"></select>
+      </label>
+      <label id="pointInspectorHelperField" class="inspector-check">
+        <input id="pointInspectorHelper" type="checkbox">
+        <span id="pointInspectorHelperLabel">Helper point</span>
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLabelLabel">Label</span>
+        <input id="pointInspectorLabel" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLocationLabel">Location</span>
+        <input id="pointInspectorLocation" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorDurationLabel">Duration</span>
+        <input id="pointInspectorDuration" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorNoteLabel">Note</span>
+        <textarea id="pointInspectorNote" rows="5"></textarea>
+      </label>
+    </div>
+    <footer class="point-inspector-footer">
+      <button id="pointInspectorJump" class="btn small" type="button">Jump</button>
+      <button id="pointInspectorSave" class="btn small" type="button">Save</button>
+      <button id="pointInspectorDelete" class="btn small danger" type="button">Delete</button>
+    </footer>
+  </aside>
+
   <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
     <div class="color-popover-header">
       <span id="routeColorPopoverLabel">Color</span>

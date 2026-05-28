@@ -321,10 +321,45 @@ async function exerciseRouteManagement(page) {
 
 async function editFirstPointLabel(page) {
   await page.locator(".point-menu-button").last().click({ force: true });
-  await page.locator(".context-menu button").first().click();
+  await page.locator(".context-menu button").nth(1).click();
   await page.locator(".point-editor input[name='value']").fill("Smoke Label");
   await page.locator(".point-editor button[type='submit']").click();
   await page.waitForFunction(() => globalThis.PM.store.getLiveState().points.some((point) => point.label === "Smoke Label"), null, { timeout: 5000 });
+}
+
+async function exercisePointInspector(page) {
+  const pointId = await page.evaluate(() => PM.store.getLiveState().points.find((point) => point.type === "route")?.id);
+  assert(pointId, "Point inspector smoke needs a route point.");
+  await page.locator(`.point[data-id="${pointId}"] .point-menu-button`).evaluate((button) => button.click());
+  await page.waitForSelector(".context-menu");
+  const menuText = await page.locator(".context-menu").textContent();
+  assert(/Inspect|Inspector/.test(menuText || ""), `Point menu should expose Inspector, got: ${menuText}`);
+  await page.locator(".context-menu button", { hasText: /Inspect|Inspector/ }).click();
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#pointInspector")?.dataset.mode === "float", null, { timeout: 5000 });
+  await page.click("#pointInspectorMode");
+  await page.waitForFunction(() => document.querySelector("#pointInspector")?.dataset.mode === "dock", null, { timeout: 5000 });
+  await page.fill("#pointInspectorLabel", "Inspector Label");
+  await page.fill("#pointInspectorLocation", "Inspector Location");
+  await page.fill("#pointInspectorDuration", "4 Tage");
+  await page.fill("#pointInspectorNote", "Inspector smoke note");
+  await setCheckbox(page, "#pointInspectorHelper", true);
+  await page.click("#pointInspectorSave");
+  await page.waitForFunction((id) => {
+    const point = PM.store.getLiveState().points.find((entry) => entry.id === id);
+    return point
+      && point.label === "Inspector Label"
+      && point.location === "Inspector Location"
+      && point.duration === "4 Tage"
+      && point.note === "Inspector smoke note"
+      && point.helper === true;
+  }, pointId, { timeout: 5000 });
+  const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
+  await page.click("#pointInspectorJump");
+  await page.waitForSelector(".point.is-jump-target");
+  await page.waitForFunction((before) => PM.store.getLiveState().settings.panX !== before || PM.store.getLiveState().settings.zoom > 1, panBefore, { timeout: 5000 });
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
 }
 
 async function insertMidpointAndUndoRedo(page) {
@@ -345,7 +380,7 @@ async function toggleControls(page) {
   await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
   await setInputValue(page, "#pointSizeControl", "40");
   await page.waitForFunction(() => {
-    const point = document.querySelector(".point");
+    const point = document.querySelector(".point:not(.helper)");
     return PM.store.getLiveState().settings.pointSizePx === 40
       && getComputedStyle(document.documentElement).getPropertyValue("--point-size").trim() === "40px"
       && point
@@ -533,6 +568,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await addPlacePoint(page);
   await exerciseRouteManagement(page);
   await editFirstPointLabel(page);
+  await exercisePointInspector(page);
   await insertMidpointAndUndoRedo(page);
   await toggleControls(page);
   await exercisePresentation(page);
