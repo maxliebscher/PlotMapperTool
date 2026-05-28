@@ -246,7 +246,9 @@
         char: $("filter-char"),
         event: $("filter-event"),
         item: $("filter-item")
-      }
+      },
+      viewPresetLabel: $("viewPresetLabel"),
+      viewPresetButtons: $("viewPresetButtons")
     };
     const minimap = PM.createMinimap({
       panel: controls.minimapPanel,
@@ -453,6 +455,30 @@
       controls.commandBackdrop.hidden = true;
       controls.commandPalette.hidden = true;
       controls.commandResults.textContent = "";
+    }
+
+    function renderViewPresets(state) {
+      const locale = state.settings.locale;
+      controls.viewPresetLabel.textContent = PM.I18n.t(locale, "viewPresets");
+      controls.viewPresetButtons.setAttribute("aria-label", PM.I18n.t(locale, "viewPresets"));
+      controls.viewPresetButtons.textContent = "";
+      PM.VIEW_PRESETS.forEach((preset) => {
+        const active = PM.viewPresetMatchesState(state, preset.id);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `view-preset${active ? " is-active" : ""}`;
+        button.textContent = PM.I18n.t(locale, preset.labelKey);
+        button.setAttribute("title", PM.I18n.t(locale, preset.titleKey));
+        button.setAttribute("aria-pressed", String(active));
+        button.addEventListener("click", () => {
+          closeCommandPalette();
+          closeRouteColorPopover();
+          menu.close();
+          finder.close();
+          PM.applyViewPreset(store, preset.id);
+        });
+        controls.viewPresetButtons.appendChild(button);
+      });
     }
 
     function openFinder(seed) {
@@ -763,6 +789,7 @@
       controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
       controls.commandClose.textContent = PM.I18n.t(locale, "close");
       controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
+      renderViewPresets(store.getLiveState());
       if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
     }

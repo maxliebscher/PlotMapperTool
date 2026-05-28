@@ -430,6 +430,23 @@ async function toggleControls(page) {
   const initialTheme = await page.evaluate(() => document.documentElement.dataset.theme);
   await page.click("#themeToggle");
   await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  await page.locator(".view-preset", { hasText: /Route/ }).click();
+  await page.waitForFunction(() => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.filters.route === true
+      && settings.filters.place === false
+      && settings.filters.char === false
+      && settings.showLines === true
+      && settings.showNotes === false
+      && document.querySelector(".view-preset.is-active")?.textContent?.match(/Route/);
+  }, null, { timeout: 5000 });
+  await page.locator(".view-preset", { hasText: /All|Alles/ }).click();
+  await page.waitForFunction(() => {
+    const settings = PM.store.getLiveState().settings;
+    return Object.values(settings.filters).every(Boolean)
+      && settings.showNotes === true
+      && settings.showEdit === true;
+  }, null, { timeout: 5000 });
   await setInputValue(page, "#pointSizeControl", "40");
   await page.waitForFunction(() => {
     const point = document.querySelector(".point:not(.helper)");

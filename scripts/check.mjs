@@ -101,6 +101,8 @@ requireHtml("finderDrawer", "Finder drawer dialog");
 requireHtml("finderInput", "Finder search input");
 requireHtml("finderResults", "Finder result list");
 requireHtml("finderLimit", "Finder result limit note");
+requireHtml("viewPresetRow", "Compact view preset row");
+requireHtml("viewPresetButtons", "View preset buttons");
 assert(html.includes("flashPoint"), "Point UI should expose a visible point jump highlight helper.");
 assert(html.includes("commandAction"), "Command palette should label point results with explicit jump actions.");
 assert(html.includes("reader-jump"), "Reader should expose explicit jump-to-map controls.");
@@ -141,6 +143,7 @@ const coreFiles = [
   "src/presentation.js",
   "src/command-palette.js",
   "src/finder.js",
+  "src/view-presets.js",
   "src/serialization.js",
   "src/exporters.js"
 ];
@@ -161,6 +164,9 @@ const PM = context.PM;
 assert(typeof PM.buildCommandPaletteEntries === "function", "Command palette search builder should be registered.");
 assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette filtering helper should be registered.");
 assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should be registered.");
+assert(Array.isArray(PM.VIEW_PRESETS) && PM.VIEW_PRESETS.length >= 4, "Built-in view presets should be registered.");
+assert(typeof PM.getViewPresetPatch === "function", "View preset patches should be exposed for tests and UI.");
+assert(typeof PM.viewPresetMatchesState === "function", "View preset active-state matcher should be registered.");
 
 const paletteProject = PM.createEmptyProject({ locale: "de" });
 paletteProject.routes.push(PM.normalizeRoute({
@@ -193,6 +199,17 @@ assertDeepEqual(
   ["action", "action", "action"],
   "Empty command palette query should prioritize actions."
 );
+
+const routeView = PM.getViewPresetPatch("route");
+assert(routeView && routeView.filters.route === true, "Route view should keep route points visible.");
+assertEqual(routeView.filters.place, false, "Route view should hide places.");
+assertEqual(routeView.showLines, true, "Route view should keep lines visible.");
+const notesView = PM.getViewPresetPatch("notes");
+assert(notesView && notesView.showNotes === true && notesView.showDuration === true, "Notes view should show note and duration context.");
+const viewProject = PM.createEmptyProject({ locale: "de" });
+viewProject.settings = PM.normalizeSettings({ ...viewProject.settings, ...routeView });
+assert(PM.viewPresetMatchesState(viewProject, "route"), "Preset matcher should recognize an active route view.");
+assert(!PM.viewPresetMatchesState(viewProject, "all"), "Preset matcher should not mark unrelated views active.");
 
 const fixturesDir = join(root, "testdata", "fixtures");
 const fixtureNames = (await readdir(fixturesDir)).filter((name) => name.endsWith(".plotmap.json")).sort();

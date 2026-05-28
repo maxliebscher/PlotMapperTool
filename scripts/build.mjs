@@ -18,6 +18,7 @@ const sourceFiles = [
   "src/minimap.js",
   "src/point-inspector.js",
   "src/finder.js",
+  "src/view-presets.js",
   "src/menu.js",
   "src/point-ui.js",
   "src/reader.js",
