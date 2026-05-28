@@ -396,6 +396,7 @@ async function exerciseFinderDrawer(page) {
   await page.locator("#finderInput").fill("finder");
   await page.locator(".finder-filter[data-filter='issue']").click();
   await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Missing label|Fehlendes Label|Long note|Lange Notiz/.test(document.querySelector("#finderResults")?.textContent || ""), null, { timeout: 5000 });
   await page.locator(".finder-result-inspect").first().click();
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
   await page.waitForSelector("#pointInspector:not([hidden])");

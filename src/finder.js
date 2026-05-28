@@ -11,6 +11,15 @@
     return "";
   }
 
+  function issueLabel(issue, locale) {
+    const keys = {
+      missingLabel: "finderIssueMissingLabel",
+      unnamedHelper: "finderIssueUnnamedHelper",
+      longNote: "finderIssueLongNote"
+    };
+    return keys[issue] ? PM.I18n.t(locale, keys[issue]) : "";
+  }
+
   function entryType(entry, state) {
     if (entry.kind !== "point") return entry.kind;
     const point = state.points.find((candidate) => candidate.id === entry.pointId);
@@ -43,6 +52,11 @@
   function resultActionLabel(entry, locale) {
     if (entry.kind === "route") return PM.I18n.t(locale, "routes");
     return PM.I18n.t(locale, "jump");
+  }
+
+  function resultDetail(entry, state, locale) {
+    const issue = entryIssue(entry, state);
+    return [issueLabel(issue, locale), entry.detail].filter(Boolean).join(" - ");
   }
 
   function createFinderDrawer(elements, store, options) {
@@ -137,7 +151,7 @@
         button.setAttribute("aria-selected", String(index === selection));
         button.innerHTML = [
           `<span class="finder-result-icon">${iconHtml(entry, state)}</span>`,
-          `<span class="finder-result-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || "")}</span></span>`,
+          `<span class="finder-result-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(resultDetail(entry, state, locale))}</span></span>`,
           `<span class="finder-result-action">${PM.escapeHtml(resultActionLabel(entry, locale))}</span>`,
           entry.kind === "point" && typeof hooks.onInspect === "function" ? `<span class="finder-result-inspect">${PM.escapeHtml(PM.I18n.t(locale, "inspectPoint"))}</span>` : ""
         ].join("");
@@ -246,5 +260,7 @@
     };
   }
 
+  PM.finderIssueForPoint = issueForPoint;
+  PM.finderIssueLabel = issueLabel;
   PM.createFinderDrawer = createFinderDrawer;
 })(globalThis.PM);
