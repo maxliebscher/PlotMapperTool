@@ -1,0 +1,250 @@
+(function finderModule(PM) {
+  "use strict";
+
+  const RESULT_LIMIT = 48;
+
+  function issueForPoint(point) {
+    if (!point) return "";
+    if (!String(point.label || "").trim() && point.type !== "route") return "missingLabel";
+    if (point.type === "route" && point.helper && !String(point.label || "").trim()) return "unnamedHelper";
+    if (String(point.note || "").length > 180) return "longNote";
+    return "";
+  }
+
+  function entryType(entry, state) {
+    if (entry.kind !== "point") return entry.kind;
+    const point = state.points.find((candidate) => candidate.id === entry.pointId);
+    return point ? point.type : "point";
+  }
+
+  function entryIssue(entry, state) {
+    if (entry.kind !== "point") return "";
+    return issueForPoint(state.points.find((candidate) => candidate.id === entry.pointId));
+  }
+
+  function filterMatches(entry, state, activeFilter) {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "issue") return Boolean(entryIssue(entry, state));
+    if (activeFilter === "note") {
+      if (entry.kind !== "point") return false;
+      const point = state.points.find((candidate) => candidate.id === entry.pointId);
+      return Boolean(point && (point.note || point.duration || point.location));
+    }
+    return entryType(entry, state) === activeFilter;
+  }
+
+  function groupLabel(entry, state, locale) {
+    if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+    const issue = entryIssue(entry, state);
+    if (issue) return PM.I18n.t(locale, "finderIssues");
+    return PM.I18n.t(locale, entryType(entry, state)) || PM.I18n.t(locale, "commandKindPoint");
+  }
+
+  function resultActionLabel(entry, locale) {
+    if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+    return PM.I18n.t(locale, "jump");
+  }
+
+  function createFinderDrawer(elements, store, options) {
+    const hooks = options || {};
+    const {
+      panel,
+      title,
+      hint,
+      closeButton,
+      input,
+      filters,
+      summary,
+      results,
+      empty,
+      limitLabel
+    } = elements;
+
+    let activeFilter = "all";
+    let matches = [];
+    let selection = 0;
+
+    function t(key) {
+      return PM.I18n.t(store.getLiveState().settings.locale, key);
+    }
+
+    function searchableEntries() {
+      const state = store.getLiveState();
+      return PM.buildCommandPaletteEntries(state, state.settings.locale)
+        .filter((entry) => entry.kind === "point" || entry.kind === "route");
+    }
+
+    function filterEntries() {
+      const state = store.getLiveState();
+      const query = input.value;
+      const base = PM.filterCommandPaletteEntries(searchableEntries(), query, state.points.length + state.routes.length + 8);
+      return base.filter((entry) => filterMatches(entry, state, activeFilter));
+    }
+
+    function iconHtml(entry, state) {
+      if (entry.kind === "route" && entry.color) {
+        return `<span class="finder-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
+      }
+      const issue = entryIssue(entry, state);
+      if (issue) return "<span class=\"finder-issue-mark\">!</span>";
+      return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
+    }
+
+    function renderFilters(locale) {
+      filters.forEach((button) => {
+        const key = button.dataset.filter === "issue" ? "finderIssues"
+          : button.dataset.filter === "note" ? "notes"
+            : button.dataset.filter === "all" ? "finderAll"
+              : button.dataset.filter;
+        button.textContent = PM.I18n.t(locale, key);
+        button.classList.toggle("is-active", button.dataset.filter === activeFilter);
+        button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter));
+      });
+    }
+
+    function render() {
+      if (panel.hidden) return;
+      const state = store.getLiveState();
+      const locale = state.settings.locale;
+      title.textContent = t("finder");
+      hint.textContent = t("finderHint");
+      closeButton.textContent = "x";
+      input.placeholder = t("finderPlaceholder");
+      input.setAttribute("aria-label", t("finderPlaceholder"));
+      empty.textContent = t("finderEmpty");
+      limitLabel.textContent = t("finderLimit");
+      renderFilters(locale);
+      matches = filterEntries();
+      const visibleMatches = matches.slice(0, RESULT_LIMIT);
+      selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
+      summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      results.textContent = "";
+      empty.hidden = matches.length > 0;
+      let lastGroup = "";
+      visibleMatches.forEach((entry, index) => {
+        const group = groupLabel(entry, state, locale);
+        if (group !== lastGroup) {
+          const heading = document.createElement("div");
+          heading.className = "finder-group-title";
+          heading.textContent = group;
+          results.appendChild(heading);
+          lastGroup = group;
+        }
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `finder-result${index === selection ? " is-selected" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(index === selection));
+        button.innerHTML = [
+          `<span class="finder-result-icon">${iconHtml(entry, state)}</span>`,
+          `<span class="finder-result-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || "")}</span></span>`,
+          `<span class="finder-result-action">${PM.escapeHtml(resultActionLabel(entry, locale))}</span>`,
+          entry.kind === "point" && typeof hooks.onInspect === "function" ? `<span class="finder-result-inspect">${PM.escapeHtml(PM.I18n.t(locale, "inspectPoint"))}</span>` : ""
+        ].join("");
+        button.addEventListener("mouseenter", () => {
+          if (selection === index) return;
+          selection = index;
+          render();
+        });
+        button.addEventListener("click", () => execute(entry, "jump"));
+        const inspect = button.querySelector(".finder-result-inspect");
+        if (inspect) {
+          inspect.addEventListener("click", (event) => {
+            event.stopPropagation();
+            execute(entry, "inspect");
+          });
+        }
+        results.appendChild(button);
+      });
+    }
+
+    function open(seed) {
+      panel.hidden = false;
+      document.documentElement.classList.add("finder-open");
+      if (seed !== undefined) input.value = seed || "";
+      selection = 0;
+      render();
+      input.focus();
+      input.select();
+    }
+
+    function close() {
+      panel.hidden = true;
+      document.documentElement.classList.remove("finder-open");
+    }
+
+    function execute(entry, action) {
+      if (!entry) return;
+      if (entry.kind === "point") {
+        if (action === "inspect" && typeof hooks.onInspect === "function") {
+          close();
+          hooks.onInspect(entry.pointId, { mode: "dock" });
+          return;
+        }
+        close();
+        if (typeof hooks.onJumpPoint === "function") hooks.onJumpPoint(entry.pointId);
+        return;
+      }
+      if (entry.kind === "route" && typeof hooks.onRoute === "function") {
+        close();
+        hooks.onRoute(entry.routeId);
+      }
+    }
+
+    function currentSelection() {
+      return matches.slice(0, RESULT_LIMIT)[selection];
+    }
+
+    input.addEventListener("input", () => {
+      selection = 0;
+      render();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        selection = PM.clamp(selection + 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+        render();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        selection = PM.clamp(selection - 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+        render();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        execute(currentSelection(), "jump");
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+    });
+    filters.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter || "all";
+        selection = 0;
+        render();
+        input.focus();
+      });
+    });
+    closeButton.addEventListener("click", close);
+    document.addEventListener("keydown", (event) => {
+      if (!panel.hidden && event.key === "Escape") close();
+    });
+    store.subscribe(() => render());
+
+    return {
+      open,
+      close,
+      render,
+      isOpen() {
+        return !panel.hidden;
+      },
+      resultCount() {
+        return matches.length;
+      }
+    };
+  }
+
+  PM.createFinderDrawer = createFinderDrawer;
+})(globalThis.PM);

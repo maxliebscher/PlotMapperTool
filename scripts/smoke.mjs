@@ -362,6 +362,58 @@ async function exercisePointInspector(page) {
   await page.waitForSelector("#pointInspector", { state: "hidden" });
 }
 
+async function exerciseFinderDrawer(page) {
+  await page.evaluate(() => {
+    const types = ["place", "char", "event", "item"];
+    for (let index = 0; index < 72; index += 1) {
+      PM.store.addPoint({
+        x: 0.12 + ((index * 17) % 72) / 100,
+        y: 0.16 + ((index * 23) % 68) / 100,
+        type: types[index % types.length],
+        label: index % 17 === 0 ? "" : `Finder Target ${index}`,
+        location: index % 5 === 0 ? "Finder District" : "",
+        note: index % 9 === 0
+          ? "finder scale note with deliberately longer text so the issue filter has a useful signal in a large project"
+          : `finder scale note ${index}`
+      });
+    }
+  });
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.waitForFunction(() => PM.finder.resultCount() > 48 && document.querySelectorAll(".finder-result").length === 48, null, { timeout: 5000 });
+  await page.waitForFunction(() => {
+    const drawer = document.querySelector("#finderDrawer");
+    return drawer && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+  }, null, { timeout: 5000 });
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector(".point.is-jump-target");
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.locator(".finder-filter[data-filter='issue']").click();
+  await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
+  await page.locator(".finder-result-inspect").first().click();
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("Smoke Route");
+  await page.locator(".finder-filter[data-filter='route']").click();
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result").length >= 1, null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#routePanel:not([hidden])");
+  await page.click("#routePanelToggle");
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+}
+
 async function insertMidpointAndUndoRedo(page) {
   await page.evaluate(() => PM.store.setSettings({ zoom: 1, panX: 0, panY: 0 }));
   await page.waitForFunction(() => document.querySelectorAll(".midpoint").length > 0, null, { timeout: 5000 });
@@ -569,6 +621,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await exerciseRouteManagement(page);
   await editFirstPointLabel(page);
   await exercisePointInspector(page);
+  await exerciseFinderDrawer(page);
   await insertMidpointAndUndoRedo(page);
   await toggleControls(page);
   await exercisePresentation(page);

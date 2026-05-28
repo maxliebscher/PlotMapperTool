@@ -138,6 +138,7 @@
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
       helpButton: $("helpButton"),
+      finderButton: $("finderButton"),
       infoPanel: $("infoPanel"),
       infoButton: $("infoButton"),
       infoClose: $("infoClose"),
@@ -159,6 +160,16 @@
       commandInput: $("commandInput"),
       commandResults: $("commandResults"),
       commandEmpty: $("commandEmpty"),
+      finderDrawer: $("finderDrawer"),
+      finderTitle: $("finderTitle"),
+      finderHint: $("finderHint"),
+      finderClose: $("finderClose"),
+      finderInput: $("finderInput"),
+      finderFilters: Array.from(document.querySelectorAll(".finder-filter")),
+      finderSummary: $("finderSummary"),
+      finderResults: $("finderResults"),
+      finderEmpty: $("finderEmpty"),
+      finderLimit: $("finderLimit"),
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
@@ -277,6 +288,30 @@
       noteInput: controls.pointInspectorNote
     }, store, renderer);
     PM.pointInspector = pointInspector;
+    const finder = PM.createFinderDrawer({
+      panel: controls.finderDrawer,
+      title: controls.finderTitle,
+      hint: controls.finderHint,
+      closeButton: controls.finderClose,
+      input: controls.finderInput,
+      filters: controls.finderFilters,
+      summary: controls.finderSummary,
+      results: controls.finderResults,
+      empty: controls.finderEmpty,
+      limitLabel: controls.finderLimit
+    }, store, {
+      onJumpPoint: (pointId) => jumpToPointId(pointId),
+      onInspect: (pointId, options) => {
+        pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onRoute: (routeId) => {
+        store.setActiveRoute(routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false });
+      }
+    });
+    PM.finder = finder;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -404,6 +439,7 @@
       commandSelection = 0;
       closeRouteColorPopover();
       menu.close();
+      finder.close();
       controls.commandBackdrop.hidden = false;
       controls.commandPalette.hidden = false;
       controls.commandInput.value = seed || "";
@@ -417,6 +453,13 @@
       controls.commandBackdrop.hidden = true;
       controls.commandPalette.hidden = true;
       controls.commandResults.textContent = "";
+    }
+
+    function openFinder(seed) {
+      closeCommandPalette();
+      closeRouteColorPopover();
+      menu.close();
+      finder.open(seed);
     }
 
     async function exportCurrentPng() {
@@ -434,22 +477,27 @@
       }
     }
 
+    function jumpToPointId(pointId) {
+      const state = store.getLiveState();
+      const point = state.points.find((candidate) => candidate.id === pointId);
+      if (!point) return;
+      if (point.type === "route" && point.routeId) {
+        store.setActiveRoute(point.routeId);
+      } else if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
+      if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
     function executeCommandEntry(entry) {
       if (!entry) return;
       const state = store.getLiveState();
       if (entry.kind === "point") {
-        const point = state.points.find((candidate) => candidate.id === entry.pointId);
-        if (!point) return;
-        if (point.type === "route" && point.routeId) {
-          store.setActiveRoute(point.routeId);
-        } else if (state.settings.filters[point.type] === false) {
-          store.setFilter(point.type, true);
-        }
-        if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
-        renderer.centerOnPoint(point);
-        setTimeout(() => {
-          if (PM.flashPoint) PM.flashPoint(point.id);
-        }, 80);
+        jumpToPointId(entry.pointId);
         closeCommandPalette();
         return;
       }
@@ -470,6 +518,7 @@
         renderRoutePanel(store.getState());
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
+      if (entry.action === "finder") openFinder();
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
       if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();
@@ -596,6 +645,7 @@
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
       controls.minimapToggle.textContent = "\u25A3";
       controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
       controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
@@ -713,6 +763,7 @@
       controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
       controls.commandClose.textContent = PM.I18n.t(locale, "close");
       controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
+      if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
     }
 
@@ -799,6 +850,8 @@
     controls.undo.addEventListener("click", () => store.undo());
     controls.redo.addEventListener("click", () => store.redo());
     controls.readerButton.addEventListener("click", () => reader.open());
+    controls.finderButton.addEventListener("click", () => openFinder());
+    controls.presentationButton.addEventListener("click", () => finder.close());
     controls.langToggle.addEventListener("click", () => {
       const next = store.getLiveState().settings.locale === "en" ? "de" : "en";
       store.setSettings({ locale: next });

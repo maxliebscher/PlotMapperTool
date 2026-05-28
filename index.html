@@ -1955,6 +1955,249 @@ button, input, textarea, select {
   color: var(--muted);
 }
 
+.finder-drawer {
+  position: fixed;
+  right: 18px;
+  top: 18px;
+  bottom: 18px;
+  z-index: 79;
+  width: min(430px, calc(100vw - 36px));
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 16px;
+  background: rgba(var(--panel-rgb), 0.96);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.finder-drawer[hidden],
+:root.presentation-mode .finder-drawer {
+  display: none !important;
+}
+
+.finder-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+.finder-drawer-head h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.12;
+}
+
+.finder-drawer-head p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.finder-search-wrap {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+#finderInput {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 13px;
+  font: inherit;
+  outline: none;
+}
+
+#finderInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74, 172, 255, 0.22);
+}
+
+.finder-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.finder-filter {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.finder-filter.is-active,
+.finder-filter:hover {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--text);
+}
+
+.finder-summary,
+.finder-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.finder-summary {
+  padding: 9px 12px;
+}
+
+.finder-summary kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.finder-results {
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+
+.finder-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 9px 0 5px;
+  background: linear-gradient(rgba(var(--panel-rgb), 0.98), rgba(var(--panel-rgb), 0.9));
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.finder-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: 7px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.finder-result:hover,
+.finder-result.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+}
+
+.finder-result-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 15px;
+}
+
+.finder-route-swatch {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  background: var(--route-color);
+}
+
+.finder-issue-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn) 28%, transparent);
+  color: #ffe5a3;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.finder-result-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.finder-result-copy strong,
+.finder-result-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-result-copy span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.finder-result-action,
+.finder-result-inspect {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.finder-result-inspect {
+  color: var(--text);
+}
+
+.finder-empty {
+  margin: 0 12px 12px;
+  padding: 14px;
+  border: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.finder-empty[hidden] {
+  display: none;
+}
+
+.finder-footer {
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2307,6 +2550,7 @@ button, input, textarea, select {
   .head-actions #readerButton,
   .head-actions #presentationButton,
   .head-actions .toggle-button,
+  .head-actions #finderButton,
   .head-actions #helpButton {
     flex: 1 1 104px;
     min-width: 0;
@@ -2382,6 +2626,24 @@ button, input, textarea, select {
     justify-content: center;
   }
 
+  .finder-drawer {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: 8px;
+    width: auto;
+    max-height: 68vh;
+  }
+
+  .finder-result {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+
+  .finder-result-inspect {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+
   .point-inspector,
   .point-inspector.is-docked {
     left: 8px !important;
@@ -2441,6 +2703,7 @@ button, input, textarea, select {
         <button id="readerButton" class="btn" type="button">Reader</button>
         <button id="presentationButton" class="btn" type="button">Present</button>
         <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
+        <button id="finderButton" class="btn" type="button">Finder</button>
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
@@ -2659,6 +2922,37 @@ button, input, textarea, select {
     </label>
     <div id="commandResults" class="command-results" role="listbox"></div>
     <p id="commandEmpty" class="command-empty" hidden>No results.</p>
+  </section>
+
+  <section id="finderDrawer" class="finder-drawer" role="dialog" aria-modal="false" aria-labelledby="finderTitle" hidden>
+    <header class="finder-drawer-head">
+      <div>
+        <h2 id="finderTitle">Finder</h2>
+        <p id="finderHint">Find points and jump to the map.</p>
+      </div>
+      <button id="finderClose" class="close" type="button">x</button>
+    </header>
+    <div class="finder-search-wrap">
+      <input id="finderInput" type="search" autocomplete="off" spellcheck="false" aria-label="Search points">
+      <div class="finder-filters" aria-label="Finder filters">
+        <button class="finder-filter is-active" data-filter="all" type="button" aria-pressed="true">All</button>
+        <button class="finder-filter" data-filter="issue" type="button" aria-pressed="false">Hints</button>
+        <button class="finder-filter" data-filter="route" type="button" aria-pressed="false">Route</button>
+        <button class="finder-filter" data-filter="place" type="button" aria-pressed="false">Places</button>
+        <button class="finder-filter" data-filter="char" type="button" aria-pressed="false">Characters</button>
+        <button class="finder-filter" data-filter="note" type="button" aria-pressed="false">Notes</button>
+      </div>
+    </div>
+    <div class="finder-summary">
+      <span id="finderSummary">0 results</span>
+      <span><kbd>↑↓</kbd> <kbd>Enter</kbd></span>
+    </div>
+    <div id="finderResults" class="finder-results" role="listbox"></div>
+    <p id="finderEmpty" class="finder-empty" hidden>No results.</p>
+    <footer class="finder-footer">
+      <span id="finderLimit">Max. 48 results shown.</span>
+      <span>Esc</span>
+    </footer>
   </section>
 
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
@@ -2891,6 +3185,15 @@ button, input, textarea, select {
       minimapPinShort: "P",
       minimapResize: "Resize minimap",
       minimapJump: "Click jumps to this map area",
+      finder: "Finder",
+      finderHint: "Search points, routes, notes, and jump back to the map.",
+      finderPlaceholder: "Search labels, notes, locations, routes",
+      finderAll: "All",
+      finderIssues: "Hints",
+      finderMatches: "matches",
+      finderVisible: "shown",
+      finderEmpty: "No results. Loosen search or filters.",
+      finderLimit: "Max. 48 results shown; everything remains searchable.",
       collapseMenu: "Collapse menu",
       expandMenu: "Open menu",
       focus: "Focus",
@@ -2973,7 +3276,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Finder:</strong> searches large point lists, filters hints/types, and jumps back to the map</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -3040,6 +3343,15 @@ button, input, textarea, select {
       minimapPinShort: "P",
       minimapResize: "Minimap skalieren",
       minimapJump: "Klick springt zu diesem Kartenausschnitt",
+      finder: "Finder",
+      finderHint: "Punkte, Routen und Notizen suchen und zur Karte springen.",
+      finderPlaceholder: "Labels, Notizen, Orte, Routen suchen",
+      finderAll: "Alle",
+      finderIssues: "Hinweise",
+      finderMatches: "Treffer",
+      finderVisible: "sichtbar",
+      finderEmpty: "Keine Treffer. Suche oder Filter lockern.",
+      finderLimit: "Max. 48 Treffer sichtbar; der Rest bleibt suchbar.",
       menuOpacity: "Menü",
       collapseMenu: "Menü einklappen",
       expandMenu: "Menü ausklappen",
@@ -3123,7 +3435,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Finder:</strong> durchsucht große Punktlisten, filtert Hinweise/Punktarten und springt zurück zur Karte</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -4200,6 +4512,7 @@ button, input, textarea, select {
       paletteAction("export-png", PM.I18n.t(locale, "png"), locale === "de" ? "Aktuelle Ansicht als Bild exportieren" : "Export current view as image", "\uD83D\uDCF7", "export png bild image"),
       paletteAction("routes", PM.I18n.t(locale, "routes"), locale === "de" ? "Routenverwaltung öffnen" : "Open route management", "\u21C4", "route pfad panel farbe linie"),
       paletteAction("focus", PM.I18n.t(locale, "focus"), locale === "de" ? "Fokus-Modus umschalten" : "Toggle focus mode", "\u25C9", "focus fokus filter"),
+      paletteAction("finder", PM.I18n.t(locale, "finder"), locale === "de" ? "Große Punktliste durchsuchen und zur Karte springen" : "Search large point lists and jump to the map", "\u2315", "finder suchen search punkte points hinweise"),
       paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\u25A3", "minimap overview ausschnitt viewport orientierung"),
       paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
     ];
@@ -5484,6 +5797,259 @@ button, input, textarea, select {
 })(globalThis.PM);
 
 
+/* src/finder.js */
+(function finderModule(PM) {
+  "use strict";
+
+  const RESULT_LIMIT = 48;
+
+  function issueForPoint(point) {
+    if (!point) return "";
+    if (!String(point.label || "").trim() && point.type !== "route") return "missingLabel";
+    if (point.type === "route" && point.helper && !String(point.label || "").trim()) return "unnamedHelper";
+    if (String(point.note || "").length > 180) return "longNote";
+    return "";
+  }
+
+  function entryType(entry, state) {
+    if (entry.kind !== "point") return entry.kind;
+    const point = state.points.find((candidate) => candidate.id === entry.pointId);
+    return point ? point.type : "point";
+  }
+
+  function entryIssue(entry, state) {
+    if (entry.kind !== "point") return "";
+    return issueForPoint(state.points.find((candidate) => candidate.id === entry.pointId));
+  }
+
+  function filterMatches(entry, state, activeFilter) {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "issue") return Boolean(entryIssue(entry, state));
+    if (activeFilter === "note") {
+      if (entry.kind !== "point") return false;
+      const point = state.points.find((candidate) => candidate.id === entry.pointId);
+      return Boolean(point && (point.note || point.duration || point.location));
+    }
+    return entryType(entry, state) === activeFilter;
+  }
+
+  function groupLabel(entry, state, locale) {
+    if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+    const issue = entryIssue(entry, state);
+    if (issue) return PM.I18n.t(locale, "finderIssues");
+    return PM.I18n.t(locale, entryType(entry, state)) || PM.I18n.t(locale, "commandKindPoint");
+  }
+
+  function resultActionLabel(entry, locale) {
+    if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+    return PM.I18n.t(locale, "jump");
+  }
+
+  function createFinderDrawer(elements, store, options) {
+    const hooks = options || {};
+    const {
+      panel,
+      title,
+      hint,
+      closeButton,
+      input,
+      filters,
+      summary,
+      results,
+      empty,
+      limitLabel
+    } = elements;
+
+    let activeFilter = "all";
+    let matches = [];
+    let selection = 0;
+
+    function t(key) {
+      return PM.I18n.t(store.getLiveState().settings.locale, key);
+    }
+
+    function searchableEntries() {
+      const state = store.getLiveState();
+      return PM.buildCommandPaletteEntries(state, state.settings.locale)
+        .filter((entry) => entry.kind === "point" || entry.kind === "route");
+    }
+
+    function filterEntries() {
+      const state = store.getLiveState();
+      const query = input.value;
+      const base = PM.filterCommandPaletteEntries(searchableEntries(), query, state.points.length + state.routes.length + 8);
+      return base.filter((entry) => filterMatches(entry, state, activeFilter));
+    }
+
+    function iconHtml(entry, state) {
+      if (entry.kind === "route" && entry.color) {
+        return `<span class="finder-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
+      }
+      const issue = entryIssue(entry, state);
+      if (issue) return "<span class=\"finder-issue-mark\">!</span>";
+      return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
+    }
+
+    function renderFilters(locale) {
+      filters.forEach((button) => {
+        const key = button.dataset.filter === "issue" ? "finderIssues"
+          : button.dataset.filter === "note" ? "notes"
+            : button.dataset.filter === "all" ? "finderAll"
+              : button.dataset.filter;
+        button.textContent = PM.I18n.t(locale, key);
+        button.classList.toggle("is-active", button.dataset.filter === activeFilter);
+        button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter));
+      });
+    }
+
+    function render() {
+      if (panel.hidden) return;
+      const state = store.getLiveState();
+      const locale = state.settings.locale;
+      title.textContent = t("finder");
+      hint.textContent = t("finderHint");
+      closeButton.textContent = "x";
+      input.placeholder = t("finderPlaceholder");
+      input.setAttribute("aria-label", t("finderPlaceholder"));
+      empty.textContent = t("finderEmpty");
+      limitLabel.textContent = t("finderLimit");
+      renderFilters(locale);
+      matches = filterEntries();
+      const visibleMatches = matches.slice(0, RESULT_LIMIT);
+      selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
+      summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      results.textContent = "";
+      empty.hidden = matches.length > 0;
+      let lastGroup = "";
+      visibleMatches.forEach((entry, index) => {
+        const group = groupLabel(entry, state, locale);
+        if (group !== lastGroup) {
+          const heading = document.createElement("div");
+          heading.className = "finder-group-title";
+          heading.textContent = group;
+          results.appendChild(heading);
+          lastGroup = group;
+        }
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `finder-result${index === selection ? " is-selected" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(index === selection));
+        button.innerHTML = [
+          `<span class="finder-result-icon">${iconHtml(entry, state)}</span>`,
+          `<span class="finder-result-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || "")}</span></span>`,
+          `<span class="finder-result-action">${PM.escapeHtml(resultActionLabel(entry, locale))}</span>`,
+          entry.kind === "point" && typeof hooks.onInspect === "function" ? `<span class="finder-result-inspect">${PM.escapeHtml(PM.I18n.t(locale, "inspectPoint"))}</span>` : ""
+        ].join("");
+        button.addEventListener("mouseenter", () => {
+          if (selection === index) return;
+          selection = index;
+          render();
+        });
+        button.addEventListener("click", () => execute(entry, "jump"));
+        const inspect = button.querySelector(".finder-result-inspect");
+        if (inspect) {
+          inspect.addEventListener("click", (event) => {
+            event.stopPropagation();
+            execute(entry, "inspect");
+          });
+        }
+        results.appendChild(button);
+      });
+    }
+
+    function open(seed) {
+      panel.hidden = false;
+      document.documentElement.classList.add("finder-open");
+      if (seed !== undefined) input.value = seed || "";
+      selection = 0;
+      render();
+      input.focus();
+      input.select();
+    }
+
+    function close() {
+      panel.hidden = true;
+      document.documentElement.classList.remove("finder-open");
+    }
+
+    function execute(entry, action) {
+      if (!entry) return;
+      if (entry.kind === "point") {
+        if (action === "inspect" && typeof hooks.onInspect === "function") {
+          close();
+          hooks.onInspect(entry.pointId, { mode: "dock" });
+          return;
+        }
+        close();
+        if (typeof hooks.onJumpPoint === "function") hooks.onJumpPoint(entry.pointId);
+        return;
+      }
+      if (entry.kind === "route" && typeof hooks.onRoute === "function") {
+        close();
+        hooks.onRoute(entry.routeId);
+      }
+    }
+
+    function currentSelection() {
+      return matches.slice(0, RESULT_LIMIT)[selection];
+    }
+
+    input.addEventListener("input", () => {
+      selection = 0;
+      render();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        selection = PM.clamp(selection + 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+        render();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        selection = PM.clamp(selection - 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+        render();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        execute(currentSelection(), "jump");
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+    });
+    filters.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter || "all";
+        selection = 0;
+        render();
+        input.focus();
+      });
+    });
+    closeButton.addEventListener("click", close);
+    document.addEventListener("keydown", (event) => {
+      if (!panel.hidden && event.key === "Escape") close();
+    });
+    store.subscribe(() => render());
+
+    return {
+      open,
+      close,
+      render,
+      isOpen() {
+        return !panel.hidden;
+      },
+      resultCount() {
+        return matches.length;
+      }
+    };
+  }
+
+  PM.createFinderDrawer = createFinderDrawer;
+})(globalThis.PM);
+
+
 /* src/menu.js */
 (function menuModule(PM) {
   "use strict";
@@ -6405,6 +6971,7 @@ button, input, textarea, select {
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
       helpButton: $("helpButton"),
+      finderButton: $("finderButton"),
       infoPanel: $("infoPanel"),
       infoButton: $("infoButton"),
       infoClose: $("infoClose"),
@@ -6426,6 +6993,16 @@ button, input, textarea, select {
       commandInput: $("commandInput"),
       commandResults: $("commandResults"),
       commandEmpty: $("commandEmpty"),
+      finderDrawer: $("finderDrawer"),
+      finderTitle: $("finderTitle"),
+      finderHint: $("finderHint"),
+      finderClose: $("finderClose"),
+      finderInput: $("finderInput"),
+      finderFilters: Array.from(document.querySelectorAll(".finder-filter")),
+      finderSummary: $("finderSummary"),
+      finderResults: $("finderResults"),
+      finderEmpty: $("finderEmpty"),
+      finderLimit: $("finderLimit"),
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
@@ -6544,6 +7121,30 @@ button, input, textarea, select {
       noteInput: controls.pointInspectorNote
     }, store, renderer);
     PM.pointInspector = pointInspector;
+    const finder = PM.createFinderDrawer({
+      panel: controls.finderDrawer,
+      title: controls.finderTitle,
+      hint: controls.finderHint,
+      closeButton: controls.finderClose,
+      input: controls.finderInput,
+      filters: controls.finderFilters,
+      summary: controls.finderSummary,
+      results: controls.finderResults,
+      empty: controls.finderEmpty,
+      limitLabel: controls.finderLimit
+    }, store, {
+      onJumpPoint: (pointId) => jumpToPointId(pointId),
+      onInspect: (pointId, options) => {
+        pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onRoute: (routeId) => {
+        store.setActiveRoute(routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false });
+      }
+    });
+    PM.finder = finder;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -6671,6 +7272,7 @@ button, input, textarea, select {
       commandSelection = 0;
       closeRouteColorPopover();
       menu.close();
+      finder.close();
       controls.commandBackdrop.hidden = false;
       controls.commandPalette.hidden = false;
       controls.commandInput.value = seed || "";
@@ -6684,6 +7286,13 @@ button, input, textarea, select {
       controls.commandBackdrop.hidden = true;
       controls.commandPalette.hidden = true;
       controls.commandResults.textContent = "";
+    }
+
+    function openFinder(seed) {
+      closeCommandPalette();
+      closeRouteColorPopover();
+      menu.close();
+      finder.open(seed);
     }
 
     async function exportCurrentPng() {
@@ -6701,22 +7310,27 @@ button, input, textarea, select {
       }
     }
 
+    function jumpToPointId(pointId) {
+      const state = store.getLiveState();
+      const point = state.points.find((candidate) => candidate.id === pointId);
+      if (!point) return;
+      if (point.type === "route" && point.routeId) {
+        store.setActiveRoute(point.routeId);
+      } else if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
+      if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
     function executeCommandEntry(entry) {
       if (!entry) return;
       const state = store.getLiveState();
       if (entry.kind === "point") {
-        const point = state.points.find((candidate) => candidate.id === entry.pointId);
-        if (!point) return;
-        if (point.type === "route" && point.routeId) {
-          store.setActiveRoute(point.routeId);
-        } else if (state.settings.filters[point.type] === false) {
-          store.setFilter(point.type, true);
-        }
-        if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
-        renderer.centerOnPoint(point);
-        setTimeout(() => {
-          if (PM.flashPoint) PM.flashPoint(point.id);
-        }, 80);
+        jumpToPointId(entry.pointId);
         closeCommandPalette();
         return;
       }
@@ -6737,6 +7351,7 @@ button, input, textarea, select {
         renderRoutePanel(store.getState());
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
+      if (entry.action === "finder") openFinder();
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
       if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();
@@ -6863,6 +7478,7 @@ button, input, textarea, select {
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
       controls.minimapToggle.textContent = "\u25A3";
       controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
       controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
@@ -6980,6 +7596,7 @@ button, input, textarea, select {
       controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
       controls.commandClose.textContent = PM.I18n.t(locale, "close");
       controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
+      if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
     }
 
@@ -7066,6 +7683,8 @@ button, input, textarea, select {
     controls.undo.addEventListener("click", () => store.undo());
     controls.redo.addEventListener("click", () => store.redo());
     controls.readerButton.addEventListener("click", () => reader.open());
+    controls.finderButton.addEventListener("click", () => openFinder());
+    controls.presentationButton.addEventListener("click", () => finder.close());
     controls.langToggle.addEventListener("click", () => {
       const next = store.getLiveState().settings.locale === "en" ? "de" : "en";
       store.setSettings({ locale: next });

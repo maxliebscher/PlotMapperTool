@@ -48,6 +48,7 @@
         <button id="readerButton" class="btn" type="button">Reader</button>
         <button id="presentationButton" class="btn" type="button">Present</button>
         <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
+        <button id="finderButton" class="btn" type="button">Finder</button>
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
@@ -266,6 +267,37 @@
     </label>
     <div id="commandResults" class="command-results" role="listbox"></div>
     <p id="commandEmpty" class="command-empty" hidden>No results.</p>
+  </section>
+
+  <section id="finderDrawer" class="finder-drawer" role="dialog" aria-modal="false" aria-labelledby="finderTitle" hidden>
+    <header class="finder-drawer-head">
+      <div>
+        <h2 id="finderTitle">Finder</h2>
+        <p id="finderHint">Find points and jump to the map.</p>
+      </div>
+      <button id="finderClose" class="close" type="button">x</button>
+    </header>
+    <div class="finder-search-wrap">
+      <input id="finderInput" type="search" autocomplete="off" spellcheck="false" aria-label="Search points">
+      <div class="finder-filters" aria-label="Finder filters">
+        <button class="finder-filter is-active" data-filter="all" type="button" aria-pressed="true">All</button>
+        <button class="finder-filter" data-filter="issue" type="button" aria-pressed="false">Hints</button>
+        <button class="finder-filter" data-filter="route" type="button" aria-pressed="false">Route</button>
+        <button class="finder-filter" data-filter="place" type="button" aria-pressed="false">Places</button>
+        <button class="finder-filter" data-filter="char" type="button" aria-pressed="false">Characters</button>
+        <button class="finder-filter" data-filter="note" type="button" aria-pressed="false">Notes</button>
+      </div>
+    </div>
+    <div class="finder-summary">
+      <span id="finderSummary">0 results</span>
+      <span><kbd>↑↓</kbd> <kbd>Enter</kbd></span>
+    </div>
+    <div id="finderResults" class="finder-results" role="listbox"></div>
+    <p id="finderEmpty" class="finder-empty" hidden>No results.</p>
+    <footer class="finder-footer">
+      <span id="finderLimit">Max. 48 results shown.</span>
+      <span>Esc</span>
+    </footer>
   </section>
 
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>

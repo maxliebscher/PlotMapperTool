@@ -50,6 +50,7 @@
       paletteAction("export-png", PM.I18n.t(locale, "png"), locale === "de" ? "Aktuelle Ansicht als Bild exportieren" : "Export current view as image", "\uD83D\uDCF7", "export png bild image"),
       paletteAction("routes", PM.I18n.t(locale, "routes"), locale === "de" ? "Routenverwaltung öffnen" : "Open route management", "\u21C4", "route pfad panel farbe linie"),
       paletteAction("focus", PM.I18n.t(locale, "focus"), locale === "de" ? "Fokus-Modus umschalten" : "Toggle focus mode", "\u25C9", "focus fokus filter"),
+      paletteAction("finder", PM.I18n.t(locale, "finder"), locale === "de" ? "Große Punktliste durchsuchen und zur Karte springen" : "Search large point lists and jump to the map", "\u2315", "finder suchen search punkte points hinweise"),
       paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\u25A3", "minimap overview ausschnitt viewport orientierung"),
       paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
     ];

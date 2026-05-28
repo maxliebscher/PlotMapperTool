@@ -96,11 +96,18 @@ requireHtml("pointInspectorSave", "Point inspector apply button");
 requireHtml("commandPalette", "Command palette dialog");
 requireHtml("commandInput", "Command palette search input");
 requireHtml("commandResults", "Command palette results");
+requireHtml("finderButton", "Finder toolbar button");
+requireHtml("finderDrawer", "Finder drawer dialog");
+requireHtml("finderInput", "Finder search input");
+requireHtml("finderResults", "Finder result list");
+requireHtml("finderLimit", "Finder result limit note");
 assert(html.includes("flashPoint"), "Point UI should expose a visible point jump highlight helper.");
 assert(html.includes("commandAction"), "Command palette should label point results with explicit jump actions.");
 assert(html.includes("reader-jump"), "Reader should expose explicit jump-to-map controls.");
 assert(html.includes("PM.createMinimap"), "App should create the optional viewport minimap controller.");
 assert(html.includes("PM.createPointInspector"), "App should create the optional point inspector controller.");
+assert(html.includes("PM.createFinderDrawer"), "App should create the optional large-project finder drawer.");
+assert(html.includes("finderIssues"), "Finder should expose a scale-oriented issue filter.");
 assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
 assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Close controls.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
@@ -133,6 +140,7 @@ const coreFiles = [
   "src/state.js",
   "src/presentation.js",
   "src/command-palette.js",
+  "src/finder.js",
   "src/serialization.js",
   "src/exporters.js"
 ];
@@ -152,6 +160,7 @@ for (const file of coreFiles) {
 const PM = context.PM;
 assert(typeof PM.buildCommandPaletteEntries === "function", "Command palette search builder should be registered.");
 assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette filtering helper should be registered.");
+assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should be registered.");
 
 const paletteProject = PM.createEmptyProject({ locale: "de" });
 paletteProject.routes.push(PM.normalizeRoute({

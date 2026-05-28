@@ -1947,6 +1947,249 @@ button, input, textarea, select {
   color: var(--muted);
 }
 
+.finder-drawer {
+  position: fixed;
+  right: 18px;
+  top: 18px;
+  bottom: 18px;
+  z-index: 79;
+  width: min(430px, calc(100vw - 36px));
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 16px;
+  background: rgba(var(--panel-rgb), 0.96);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.finder-drawer[hidden],
+:root.presentation-mode .finder-drawer {
+  display: none !important;
+}
+
+.finder-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+.finder-drawer-head h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.12;
+}
+
+.finder-drawer-head p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.finder-search-wrap {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+#finderInput {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 13px;
+  font: inherit;
+  outline: none;
+}
+
+#finderInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74, 172, 255, 0.22);
+}
+
+.finder-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.finder-filter {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.finder-filter.is-active,
+.finder-filter:hover {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--text);
+}
+
+.finder-summary,
+.finder-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.finder-summary {
+  padding: 9px 12px;
+}
+
+.finder-summary kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.finder-results {
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+
+.finder-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 9px 0 5px;
+  background: linear-gradient(rgba(var(--panel-rgb), 0.98), rgba(var(--panel-rgb), 0.9));
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.finder-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: 7px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.finder-result:hover,
+.finder-result.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+}
+
+.finder-result-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 15px;
+}
+
+.finder-route-swatch {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  background: var(--route-color);
+}
+
+.finder-issue-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn) 28%, transparent);
+  color: #ffe5a3;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.finder-result-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.finder-result-copy strong,
+.finder-result-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-result-copy span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.finder-result-action,
+.finder-result-inspect {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.finder-result-inspect {
+  color: var(--text);
+}
+
+.finder-empty {
+  margin: 0 12px 12px;
+  padding: 14px;
+  border: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.finder-empty[hidden] {
+  display: none;
+}
+
+.finder-footer {
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2299,6 +2542,7 @@ button, input, textarea, select {
   .head-actions #readerButton,
   .head-actions #presentationButton,
   .head-actions .toggle-button,
+  .head-actions #finderButton,
   .head-actions #helpButton {
     flex: 1 1 104px;
     min-width: 0;
@@ -2372,6 +2616,24 @@ button, input, textarea, select {
     width: 100%;
     max-width: 100%;
     justify-content: center;
+  }
+
+  .finder-drawer {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: 8px;
+    width: auto;
+    max-height: 68vh;
+  }
+
+  .finder-result {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+
+  .finder-result-inspect {
+    grid-column: 2 / -1;
+    justify-self: start;
   }
 
   .point-inspector,
