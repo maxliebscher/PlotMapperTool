@@ -3055,6 +3055,7 @@ button, input, textarea, select {
       </div>
       <div class="reader-actions">
         <label><input id="readerExtras" type="checkbox" checked><span>Context points</span></label>
+        <button id="readerFind" class="btn small" type="button">Finder</button>
         <button id="readerExportHtml" class="btn small" type="button">HTML</button>
         <button id="readerPrintPdf" class="btn small" type="button">PDF</button>
         <button id="readerClose" class="close" type="button">x</button>
@@ -6771,6 +6772,7 @@ button, input, textarea, select {
       cards,
       closeButton,
       extrasToggle,
+      findButton,
       exportHtmlButton,
       printPdfButton,
       title,
@@ -6866,6 +6868,7 @@ button, input, textarea, select {
       title.textContent = text(locale, "reader");
       hint.textContent = text(locale, "readerHint");
       extrasLabel.textContent = text(locale, "contextPoints");
+      findButton.textContent = text(locale, "finder");
       exportHtmlButton.textContent = text(locale, "saveHtml");
       printPdfButton.textContent = text(locale, "printPdf");
       closeButton.textContent = "x";
@@ -6989,6 +6992,10 @@ button, input, textarea, select {
     closeButton.addEventListener("click", close);
     backdrop.addEventListener("click", close);
     extrasToggle.addEventListener("change", render);
+    findButton.addEventListener("click", () => {
+      close();
+      if (typeof hooks.onFind === "function") hooks.onFind();
+    });
     exportHtmlButton.addEventListener("click", exportHtml);
     printPdfButton.addEventListener("click", printPdf);
     document.addEventListener("keydown", (event) => {
@@ -7087,6 +7094,7 @@ button, input, textarea, select {
       cards: $("readerCards"),
       closeButton: $("readerClose"),
       extrasToggle: $("readerExtras"),
+      findButton: $("readerFind"),
       exportHtmlButton: $("readerExportHtml"),
       printPdfButton: $("readerPrintPdf"),
       title: $("readerTitle"),
@@ -7095,6 +7103,9 @@ button, input, textarea, select {
     }, store, renderer, {
       onInspect: (pointId, options) => {
         if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onFind: () => {
+        openFinder();
       }
     });
 

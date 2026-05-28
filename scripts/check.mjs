@@ -53,6 +53,7 @@ requireHtml("loadProject", "Project load control");
 requireHtml("projectInput", "Project input control");
 requireHtml("exportPng", "PNG export control");
 requireHtml("readerModal", "Reader modal");
+requireHtml("readerFind", "Reader finder handoff control");
 requireHtml("readerExportHtml", "Reader HTML export control");
 requireHtml("presentationButton", "Presentation mode toolbar button");
 requireHtml("presentationDock", "Presentation dock");

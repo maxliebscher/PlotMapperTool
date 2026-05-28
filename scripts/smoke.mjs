@@ -602,6 +602,14 @@ async function exercisePresentation(page) {
 async function exerciseReader(page) {
   await page.click("#readerButton");
   await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
+  await page.click("#readerFind");
+  await page.waitForSelector("#readerModal", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#readerButton");
+  await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
   await page.waitForSelector(".reader-jump");
   const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
   await page.locator(".reader-jump").first().click();

@@ -9,6 +9,7 @@
       cards,
       closeButton,
       extrasToggle,
+      findButton,
       exportHtmlButton,
       printPdfButton,
       title,
@@ -104,6 +105,7 @@
       title.textContent = text(locale, "reader");
       hint.textContent = text(locale, "readerHint");
       extrasLabel.textContent = text(locale, "contextPoints");
+      findButton.textContent = text(locale, "finder");
       exportHtmlButton.textContent = text(locale, "saveHtml");
       printPdfButton.textContent = text(locale, "printPdf");
       closeButton.textContent = "x";
@@ -227,6 +229,10 @@
     closeButton.addEventListener("click", close);
     backdrop.addEventListener("click", close);
     extrasToggle.addEventListener("change", render);
+    findButton.addEventListener("click", () => {
+      close();
+      if (typeof hooks.onFind === "function") hooks.onFind();
+    });
     exportHtmlButton.addEventListener("click", exportHtml);
     printPdfButton.addEventListener("click", printPdf);
     document.addEventListener("keydown", (event) => {

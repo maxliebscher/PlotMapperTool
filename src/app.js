@@ -72,6 +72,7 @@
       cards: $("readerCards"),
       closeButton: $("readerClose"),
       extrasToggle: $("readerExtras"),
+      findButton: $("readerFind"),
       exportHtmlButton: $("readerExportHtml"),
       printPdfButton: $("readerPrintPdf"),
       title: $("readerTitle"),
@@ -80,6 +81,9 @@
     }, store, renderer, {
       onInspect: (pointId, options) => {
         if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onFind: () => {
+        openFinder();
       }
     });
 
