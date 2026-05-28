@@ -187,6 +187,7 @@
       presentationShowAll: $("presentationShowAll"),
       presentationReset: $("presentationReset"),
       presentationFogToggle: $("presentationFogToggle"),
+      presentationExportPng: $("presentationExportPng"),
       presentationFogPanel: $("presentationFogPanel"),
       presentationFogTitle: $("presentationFogTitle"),
       presentationFogClose: $("presentationFogClose"),
@@ -689,6 +690,9 @@
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
       controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
+      controls.presentationExportPng.textContent = PM.I18n.t(locale, "png");
+      controls.presentationExportPng.setAttribute("aria-label", PM.I18n.t(locale, "presentationExportPng"));
+      controls.presentationExportPng.setAttribute("title", PM.I18n.t(locale, "presentationExportPng"));
       controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
       controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
       controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
@@ -870,6 +874,7 @@
     });
 
     controls.exportPng.addEventListener("click", exportCurrentPng);
+    controls.presentationExportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
       if (confirm(t("clearConfirm"))) store.clearPoints();

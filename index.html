@@ -3001,6 +3001,7 @@ button, input, textarea, select {
     <button id="presentationShowAll" class="btn small" type="button">All</button>
     <button id="presentationReset" class="btn small" type="button">Reset</button>
     <button id="presentationFogToggle" class="btn icon" type="button" aria-label="Fog settings">&#9881;</button>
+    <button id="presentationExportPng" class="btn small" type="button">PNG</button>
     <button id="presentationExit" class="btn small" type="button">Exit</button>
   </section>
 
@@ -3254,6 +3255,7 @@ button, input, textarea, select {
       presentationNext: "Next step",
       presentationShowAll: "All",
       presentationReset: "Reset",
+      presentationExportPng: "Export current presentation state as PNG",
       presentationExit: "Exit",
       presentationEmpty: "No route",
       presentationFog: "Fog",
@@ -3422,6 +3424,7 @@ button, input, textarea, select {
       presentationNext: "Nächster Schritt",
       presentationShowAll: "Alles",
       presentationReset: "Reset",
+      presentationExportPng: "Aktuellen Präsentationszustand als PNG exportieren",
       presentationExit: "Ende",
       presentationEmpty: "Keine Route",
       presentationFog: "Fog",
@@ -7199,6 +7202,7 @@ button, input, textarea, select {
       presentationShowAll: $("presentationShowAll"),
       presentationReset: $("presentationReset"),
       presentationFogToggle: $("presentationFogToggle"),
+      presentationExportPng: $("presentationExportPng"),
       presentationFogPanel: $("presentationFogPanel"),
       presentationFogTitle: $("presentationFogTitle"),
       presentationFogClose: $("presentationFogClose"),
@@ -7701,6 +7705,9 @@ button, input, textarea, select {
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
       controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
+      controls.presentationExportPng.textContent = PM.I18n.t(locale, "png");
+      controls.presentationExportPng.setAttribute("aria-label", PM.I18n.t(locale, "presentationExportPng"));
+      controls.presentationExportPng.setAttribute("title", PM.I18n.t(locale, "presentationExportPng"));
       controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
       controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
       controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
@@ -7882,6 +7889,7 @@ button, input, textarea, select {
     });
 
     controls.exportPng.addEventListener("click", exportCurrentPng);
+    controls.presentationExportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
       if (confirm(t("clearConfirm"))) store.clearPoints();

@@ -61,6 +61,7 @@ requireHtml("presentationPrev", "Presentation previous control");
 requireHtml("presentationNext", "Presentation next control");
 requireHtml("presentationShowAll", "Presentation show-all control");
 requireHtml("presentationReset", "Presentation reset control");
+requireHtml("presentationExportPng", "Presentation PNG export control");
 requireHtml("presentationExit", "Presentation exit control");
 requireHtml("presentationFogToggle", "Presentation fog settings toggle");
 requireHtml("presentationFogPanel", "Presentation fog settings panel");

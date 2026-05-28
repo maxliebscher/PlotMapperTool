@@ -572,6 +572,25 @@ async function exercisePresentation(page) {
       && document.querySelectorAll(".point:not(.hidden)").length === reveal.visibleIds.size;
   }, null, { timeout: 5000 });
 
+  await page.evaluate(() => {
+    if (globalThis.__pmDownloadCaptureInstalled) return;
+    globalThis.__pmDownloadCaptureInstalled = true;
+    globalThis.__pmDownloads = [];
+    const originalClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function capturedDownloadClick() {
+      if (this.download) {
+        globalThis.__pmDownloads.push({
+          download: this.download,
+          href: this.href
+        });
+      }
+      return originalClick.call(this);
+    };
+  });
+  await page.click("#presentationExportPng");
+  await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".png")), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
+
   await page.keyboard.press("End");
   await page.waitForFunction((count) => document.querySelectorAll(".point:not(.hidden)").length === count, presentationShowAllCount, { timeout: 5000 });
 
