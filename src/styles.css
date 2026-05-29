@@ -2066,6 +2066,9 @@ button, input, textarea, select {
 
 .finder-filter {
   min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 0 9px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -2074,6 +2077,20 @@ button, input, textarea, select {
   cursor: pointer;
   font-size: 12px;
   font-weight: 850;
+}
+
+.finder-filter-count {
+  min-width: 18px;
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-strong) 78%, transparent);
+  color: var(--text);
+  font-size: 10px;
+  line-height: 1;
 }
 
 .finder-filter.is-active,

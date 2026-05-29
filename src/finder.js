@@ -42,6 +42,14 @@
     return entryType(entry, state) === activeFilter;
   }
 
+  function filterCounts(entries, state) {
+    const filters = ["all", "issue", "route", "place", "char", "event", "item", "note"];
+    return filters.reduce((counts, filter) => {
+      counts[filter] = (entries || []).filter((entry) => filterMatches(entry, state, filter)).length;
+      return counts;
+    }, {});
+  }
+
   function groupLabel(entry, state, locale) {
     if (entry.kind === "route") return PM.I18n.t(locale, "routes");
     const issue = entryIssue(entry, state);
@@ -88,13 +96,6 @@
         .filter((entry) => entry.kind === "point" || entry.kind === "route");
     }
 
-    function filterEntries() {
-      const state = store.getLiveState();
-      const query = input.value;
-      const base = PM.filterCommandPaletteEntries(searchableEntries(), query, state.points.length + state.routes.length + 8);
-      return base.filter((entry) => filterMatches(entry, state, activeFilter));
-    }
-
     function iconHtml(entry, state) {
       if (entry.kind === "route" && entry.color) {
         return `<span class="finder-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
@@ -104,13 +105,19 @@
       return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
     }
 
-    function renderFilters(locale) {
+    function renderFilters(locale, counts) {
       filters.forEach((button) => {
         const key = button.dataset.filter === "issue" ? "finderIssues"
           : button.dataset.filter === "note" ? "notes"
             : button.dataset.filter === "all" ? "finderAll"
               : button.dataset.filter;
-        button.textContent = PM.I18n.t(locale, key);
+        const label = PM.I18n.t(locale, key);
+        const count = counts[button.dataset.filter] || 0;
+        button.innerHTML = [
+          `<span>${PM.escapeHtml(label)}</span>`,
+          `<span class="finder-filter-count">${PM.escapeHtml(String(count))}</span>`
+        ].join("");
+        button.setAttribute("aria-label", `${label} ${count}`);
         button.classList.toggle("is-active", button.dataset.filter === activeFilter);
         button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter));
       });
@@ -127,8 +134,11 @@
       input.setAttribute("aria-label", t("finderPlaceholder"));
       empty.textContent = t("finderEmpty");
       limitLabel.textContent = t("finderLimit");
-      renderFilters(locale);
-      matches = filterEntries();
+      const entries = searchableEntries();
+      const query = input.value;
+      const baseMatches = PM.filterCommandPaletteEntries(entries, query, state.points.length + state.routes.length + 8);
+      renderFilters(locale, filterCounts(baseMatches, state));
+      matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter));
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
       summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
@@ -267,5 +277,6 @@
 
   PM.finderIssueForPoint = issueForPoint;
   PM.finderIssueLabel = issueLabel;
+  PM.finderFilterCounts = filterCounts;
   PM.createFinderDrawer = createFinderDrawer;
 })(globalThis.PM);

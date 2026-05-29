@@ -168,6 +168,7 @@ assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette fi
 assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should be registered.");
 assert(typeof PM.finderIssueForPoint === "function", "Finder should expose project hint classification.");
 assert(typeof PM.finderIssueLabel === "function", "Finder should expose localized project hint labels.");
+assert(typeof PM.finderFilterCounts === "function", "Finder should expose scale-oriented filter counts.");
 assert(Array.isArray(PM.VIEW_PRESETS) && PM.VIEW_PRESETS.length >= 4, "Built-in view presets should be registered.");
 assert(typeof PM.getViewPresetPatch === "function", "View preset patches should be exposed for tests and UI.");
 assert(typeof PM.viewPresetMatchesState === "function", "View preset active-state matcher should be registered.");
@@ -215,6 +216,29 @@ assertEqual(PM.finderIssueForPoint({ type: "route", helper: true, label: "" }), 
 assertEqual(PM.finderIssueForPoint({ type: "event", label: "Long", note: "x".repeat(181) }), "longNote", "Finder hints should flag long notes.");
 assertEqual(PM.finderIssueLabel("missingLabel", "en"), "Missing label", "Finder hint labels should be localized in English.");
 assertEqual(PM.finderIssueLabel("missingLabel", "de"), "Fehlendes Label", "Finder hint labels should be localized in German.");
+const finderCountProject = PM.normalizeProject({
+  ...PM.createEmptyProject(),
+  routes: [
+    { ...PM.DEFAULT_ROUTE, id: "route-a", name: "A" },
+    { ...PM.DEFAULT_ROUTE, id: "route-b", name: "B" }
+  ],
+  points: [
+    { id: "p-route", type: "route", routeId: "route-a", x: 0.1, y: 0.1, label: "Route A" },
+    { id: "p-place", type: "place", x: 0.2, y: 0.2, label: "Place", note: "short" },
+    { id: "p-char", type: "char", x: 0.3, y: 0.3, label: "Character" },
+    { id: "p-event", type: "event", x: 0.4, y: 0.4, label: "Event", note: "x".repeat(181) },
+    { id: "p-item", type: "item", x: 0.5, y: 0.5, label: "" }
+  ]
+});
+const finderCounts = PM.finderFilterCounts(PM.buildCommandPaletteEntries(finderCountProject, "en").filter((entry) => entry.kind === "point" || entry.kind === "route"), finderCountProject);
+assertEqual(finderCounts.all, 7, "Finder counts should include point and route entries.");
+assertEqual(finderCounts.route, 3, "Finder route count should include route points and route entries.");
+assertEqual(finderCounts.place, 1, "Finder should count places.");
+assertEqual(finderCounts.char, 1, "Finder should count characters.");
+assertEqual(finderCounts.event, 1, "Finder should count events.");
+assertEqual(finderCounts.item, 1, "Finder should count items.");
+assertEqual(finderCounts.note, 2, "Finder should count entries with note-like context.");
+assertEqual(finderCounts.issue, 2, "Finder should count project hints.");
 const viewProject = PM.createEmptyProject({ locale: "de" });
 viewProject.settings = PM.normalizeSettings({ ...viewProject.settings, ...routeView });
 assert(PM.viewPresetMatchesState(viewProject, "route"), "Preset matcher should recognize an active route view.");
