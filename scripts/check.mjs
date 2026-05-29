@@ -188,6 +188,7 @@ paletteProject.points.push(
 );
 const paletteEntries = PM.buildCommandPaletteEntries(paletteProject, "de");
 assert(paletteEntries.some((entry) => entry.id === "action:reader" && entry.kind === "action"), "Command palette should include app actions.");
+assert(paletteEntries.some((entry) => entry.id === "action:finder-issues" && entry.action === "finder-issues"), "Command palette should include direct project hints action.");
 assert(paletteEntries.some((entry) => entry.id === "point:market" && entry.kind === "point"), "Command palette should include points.");
 assert(paletteEntries.some((entry) => entry.id === "route:route-two" && entry.kind === "route"), "Command palette should include routes.");
 assertEqual(

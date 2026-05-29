@@ -487,11 +487,11 @@
       });
     }
 
-    function openFinder(seed) {
+    function openFinder(seed, filter = "all") {
       closeCommandPalette();
       closeRouteColorPopover();
       menu.close();
-      finder.open(seed);
+      finder.open(seed, filter);
     }
 
     async function exportCurrentPng() {
@@ -551,6 +551,7 @@
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "finder") openFinder();
+      if (entry.action === "finder-issues") openFinder("", "issue");
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
       if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();

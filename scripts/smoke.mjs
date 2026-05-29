@@ -413,8 +413,21 @@ async function exerciseFinderDrawer(page) {
   await page.click("#pointInspectorClose");
   await page.waitForSelector("#pointInspector", { state: "hidden" });
 
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("hints");
+  await page.waitForFunction(() => document.querySelector(".command-result")?.textContent?.match(/Hints|Hinweise/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector(".finder-filter[data-filter='issue']")?.classList.contains("is-active"), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Missing label|Fehlendes Label|Long note|Lange Notiz/.test(document.querySelector("#finderResults")?.textContent || ""), null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
   await page.click("#finderButton");
   await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector(".finder-filter[data-filter='all']")?.classList.contains("is-active"), null, { timeout: 5000 });
   await page.locator("#finderInput").fill("Smoke Route");
   await page.locator(".finder-filter[data-filter='route']").click();
   await page.waitForFunction(() => document.querySelectorAll(".finder-result").length >= 1, null, { timeout: 5000 });

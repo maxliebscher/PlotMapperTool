@@ -192,10 +192,11 @@
       }
     }
 
-    function open(seed) {
+    function open(seed, filter) {
       panel.hidden = false;
       document.documentElement.classList.add("finder-open");
       if (seed !== undefined) input.value = seed || "";
+      if (filter) activeFilter = filter;
       selection = 0;
       render();
       input.focus();
