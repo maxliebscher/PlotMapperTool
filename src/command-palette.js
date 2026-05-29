@@ -127,7 +127,15 @@
       .map((item) => item.entry);
   }
 
+  function countCommandPaletteMatches(entries, query) {
+    return (entries || [])
+      .map((entry) => scoreEntry(entry, query))
+      .filter((score) => score > -Infinity)
+      .length;
+  }
+
   PM.normalizeSearchText = normalizeSearchText;
   PM.buildCommandPaletteEntries = buildCommandPaletteEntries;
   PM.filterCommandPaletteEntries = filterCommandPaletteEntries;
+  PM.countCommandPaletteMatches = countCommandPaletteMatches;
 })(globalThis.PM);

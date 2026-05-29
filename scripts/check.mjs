@@ -165,6 +165,7 @@ for (const file of coreFiles) {
 const PM = context.PM;
 assert(typeof PM.buildCommandPaletteEntries === "function", "Command palette search builder should be registered.");
 assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette filtering helper should be registered.");
+assert(typeof PM.countCommandPaletteMatches === "function", "Command palette should expose overflow match counts.");
 assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should be registered.");
 assert(typeof PM.finderIssueForPoint === "function", "Finder should expose project hint classification.");
 assert(typeof PM.finderIssueLabel === "function", "Finder should expose localized project hint labels.");
@@ -205,6 +206,11 @@ assertDeepEqual(
   PM.filterCommandPaletteEntries(paletteEntries, "   ").slice(0, 3).map((entry) => entry.kind),
   ["action", "action", "action"],
   "Empty command palette query should prioritize actions."
+);
+assertEqual(
+  PM.countCommandPaletteMatches(paletteEntries, "route"),
+  PM.filterCommandPaletteEntries(paletteEntries, "route", 999).length,
+  "Command palette should count all matches before its visible cap."
 );
 
 const routeView = PM.getViewPresetPatch("route");

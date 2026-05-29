@@ -378,6 +378,17 @@ async function exerciseFinderDrawer(page) {
       });
     }
   });
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("finder");
+  await page.waitForSelector(".command-more-results");
+  await page.click(".command-more-results");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#finderInput")?.value === "finder" && PM.finder.resultCount() > 48, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
   await page.click("#finderButton");
   await page.waitForSelector("#finderDrawer:not([hidden])");
   await page.locator("#finderInput").fill("finder");

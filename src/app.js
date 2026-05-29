@@ -418,7 +418,10 @@
     function renderCommandPalette() {
       if (!commandOpen) return;
       const locale = store.getLiveState().settings.locale;
-      commandMatches = PM.filterCommandPaletteEntries(currentCommandEntries(), controls.commandInput.value, 10);
+      const query = controls.commandInput.value;
+      const entries = currentCommandEntries();
+      const totalMatches = PM.countCommandPaletteMatches(entries, query);
+      commandMatches = PM.filterCommandPaletteEntries(entries, query, 10);
       commandSelection = PM.clamp(commandSelection, 0, Math.max(0, commandMatches.length - 1));
       controls.commandResults.textContent = "";
       controls.commandEmpty.hidden = commandMatches.length > 0;
@@ -435,11 +438,27 @@
         ].join("");
         button.addEventListener("mouseenter", () => {
           commandSelection = index;
-          renderCommandPalette();
+          Array.from(controls.commandResults.querySelectorAll(".command-result[role='option']")).forEach((node, nodeIndex) => {
+            node.classList.toggle("is-selected", nodeIndex === commandSelection);
+            node.setAttribute("aria-selected", String(nodeIndex === commandSelection));
+          });
         });
         button.addEventListener("click", () => executeCommandEntry(entry));
         controls.commandResults.appendChild(button);
       });
+      const hiddenMatches = Math.max(0, totalMatches - commandMatches.length);
+      if (hiddenMatches > 0 && query.trim()) {
+        const moreButton = document.createElement("button");
+        moreButton.type = "button";
+        moreButton.className = "command-result command-more-results";
+        moreButton.innerHTML = [
+          `<span class="command-icon" aria-hidden="true">\u2315</span>`,
+          `<span class="command-copy"><strong>${PM.escapeHtml(PM.I18n.t(locale, "finder"))}</strong><span>${PM.escapeHtml(PM.I18n.t(locale, "commandMoreResults").replace("{count}", String(hiddenMatches)))}</span></span>`,
+          `<span class="command-action">${PM.escapeHtml(PM.I18n.t(locale, "finder"))}</span>`
+        ].join("");
+        moreButton.addEventListener("click", () => openFinder(query));
+        controls.commandResults.appendChild(moreButton);
+      }
     }
 
     function openCommandPalette(seed) {
