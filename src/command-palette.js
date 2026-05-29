@@ -55,6 +55,18 @@
       paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\u25A3", "minimap overview ausschnitt viewport orientierung"),
       paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
     ];
+    if (Array.isArray(PM.VIEW_PRESETS)) {
+      PM.VIEW_PRESETS.forEach((preset) => {
+        actions.push(paletteAction(
+          `view-${preset.id}`,
+          PM.I18n.t(locale, preset.labelKey),
+          `${PM.I18n.t(locale, "viewPresets")} - ${PM.I18n.t(locale, preset.titleKey)}`,
+          "\u25A4",
+          `view ansicht ansichten preset filter ${preset.id} ${PM.I18n.t(locale, preset.labelKey)} ${PM.I18n.t(locale, preset.titleKey)}`
+        ));
+        actions[actions.length - 1].action = `view:${preset.id}`;
+      });
+    }
 
     const points = state.points.map((point) => {
       const type = PM.getPointType(point.type);

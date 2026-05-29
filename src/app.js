@@ -571,6 +571,10 @@
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "finder") openFinder();
       if (entry.action === "finder-issues") openFinder("", "issue");
+      if (String(entry.action || "").startsWith("view:")) {
+        finder.close();
+        PM.applyViewPreset(store, entry.action.slice("view:".length));
+      }
       if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
       if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
       closeCommandPalette();

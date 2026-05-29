@@ -139,6 +139,16 @@ async function exerciseCommandPalette(page) {
   await page.waitForSelector("#commandPalette:not([hidden])");
   await page.keyboard.press("Escape");
   await page.waitForSelector("#commandPalette", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("notes");
+  await page.waitForFunction(() => document.querySelector(".command-result strong")?.textContent?.match(/Notes|Notizen/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForFunction(() => PM.viewPresetMatchesState(PM.store.getLiveState(), "notes"), null, { timeout: 5000 });
+  await page.evaluate(() => PM.applyViewPreset(PM.store, "all"));
+  await page.waitForFunction(() => PM.store.getLiveState().settings.showEdit === true, null, { timeout: 5000 });
 }
 
 async function exerciseMinimap(page) {
