@@ -382,6 +382,7 @@ async function exerciseFinderDrawer(page) {
   await page.waitForSelector("#finderDrawer:not([hidden])");
   await page.locator("#finderInput").fill("finder");
   await page.waitForFunction(() => PM.finder.resultCount() > 48 && document.querySelectorAll(".finder-result").length === 48, null, { timeout: 5000 });
+  await page.waitForFunction(() => /more hidden|Weitere \d+ ausgeblendet/.test(document.querySelector("#finderLimit")?.textContent || ""), null, { timeout: 5000 });
   await page.waitForFunction(() => {
     const filters = Array.from(document.querySelectorAll(".finder-filter"));
     return filters.some((button) => button.dataset.filter === "event" && /\d+/.test(button.textContent || ""))

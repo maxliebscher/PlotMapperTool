@@ -67,6 +67,12 @@
     return [issueLabel(issue, locale), entry.detail].filter(Boolean).join(" - ");
   }
 
+  function limitText(total, visible, locale) {
+    const hidden = Math.max(0, total - visible);
+    if (!hidden) return PM.I18n.t(locale, "finderLimit");
+    return PM.I18n.t(locale, "finderLimitOverflow").replace("{count}", String(hidden));
+  }
+
   function createFinderDrawer(elements, store, options) {
     const hooks = options || {};
     const {
@@ -133,13 +139,13 @@
       input.placeholder = t("finderPlaceholder");
       input.setAttribute("aria-label", t("finderPlaceholder"));
       empty.textContent = t("finderEmpty");
-      limitLabel.textContent = t("finderLimit");
       const entries = searchableEntries();
       const query = input.value;
       const baseMatches = PM.filterCommandPaletteEntries(entries, query, state.points.length + state.routes.length + 8);
       renderFilters(locale, filterCounts(baseMatches, state));
       matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter));
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
+      limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
       summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
       results.textContent = "";
@@ -278,5 +284,6 @@
   PM.finderIssueForPoint = issueForPoint;
   PM.finderIssueLabel = issueLabel;
   PM.finderFilterCounts = filterCounts;
+  PM.finderLimitText = limitText;
   PM.createFinderDrawer = createFinderDrawer;
 })(globalThis.PM);

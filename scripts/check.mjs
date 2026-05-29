@@ -169,6 +169,7 @@ assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should
 assert(typeof PM.finderIssueForPoint === "function", "Finder should expose project hint classification.");
 assert(typeof PM.finderIssueLabel === "function", "Finder should expose localized project hint labels.");
 assert(typeof PM.finderFilterCounts === "function", "Finder should expose scale-oriented filter counts.");
+assert(typeof PM.finderLimitText === "function", "Finder should expose a human-readable result cap message.");
 assert(Array.isArray(PM.VIEW_PRESETS) && PM.VIEW_PRESETS.length >= 4, "Built-in view presets should be registered.");
 assert(typeof PM.getViewPresetPatch === "function", "View preset patches should be exposed for tests and UI.");
 assert(typeof PM.viewPresetMatchesState === "function", "View preset active-state matcher should be registered.");
@@ -239,6 +240,9 @@ assertEqual(finderCounts.event, 1, "Finder should count events.");
 assertEqual(finderCounts.item, 1, "Finder should count items.");
 assertEqual(finderCounts.note, 2, "Finder should count entries with note-like context.");
 assertEqual(finderCounts.issue, 2, "Finder should count project hints.");
+assertEqual(PM.finderLimitText(72, 48, "en"), "24 more hidden - narrow search.", "Finder should explain hidden overflow results in English.");
+assertEqual(PM.finderLimitText(72, 48, "de"), "Weitere 24 ausgeblendet - Suche eingrenzen.", "Finder should explain hidden overflow results in German.");
+assertEqual(PM.finderLimitText(12, 12, "en"), "Max. 48 results shown; everything remains searchable.", "Finder should keep the normal cap note when nothing is hidden.");
 const viewProject = PM.createEmptyProject({ locale: "de" });
 viewProject.settings = PM.normalizeSettings({ ...viewProject.settings, ...routeView });
 assert(PM.viewPresetMatchesState(viewProject, "route"), "Preset matcher should recognize an active route view.");

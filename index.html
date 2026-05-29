@@ -3262,6 +3262,7 @@ button, input, textarea, select {
       finderVisible: "shown",
       finderEmpty: "No results. Loosen search or filters.",
       finderLimit: "Max. 48 results shown; everything remains searchable.",
+      finderLimitOverflow: "{count} more hidden - narrow search.",
       finderIssueMissingLabel: "Missing label",
       finderIssueUnnamedHelper: "Unnamed helper",
       finderIssueLongNote: "Long note",
@@ -3433,6 +3434,7 @@ button, input, textarea, select {
       finderVisible: "sichtbar",
       finderEmpty: "Keine Treffer. Suche oder Filter lockern.",
       finderLimit: "Max. 48 Treffer sichtbar; der Rest bleibt suchbar.",
+      finderLimitOverflow: "Weitere {count} ausgeblendet - Suche eingrenzen.",
       finderIssueMissingLabel: "Fehlendes Label",
       finderIssueUnnamedHelper: "Unbenannter Hilfspunkt",
       finderIssueLongNote: "Lange Notiz",
@@ -5961,6 +5963,12 @@ button, input, textarea, select {
     return [issueLabel(issue, locale), entry.detail].filter(Boolean).join(" - ");
   }
 
+  function limitText(total, visible, locale) {
+    const hidden = Math.max(0, total - visible);
+    if (!hidden) return PM.I18n.t(locale, "finderLimit");
+    return PM.I18n.t(locale, "finderLimitOverflow").replace("{count}", String(hidden));
+  }
+
   function createFinderDrawer(elements, store, options) {
     const hooks = options || {};
     const {
@@ -6027,13 +6035,13 @@ button, input, textarea, select {
       input.placeholder = t("finderPlaceholder");
       input.setAttribute("aria-label", t("finderPlaceholder"));
       empty.textContent = t("finderEmpty");
-      limitLabel.textContent = t("finderLimit");
       const entries = searchableEntries();
       const query = input.value;
       const baseMatches = PM.filterCommandPaletteEntries(entries, query, state.points.length + state.routes.length + 8);
       renderFilters(locale, filterCounts(baseMatches, state));
       matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter));
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
+      limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
       summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
       results.textContent = "";
@@ -6172,6 +6180,7 @@ button, input, textarea, select {
   PM.finderIssueForPoint = issueForPoint;
   PM.finderIssueLabel = issueLabel;
   PM.finderFilterCounts = filterCounts;
+  PM.finderLimitText = limitText;
   PM.createFinderDrawer = createFinderDrawer;
 })(globalThis.PM);
 
