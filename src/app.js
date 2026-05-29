@@ -308,6 +308,7 @@
       limitLabel: controls.finderLimit
     }, store, {
       onJumpPoint: (pointId) => jumpToPointId(pointId),
+      onPreviewPoint: (pointId) => pointUi.previewPoint(pointId),
       onInspect: (pointId, options) => {
         pointInspector.open(pointId, options || { mode: "dock" });
       },

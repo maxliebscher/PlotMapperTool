@@ -170,6 +170,10 @@
         }
         results.appendChild(button);
       });
+      if (typeof hooks.onPreviewPoint === "function") {
+        const selected = visibleMatches[selection];
+        hooks.onPreviewPoint(selected && selected.kind === "point" ? selected.pointId : "");
+      }
     }
 
     function open(seed) {
@@ -185,6 +189,7 @@
     function close() {
       panel.hidden = true;
       document.documentElement.classList.remove("finder-open");
+      if (typeof hooks.onPreviewPoint === "function") hooks.onPreviewPoint("");
     }
 
     function execute(entry, action) {

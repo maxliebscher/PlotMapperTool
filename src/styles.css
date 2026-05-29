@@ -359,6 +359,15 @@ button, input, textarea, select {
   z-index: 18;
 }
 
+.point.is-finder-preview {
+  display: flex;
+  z-index: 19;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 76%, transparent),
+    0 0 0 12px color-mix(in srgb, var(--accent) 20%, transparent),
+    0 9px 16px rgba(0, 0, 0, 0.48);
+}
+
 @keyframes pointJumpTarget {
   0% {
     box-shadow:

@@ -382,13 +382,17 @@ async function exerciseFinderDrawer(page) {
   await page.waitForSelector("#finderDrawer:not([hidden])");
   await page.locator("#finderInput").fill("finder");
   await page.waitForFunction(() => PM.finder.resultCount() > 48 && document.querySelectorAll(".finder-result").length === 48, null, { timeout: 5000 });
+  await page.locator(".finder-result").nth(2).hover();
+  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
   await page.waitForFunction(() => {
     const drawer = document.querySelector("#finderDrawer");
     return drawer && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
   }, null, { timeout: 5000 });
   await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
   await page.keyboard.press("Enter");
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 0, null, { timeout: 5000 });
   await page.waitForSelector(".point.is-jump-target");
 
   await page.click("#finderButton");

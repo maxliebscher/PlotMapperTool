@@ -5,6 +5,7 @@
     const pointNodes = new Map();
     const fieldHidden = new Map();
     const flashTimers = new Map();
+    let previewId = "";
     let latestState = store.getState();
 
     function hiddenFor(pointId) {
@@ -81,6 +82,7 @@
       element.classList.toggle("char", point.type === "char");
       element.classList.toggle("event", point.type === "event");
       element.classList.toggle("item", point.type === "item");
+      element.classList.toggle("is-finder-preview", point.id === previewId);
       const screen = renderer.mapToClient(point.x, point.y);
       element.style.left = `${screen.x}px`;
       element.style.top = `${screen.y}px`;
@@ -274,6 +276,17 @@
       return true;
     }
 
+    function previewPoint(pointId) {
+      const nextId = pointId || "";
+      if (previewId === nextId) return Boolean(nextId && pointNodes.get(nextId));
+      const previous = previewId ? pointNodes.get(previewId) : null;
+      if (previous) previous.classList.remove("is-finder-preview");
+      previewId = nextId;
+      const node = previewId ? pointNodes.get(previewId) : null;
+      if (node) node.classList.add("is-finder-preview");
+      return Boolean(node);
+    }
+
     store.subscribe(render);
     globalThis.addEventListener("resize", () => render(store.getState()));
     globalThis.addEventListener("pm:image-ready", () => render(store.getState()));
@@ -290,10 +303,14 @@
       render(store.getState());
     };
     PM.flashPoint = flashPoint;
+    PM.previewPoint = previewPoint;
+    PM.clearPointPreview = () => previewPoint("");
 
     return {
       render,
-      flashPoint
+      flashPoint,
+      previewPoint,
+      clearPointPreview: () => previewPoint("")
     };
   }
 

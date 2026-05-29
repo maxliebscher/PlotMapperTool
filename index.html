@@ -367,6 +367,15 @@ button, input, textarea, select {
   z-index: 18;
 }
 
+.point.is-finder-preview {
+  display: flex;
+  z-index: 19;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 76%, transparent),
+    0 0 0 12px color-mix(in srgb, var(--accent) 20%, transparent),
+    0 9px 16px rgba(0, 0, 0, 0.48);
+}
+
 @keyframes pointJumpTarget {
   0% {
     box-shadow:
@@ -6036,6 +6045,10 @@ button, input, textarea, select {
         }
         results.appendChild(button);
       });
+      if (typeof hooks.onPreviewPoint === "function") {
+        const selected = visibleMatches[selection];
+        hooks.onPreviewPoint(selected && selected.kind === "point" ? selected.pointId : "");
+      }
     }
 
     function open(seed) {
@@ -6051,6 +6064,7 @@ button, input, textarea, select {
     function close() {
       panel.hidden = true;
       document.documentElement.classList.remove("finder-open");
+      if (typeof hooks.onPreviewPoint === "function") hooks.onPreviewPoint("");
     }
 
     function execute(entry, action) {
@@ -6486,6 +6500,7 @@ button, input, textarea, select {
     const pointNodes = new Map();
     const fieldHidden = new Map();
     const flashTimers = new Map();
+    let previewId = "";
     let latestState = store.getState();
 
     function hiddenFor(pointId) {
@@ -6562,6 +6577,7 @@ button, input, textarea, select {
       element.classList.toggle("char", point.type === "char");
       element.classList.toggle("event", point.type === "event");
       element.classList.toggle("item", point.type === "item");
+      element.classList.toggle("is-finder-preview", point.id === previewId);
       const screen = renderer.mapToClient(point.x, point.y);
       element.style.left = `${screen.x}px`;
       element.style.top = `${screen.y}px`;
@@ -6755,6 +6771,17 @@ button, input, textarea, select {
       return true;
     }
 
+    function previewPoint(pointId) {
+      const nextId = pointId || "";
+      if (previewId === nextId) return Boolean(nextId && pointNodes.get(nextId));
+      const previous = previewId ? pointNodes.get(previewId) : null;
+      if (previous) previous.classList.remove("is-finder-preview");
+      previewId = nextId;
+      const node = previewId ? pointNodes.get(previewId) : null;
+      if (node) node.classList.add("is-finder-preview");
+      return Boolean(node);
+    }
+
     store.subscribe(render);
     globalThis.addEventListener("resize", () => render(store.getState()));
     globalThis.addEventListener("pm:image-ready", () => render(store.getState()));
@@ -6771,10 +6798,14 @@ button, input, textarea, select {
       render(store.getState());
     };
     PM.flashPoint = flashPoint;
+    PM.previewPoint = previewPoint;
+    PM.clearPointPreview = () => previewPoint("");
 
     return {
       render,
-      flashPoint
+      flashPoint,
+      previewPoint,
+      clearPointPreview: () => previewPoint("")
     };
   }
 
@@ -7352,6 +7383,7 @@ button, input, textarea, select {
       limitLabel: controls.finderLimit
     }, store, {
       onJumpPoint: (pointId) => jumpToPointId(pointId),
+      onPreviewPoint: (pointId) => pointUi.previewPoint(pointId),
       onInspect: (pointId, options) => {
         pointInspector.open(pointId, options || { mode: "dock" });
       },
