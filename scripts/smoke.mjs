@@ -456,7 +456,11 @@ async function exerciseFinderDrawer(page) {
     const drawer = document.querySelector("#finderDrawer");
     return drawer && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
   }, null, { timeout: 5000 });
+  await page.locator(".finder-result").first().evaluate((node) => {
+    node.dataset.stableProbe = "kept";
+  });
   await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.querySelector(".finder-result")?.dataset.stableProbe === "kept", null, { timeout: 5000 });
   await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
   await page.keyboard.press("Enter");
   await page.waitForSelector("#finderDrawer", { state: "hidden" });

@@ -153,6 +153,20 @@
       });
     }
 
+    function syncSelection() {
+      const resultButtons = Array.from(results.querySelectorAll(".finder-result[role='option']"));
+      resultButtons.forEach((button, index) => {
+        const selected = index === selection;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-selected", String(selected));
+        if (selected) button.scrollIntoView({ block: "nearest" });
+      });
+      if (typeof hooks.onPreviewPoint === "function") {
+        const selected = currentSelection();
+        hooks.onPreviewPoint(selected && selected.kind === "point" ? selected.pointId : "");
+      }
+    }
+
     function render() {
       if (panel.hidden) return;
       const state = store.getLiveState();
@@ -204,7 +218,7 @@
         button.addEventListener("mouseenter", () => {
           if (selection === index) return;
           selection = index;
-          render();
+          syncSelection();
         });
         button.addEventListener("click", () => execute(entry, "jump"));
         const inspect = button.querySelector(".finder-result-inspect");
@@ -269,12 +283,12 @@
       if (event.key === "ArrowDown") {
         event.preventDefault();
         selection = PM.clamp(selection + 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
-        render();
+        syncSelection();
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
         selection = PM.clamp(selection - 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
-        render();
+        syncSelection();
       }
       if (event.key === "Enter") {
         event.preventDefault();
