@@ -31,9 +31,28 @@
     return issueForPoint(state.points.find((candidate) => candidate.id === entry.pointId));
   }
 
-  function filterMatches(entry, state, activeFilter) {
+  function pointInBounds(point, bounds) {
+    if (!point || !bounds) return true;
+    const right = bounds.left + bounds.width;
+    const bottom = bounds.top + bounds.height;
+    return point.x >= bounds.left && point.x <= right && point.y >= bounds.top && point.y <= bottom;
+  }
+
+  function entryInBounds(entry, state, bounds) {
+    if (!bounds) return true;
+    if (entry.kind === "point") {
+      return pointInBounds(state.points.find((candidate) => candidate.id === entry.pointId), bounds);
+    }
+    if (entry.kind === "route") {
+      return state.points.some((point) => point.type === "route" && point.routeId === entry.routeId && pointInBounds(point, bounds));
+    }
+    return false;
+  }
+
+  function filterMatches(entry, state, activeFilter, bounds) {
     if (activeFilter === "all") return true;
     if (activeFilter === "issue") return Boolean(entryIssue(entry, state));
+    if (activeFilter === "view") return entryInBounds(entry, state, bounds);
     if (activeFilter === "note") {
       if (entry.kind !== "point") return false;
       const point = state.points.find((candidate) => candidate.id === entry.pointId);
@@ -42,10 +61,10 @@
     return entryType(entry, state) === activeFilter;
   }
 
-  function filterCounts(entries, state) {
-    const filters = ["all", "issue", "route", "place", "char", "event", "item", "note"];
+  function filterCounts(entries, state, bounds) {
+    const filters = ["all", "view", "issue", "route", "place", "char", "event", "item", "note"];
     return filters.reduce((counts, filter) => {
-      counts[filter] = (entries || []).filter((entry) => filterMatches(entry, state, filter)).length;
+      counts[filter] = (entries || []).filter((entry) => filterMatches(entry, state, filter, bounds)).length;
       return counts;
     }, {});
   }
@@ -114,6 +133,7 @@
     function renderFilters(locale, counts) {
       filters.forEach((button) => {
         const key = button.dataset.filter === "issue" ? "finderIssues"
+          : button.dataset.filter === "view" ? "finderInView"
           : button.dataset.filter === "note" ? "notes"
             : button.dataset.filter === "all" ? "finderAll"
               : button.dataset.filter;
@@ -142,8 +162,9 @@
       const entries = searchableEntries();
       const query = input.value;
       const baseMatches = PM.filterCommandPaletteEntries(entries, query, state.points.length + state.routes.length + 8);
-      renderFilters(locale, filterCounts(baseMatches, state));
-      matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter));
+      const bounds = typeof hooks.visibleBounds === "function" ? hooks.visibleBounds() : null;
+      renderFilters(locale, filterCounts(baseMatches, state, bounds));
+      matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter, bounds));
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
       limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));

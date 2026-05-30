@@ -307,6 +307,7 @@
       empty: controls.finderEmpty,
       limitLabel: controls.finderLimit
     }, store, {
+      visibleBounds: () => renderer.visibleMapBounds(),
       onJumpPoint: (pointId) => jumpToPointId(pointId),
       onPreviewPoint: (pointId) => pointUi.previewPoint(pointId),
       onInspect: (pointId, options) => {

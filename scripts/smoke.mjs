@@ -425,6 +425,13 @@ async function exerciseFinderDrawer(page) {
     return filters.some((button) => button.dataset.filter === "event" && /\d+/.test(button.textContent || ""))
       && filters.some((button) => button.dataset.filter === "item" && /\d+/.test(button.textContent || ""));
   }, null, { timeout: 5000 });
+  await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
+  await page.locator(".finder-filter[data-filter='view']").click();
+  await page.waitForFunction(() => {
+    const viewFilter = document.querySelector(".finder-filter[data-filter='view']");
+    return viewFilter?.classList.contains("is-active") && PM.finder.resultCount() > 0 && PM.finder.resultCount() < 72;
+  }, null, { timeout: 5000 });
+  await page.locator(".finder-filter[data-filter='all']").click();
   await page.locator(".finder-result").nth(2).hover();
   await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
   await page.waitForFunction(() => {

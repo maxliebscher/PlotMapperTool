@@ -83,6 +83,22 @@
       };
     }
 
+    function visibleMapBounds() {
+      const rect = getImageRect();
+      const size = getViewportSize();
+      if (!rect.w || !rect.h) return { left: 0, top: 0, width: 1, height: 1 };
+      const left = PM.clamp((0 - rect.x) / rect.w, 0, 1);
+      const top = PM.clamp((0 - rect.y) / rect.h, 0, 1);
+      const right = PM.clamp((size.width - rect.x) / rect.w, 0, 1);
+      const bottom = PM.clamp((size.height - rect.y) / rect.h, 0, 1);
+      return {
+        left,
+        top,
+        width: Math.max(0, right - left),
+        height: Math.max(0, bottom - top)
+      };
+    }
+
     function centerOnPoint(point, targetZoom) {
       if (!point) return;
       const size = getViewportSize();
@@ -486,6 +502,7 @@
       clientToMap,
       centerOnPoint,
       getImageRect,
+      visibleMapBounds,
       exportPng,
       hasImage() {
         return imageReady;

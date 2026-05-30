@@ -3000,6 +3000,7 @@ button, input, textarea, select {
       <input id="finderInput" type="search" autocomplete="off" spellcheck="false" aria-label="Search points">
       <div class="finder-filters" aria-label="Finder filters">
         <button class="finder-filter is-active" data-filter="all" type="button" aria-pressed="true">All</button>
+        <button class="finder-filter" data-filter="view" type="button" aria-pressed="false">View</button>
         <button class="finder-filter" data-filter="issue" type="button" aria-pressed="false">Hints</button>
         <button class="finder-filter" data-filter="route" type="button" aria-pressed="false">Route</button>
         <button class="finder-filter" data-filter="place" type="button" aria-pressed="false">Places</button>
@@ -3257,6 +3258,7 @@ button, input, textarea, select {
       finderHint: "Search points, routes, notes, and jump back to the map.",
       finderPlaceholder: "Search labels, notes, locations, routes",
       finderAll: "All",
+      finderInView: "View",
       finderIssues: "Hints",
       finderMatches: "matches",
       finderVisible: "shown",
@@ -3359,7 +3361,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Finder:</strong> searches large point lists, filters hints/types, and jumps back to the map</li><li><strong>Views:</strong> small presets switch between all points, route, places/NPC, and notes without editing project data</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Finder:</strong> searches large point lists, filters hints/types/current view, and jumps back to the map</li><li><strong>Views:</strong> small presets switch between all points, route, places/NPC, and notes without editing project data</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -3430,6 +3432,7 @@ button, input, textarea, select {
       finderHint: "Punkte, Routen und Notizen suchen und zur Karte springen.",
       finderPlaceholder: "Labels, Notizen, Orte, Routen suchen",
       finderAll: "Alle",
+      finderInView: "Ausschnitt",
       finderIssues: "Hinweise",
       finderMatches: "Treffer",
       finderVisible: "sichtbar",
@@ -3533,7 +3536,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Finder:</strong> durchsucht große Punktlisten, filtert Hinweise/Punktarten und springt zurück zur Karte</li><li><strong>Ansichten:</strong> kleine Presets wechseln zwischen Alles, Route, Orte/NPC und Notizen, ohne Projektdaten zu verändern</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Finder:</strong> durchsucht große Punktlisten, filtert Hinweise/Punktarten/aktuellen Ausschnitt und springt zurück zur Karte</li><li><strong>Ansichten:</strong> kleine Presets wechseln zwischen Alles, Route, Orte/NPC und Notizen, ohne Projektdaten zu verändern</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -4911,6 +4914,22 @@ button, input, textarea, select {
       };
     }
 
+    function visibleMapBounds() {
+      const rect = getImageRect();
+      const size = getViewportSize();
+      if (!rect.w || !rect.h) return { left: 0, top: 0, width: 1, height: 1 };
+      const left = PM.clamp((0 - rect.x) / rect.w, 0, 1);
+      const top = PM.clamp((0 - rect.y) / rect.h, 0, 1);
+      const right = PM.clamp((size.width - rect.x) / rect.w, 0, 1);
+      const bottom = PM.clamp((size.height - rect.y) / rect.h, 0, 1);
+      return {
+        left,
+        top,
+        width: Math.max(0, right - left),
+        height: Math.max(0, bottom - top)
+      };
+    }
+
     function centerOnPoint(point, targetZoom) {
       if (!point) return;
       const size = getViewportSize();
@@ -5314,6 +5333,7 @@ button, input, textarea, select {
       clientToMap,
       centerOnPoint,
       getImageRect,
+      visibleMapBounds,
       exportPng,
       hasImage() {
         return imageReady;
@@ -5950,9 +5970,28 @@ button, input, textarea, select {
     return issueForPoint(state.points.find((candidate) => candidate.id === entry.pointId));
   }
 
-  function filterMatches(entry, state, activeFilter) {
+  function pointInBounds(point, bounds) {
+    if (!point || !bounds) return true;
+    const right = bounds.left + bounds.width;
+    const bottom = bounds.top + bounds.height;
+    return point.x >= bounds.left && point.x <= right && point.y >= bounds.top && point.y <= bottom;
+  }
+
+  function entryInBounds(entry, state, bounds) {
+    if (!bounds) return true;
+    if (entry.kind === "point") {
+      return pointInBounds(state.points.find((candidate) => candidate.id === entry.pointId), bounds);
+    }
+    if (entry.kind === "route") {
+      return state.points.some((point) => point.type === "route" && point.routeId === entry.routeId && pointInBounds(point, bounds));
+    }
+    return false;
+  }
+
+  function filterMatches(entry, state, activeFilter, bounds) {
     if (activeFilter === "all") return true;
     if (activeFilter === "issue") return Boolean(entryIssue(entry, state));
+    if (activeFilter === "view") return entryInBounds(entry, state, bounds);
     if (activeFilter === "note") {
       if (entry.kind !== "point") return false;
       const point = state.points.find((candidate) => candidate.id === entry.pointId);
@@ -5961,10 +6000,10 @@ button, input, textarea, select {
     return entryType(entry, state) === activeFilter;
   }
 
-  function filterCounts(entries, state) {
-    const filters = ["all", "issue", "route", "place", "char", "event", "item", "note"];
+  function filterCounts(entries, state, bounds) {
+    const filters = ["all", "view", "issue", "route", "place", "char", "event", "item", "note"];
     return filters.reduce((counts, filter) => {
-      counts[filter] = (entries || []).filter((entry) => filterMatches(entry, state, filter)).length;
+      counts[filter] = (entries || []).filter((entry) => filterMatches(entry, state, filter, bounds)).length;
       return counts;
     }, {});
   }
@@ -6033,6 +6072,7 @@ button, input, textarea, select {
     function renderFilters(locale, counts) {
       filters.forEach((button) => {
         const key = button.dataset.filter === "issue" ? "finderIssues"
+          : button.dataset.filter === "view" ? "finderInView"
           : button.dataset.filter === "note" ? "notes"
             : button.dataset.filter === "all" ? "finderAll"
               : button.dataset.filter;
@@ -6061,8 +6101,9 @@ button, input, textarea, select {
       const entries = searchableEntries();
       const query = input.value;
       const baseMatches = PM.filterCommandPaletteEntries(entries, query, state.points.length + state.routes.length + 8);
-      renderFilters(locale, filterCounts(baseMatches, state));
-      matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter));
+      const bounds = typeof hooks.visibleBounds === "function" ? hooks.visibleBounds() : null;
+      renderFilters(locale, filterCounts(baseMatches, state, bounds));
+      matches = baseMatches.filter((entry) => filterMatches(entry, state, activeFilter, bounds));
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
       limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
@@ -7445,6 +7486,7 @@ button, input, textarea, select {
       empty: controls.finderEmpty,
       limitLabel: controls.finderLimit
     }, store, {
+      visibleBounds: () => renderer.visibleMapBounds(),
       onJumpPoint: (pointId) => jumpToPointId(pointId),
       onPreviewPoint: (pointId) => pointUi.previewPoint(pointId),
       onInspect: (pointId, options) => {

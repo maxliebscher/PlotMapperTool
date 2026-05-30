@@ -253,6 +253,12 @@ assertEqual(finderCounts.event, 1, "Finder should count events.");
 assertEqual(finderCounts.item, 1, "Finder should count items.");
 assertEqual(finderCounts.note, 2, "Finder should count entries with note-like context.");
 assertEqual(finderCounts.issue, 2, "Finder should count project hints.");
+const viewFinderCounts = PM.finderFilterCounts(
+  PM.buildCommandPaletteEntries(finderCountProject, "en").filter((entry) => entry.kind === "point" || entry.kind === "route"),
+  finderCountProject,
+  { left: 0, top: 0, width: 0.25, height: 0.25 }
+);
+assertEqual(viewFinderCounts.view, 3, "Finder view filter should count entries inside the current map viewport.");
 assertEqual(PM.finderLimitText(72, 48, "en"), "24 more hidden - narrow search.", "Finder should explain hidden overflow results in English.");
 assertEqual(PM.finderLimitText(72, 48, "de"), "Weitere 24 ausgeblendet - Suche eingrenzen.", "Finder should explain hidden overflow results in German.");
 assertEqual(PM.finderLimitText(12, 12, "en"), "Max. 48 results shown; everything remains searchable.", "Finder should keep the normal cap note when nothing is hidden.");
