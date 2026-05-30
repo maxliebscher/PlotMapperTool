@@ -583,6 +583,7 @@
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "finder") openFinder();
+      if (entry.action === "finder-view") openFinder("", "view");
       if (entry.action === "finder-issues") openFinder("", "issue");
       if (String(entry.action || "").startsWith("view:")) {
         finder.close();

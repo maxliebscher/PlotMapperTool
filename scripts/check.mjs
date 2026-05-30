@@ -191,6 +191,7 @@ paletteProject.points.push(
 const paletteEntries = PM.buildCommandPaletteEntries(paletteProject, "de");
 assert(paletteEntries.some((entry) => entry.id === "action:reader" && entry.kind === "action"), "Command palette should include app actions.");
 assert(paletteEntries.some((entry) => entry.id === "action:finder-issues" && entry.action === "finder-issues"), "Command palette should include direct project hints action.");
+assert(paletteEntries.some((entry) => entry.id === "action:finder-view" && entry.action === "finder-view"), "Command palette should include a current-view Finder action.");
 assert(paletteEntries.some((entry) => entry.id === "action:view-notes" && entry.action === "view:notes"), "Command palette should include view preset actions.");
 assert(paletteEntries.some((entry) => entry.id === "point:market" && entry.kind === "point"), "Command palette should include points.");
 assert(paletteEntries.some((entry) => entry.id === "route:route-two" && entry.kind === "route"), "Command palette should include routes.");
@@ -208,6 +209,11 @@ assertEqual(
   PM.filterCommandPaletteEntries(paletteEntries, "notizen")[0].id,
   "action:view-notes",
   "Command palette should search localized view presets."
+);
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "ausschnitt")[0].id,
+  "action:finder-view",
+  "Command palette should search the localized current-view Finder action."
 );
 assertDeepEqual(
   PM.filterCommandPaletteEntries(paletteEntries, "   ").slice(0, 3).map((entry) => entry.kind),
