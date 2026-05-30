@@ -116,6 +116,9 @@ assert(html.includes("finderIssues"), "Finder should expose a scale-oriented iss
 assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
 assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Close controls.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
+const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "";
+assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
+assert(/Home|End|Pos1|Ende/.test(helpBlock), "Tutorial copy should mention Finder start/end navigation.");
 requireHtml("routeLineStyle", "Route line style i18n key");
 requireHtml("routePoint", "Route point story picker i18n key");
 requireHtml("routePointFor", "Route point active route i18n key");
@@ -124,7 +127,7 @@ requireHtml("type-menu-route", "Story picker active route pill");
 requireHtml("type-menu-option-label", "Story picker readable option labels");
 requireHtml("present:", "Presentation i18n key");
 requireHtml("Präsentieren", "German presentation label");
-assert(!/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || ""), "Tutorial copy must not advertise Markdown project import/export.");
+assert(!/Export MD|Import MD|Markdown/.test(helpBlock), "Tutorial copy must not advertise Markdown project import/export.");
 assert(!/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s+end\s*;/i.test(html), "Empty hint must not be pinned to the right edge.");
 assert(/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s*;/i.test(html), "Empty hint should be centered in the viewport.");
 assert(/\.brand-logo\s*\{[\s\S]*?overflow:\s*visible\s*;/i.test(html), "Splash logo must allow the route stroke to render without clipping.");
