@@ -582,7 +582,7 @@
         renderRoutePanel(store.getState());
       }
       if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
-      if (entry.action === "finder") openFinder();
+      if (entry.action === "finder") openFinder("");
       if (entry.action === "finder-view") openFinder("", "view");
       if (entry.action === "finder-issues") openFinder("", "issue");
       if (String(entry.action || "").startsWith("view:")) {
@@ -925,7 +925,7 @@
     controls.undo.addEventListener("click", () => store.undo());
     controls.redo.addEventListener("click", () => store.redo());
     controls.readerButton.addEventListener("click", () => reader.open());
-    controls.finderButton.addEventListener("click", () => openFinder());
+    controls.finderButton.addEventListener("click", () => openFinder(""));
     controls.presentationButton.addEventListener("click", () => finder.close());
     controls.langToggle.addEventListener("click", () => {
       const next = store.getLiveState().settings.locale === "en" ? "de" : "en";

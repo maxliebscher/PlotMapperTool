@@ -415,6 +415,16 @@ async function exerciseFinderDrawer(page) {
   await page.keyboard.press("Escape");
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
 
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => {
+    const allFilter = document.querySelector(".finder-filter[data-filter='all']");
+    return document.querySelector("#finderInput")?.value === ""
+      && allFilter?.classList.contains("is-active");
+  }, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
   await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
   await page.keyboard.press("Control+K");
   await page.waitForSelector("#commandPalette:not([hidden])");
