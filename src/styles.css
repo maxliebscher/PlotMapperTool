@@ -2129,8 +2129,15 @@ button, input, textarea, select {
 .finder-action-hint {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 5px;
-  white-space: nowrap;
+}
+
+.finder-inspect-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
 }
 
 .finder-results {

@@ -2137,8 +2137,15 @@ button, input, textarea, select {
 .finder-action-hint {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 5px;
-  white-space: nowrap;
+}
+
+.finder-inspect-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
 }
 
 .finder-results {
@@ -3273,6 +3280,7 @@ button, input, textarea, select {
       finderLimit: "Max. 48 results shown; everything remains searchable.",
       finderLimitOverflow: "{count} more hidden - narrow search.",
       finderJumpHint: "Enter / click jumps to the map",
+      finderInspectHint: "opens Inspector",
       finderIssueMissingLabel: "Missing label",
       finderIssueUnnamedHelper: "Unnamed helper",
       finderIssueLongNote: "Long note",
@@ -3448,6 +3456,7 @@ button, input, textarea, select {
       finderLimit: "Max. 48 Treffer sichtbar; der Rest bleibt suchbar.",
       finderLimitOverflow: "Weitere {count} ausgeblendet - Suche eingrenzen.",
       finderJumpHint: "Enter / Klick springt zur Karte",
+      finderInspectHint: "öffnet Inspector",
       finderIssueMissingLabel: "Fehlendes Label",
       finderIssueUnnamedHelper: "Unbenannter Hilfspunkt",
       finderIssueLongNote: "Lange Notiz",
@@ -6140,8 +6149,9 @@ button, input, textarea, select {
       summary.textContent = activeFilter === "all" ? countSummary : `${filterLabel(activeFilter, locale)}: ${countSummary}`;
       actionHint.innerHTML = [
         `<kbd>↑↓</kbd>`,
-        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`
-      ].join(" ");
+        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`,
+        typeof hooks.onInspect === "function" ? `<span class="finder-inspect-shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${PM.escapeHtml(t("finderInspectHint"))}</span>` : ""
+      ].filter(Boolean).join(" ");
       results.textContent = "";
       empty.hidden = matches.length > 0;
       let lastGroup = "";
@@ -6267,7 +6277,10 @@ button, input, textarea, select {
         event.preventDefault();
         setSelection(Math.min(matches.length, RESULT_LIMIT) - 1);
       }
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        execute(currentSelection(), "inspect");
+      } else if (event.key === "Enter") {
         event.preventDefault();
         execute(currentSelection(), "jump");
       }

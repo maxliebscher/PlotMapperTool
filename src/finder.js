@@ -191,8 +191,9 @@
       summary.textContent = activeFilter === "all" ? countSummary : `${filterLabel(activeFilter, locale)}: ${countSummary}`;
       actionHint.innerHTML = [
         `<kbd>↑↓</kbd>`,
-        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`
-      ].join(" ");
+        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`,
+        typeof hooks.onInspect === "function" ? `<span class="finder-inspect-shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${PM.escapeHtml(t("finderInspectHint"))}</span>` : ""
+      ].filter(Boolean).join(" ");
       results.textContent = "";
       empty.hidden = matches.length > 0;
       let lastGroup = "";
@@ -318,7 +319,10 @@
         event.preventDefault();
         setSelection(Math.min(matches.length, RESULT_LIMIT) - 1);
       }
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        execute(currentSelection(), "inspect");
+      } else if (event.key === "Enter") {
         event.preventDefault();
         execute(currentSelection(), "jump");
       }

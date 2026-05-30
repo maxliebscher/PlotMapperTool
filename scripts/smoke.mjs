@@ -452,6 +452,7 @@ async function exerciseFinderDrawer(page) {
       && filters.some((button) => button.dataset.filter === "item" && /\d+/.test(button.textContent || ""));
   }, null, { timeout: 5000 });
   await page.waitForFunction(() => /Enter|Klick|Click/.test(document.querySelector("#finderActionHint")?.textContent || ""), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Ctrl.*Enter.*Inspector/.test(document.querySelector("#finderActionHint")?.textContent || ""), null, { timeout: 5000 });
   await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
   await page.locator(".finder-filter[data-filter='view']").click();
   await page.waitForFunction(() => {
@@ -494,6 +495,17 @@ async function exerciseFinderDrawer(page) {
   await page.locator(".finder-filter[data-filter='issue']").click();
   await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
   await page.waitForFunction(() => /Missing label|Fehlendes Label|Long note|Lange Notiz/.test(document.querySelector("#finderResults")?.textContent || ""), null, { timeout: 5000 });
+  await page.keyboard.press("Control+Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.locator(".finder-filter[data-filter='issue']").click();
+  await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
   await page.locator(".finder-result-inspect").first().click();
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
   await page.waitForSelector("#pointInspector:not([hidden])");
