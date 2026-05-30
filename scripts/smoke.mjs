@@ -392,6 +392,22 @@ async function exerciseFinderDrawer(page) {
   await page.waitForSelector("#commandPalette:not([hidden])");
   await page.locator("#commandInput").fill("finder");
   await page.waitForSelector(".command-more-results");
+  const commandOptionCount = await page.locator(".command-result[role='option']").count();
+  for (let index = 1; index < commandOptionCount; index += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await page.waitForFunction(() => document.querySelector(".command-more-results")?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#finderInput")?.value === "finder" && PM.finder.resultCount() > 48, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("finder");
+  await page.waitForSelector(".command-more-results");
   await page.click(".command-more-results");
   await page.waitForSelector("#commandPalette", { state: "hidden" });
   await page.waitForSelector("#finderDrawer:not([hidden])");

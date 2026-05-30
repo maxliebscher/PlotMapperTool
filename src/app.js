@@ -407,6 +407,7 @@
     function commandActionLabel(entry, locale) {
       if (entry.kind === "point") return PM.I18n.t(locale, "jump");
       if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+      if (entry.action === "finder-query") return PM.I18n.t(locale, "finder");
       return commandKindLabel(entry.kind, locale);
     }
 
@@ -415,20 +416,41 @@
       return PM.buildCommandPaletteEntries(state, state.settings.locale);
     }
 
+    function syncCommandSelection() {
+      Array.from(controls.commandResults.querySelectorAll(".command-result[role='option']")).forEach((node, nodeIndex) => {
+        node.classList.toggle("is-selected", nodeIndex === commandSelection);
+        node.setAttribute("aria-selected", String(nodeIndex === commandSelection));
+      });
+    }
+
     function renderCommandPalette() {
       if (!commandOpen) return;
       const locale = store.getLiveState().settings.locale;
       const query = controls.commandInput.value;
       const entries = currentCommandEntries();
       const totalMatches = PM.countCommandPaletteMatches(entries, query);
-      commandMatches = PM.filterCommandPaletteEntries(entries, query, 10);
+      const visibleMatches = PM.filterCommandPaletteEntries(entries, query, 10);
+      const hiddenMatches = Math.max(0, totalMatches - visibleMatches.length);
+      commandMatches = visibleMatches.slice();
+      if (hiddenMatches > 0 && query.trim()) {
+        commandMatches.push({
+          id: "action:finder-query",
+          kind: "action",
+          action: "finder-query",
+          icon: "\u2315",
+          label: PM.I18n.t(locale, "finder"),
+          detail: PM.I18n.t(locale, "commandMoreResults").replace("{count}", String(hiddenMatches)),
+          query
+        });
+      }
       commandSelection = PM.clamp(commandSelection, 0, Math.max(0, commandMatches.length - 1));
       controls.commandResults.textContent = "";
       controls.commandEmpty.hidden = commandMatches.length > 0;
       commandMatches.forEach((entry, index) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `command-result${index === commandSelection ? " is-selected" : ""}`;
+        const moreClass = entry.action === "finder-query" ? " command-more-results" : "";
+        button.className = `command-result${moreClass}${index === commandSelection ? " is-selected" : ""}`;
         button.setAttribute("role", "option");
         button.setAttribute("aria-selected", String(index === commandSelection));
         button.innerHTML = [
@@ -438,27 +460,11 @@
         ].join("");
         button.addEventListener("mouseenter", () => {
           commandSelection = index;
-          Array.from(controls.commandResults.querySelectorAll(".command-result[role='option']")).forEach((node, nodeIndex) => {
-            node.classList.toggle("is-selected", nodeIndex === commandSelection);
-            node.setAttribute("aria-selected", String(nodeIndex === commandSelection));
-          });
+          syncCommandSelection();
         });
         button.addEventListener("click", () => executeCommandEntry(entry));
         controls.commandResults.appendChild(button);
       });
-      const hiddenMatches = Math.max(0, totalMatches - commandMatches.length);
-      if (hiddenMatches > 0 && query.trim()) {
-        const moreButton = document.createElement("button");
-        moreButton.type = "button";
-        moreButton.className = "command-result command-more-results";
-        moreButton.innerHTML = [
-          `<span class="command-icon" aria-hidden="true">\u2315</span>`,
-          `<span class="command-copy"><strong>${PM.escapeHtml(PM.I18n.t(locale, "finder"))}</strong><span>${PM.escapeHtml(PM.I18n.t(locale, "commandMoreResults").replace("{count}", String(hiddenMatches)))}</span></span>`,
-          `<span class="command-action">${PM.escapeHtml(PM.I18n.t(locale, "finder"))}</span>`
-        ].join("");
-        moreButton.addEventListener("click", () => openFinder(query));
-        controls.commandResults.appendChild(moreButton);
-      }
     }
 
     function openCommandPalette(seed) {
@@ -547,6 +553,10 @@
     function executeCommandEntry(entry) {
       if (!entry) return;
       const state = store.getLiveState();
+      if (entry.action === "finder-query") {
+        openFinder(entry.query || controls.commandInput.value || "");
+        return;
+      }
       if (entry.kind === "point") {
         jumpToPointId(entry.pointId);
         closeCommandPalette();
@@ -1005,12 +1015,12 @@
       if (event.key === "ArrowDown") {
         event.preventDefault();
         commandSelection = PM.clamp(commandSelection + 1, 0, Math.max(0, commandMatches.length - 1));
-        renderCommandPalette();
+        syncCommandSelection();
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
         commandSelection = PM.clamp(commandSelection - 1, 0, Math.max(0, commandMatches.length - 1));
-        renderCommandPalette();
+        syncCommandSelection();
       }
       if (event.key === "Enter") {
         event.preventDefault();
