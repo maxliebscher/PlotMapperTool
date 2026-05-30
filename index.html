@@ -2134,6 +2134,13 @@ button, input, textarea, select {
   font-weight: 900;
 }
 
+.finder-action-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 .finder-results {
   overflow: auto;
   padding: 0 12px 12px;
@@ -3012,7 +3019,7 @@ button, input, textarea, select {
     </div>
     <div class="finder-summary">
       <span id="finderSummary">0 results</span>
-      <span><kbd>↑↓</kbd> <kbd>Enter</kbd></span>
+      <span id="finderActionHint" class="finder-action-hint"><kbd>↑↓</kbd> <kbd>Enter</kbd></span>
     </div>
     <div id="finderResults" class="finder-results" role="listbox"></div>
     <p id="finderEmpty" class="finder-empty" hidden>No results.</p>
@@ -3265,6 +3272,7 @@ button, input, textarea, select {
       finderEmpty: "No results. Loosen search or filters.",
       finderLimit: "Max. 48 results shown; everything remains searchable.",
       finderLimitOverflow: "{count} more hidden - narrow search.",
+      finderJumpHint: "Enter / click jumps to the map",
       finderIssueMissingLabel: "Missing label",
       finderIssueUnnamedHelper: "Unnamed helper",
       finderIssueLongNote: "Long note",
@@ -3439,6 +3447,7 @@ button, input, textarea, select {
       finderEmpty: "Keine Treffer. Suche oder Filter lockern.",
       finderLimit: "Max. 48 Treffer sichtbar; der Rest bleibt suchbar.",
       finderLimitOverflow: "Weitere {count} ausgeblendet - Suche eingrenzen.",
+      finderJumpHint: "Enter / Klick springt zur Karte",
       finderIssueMissingLabel: "Fehlendes Label",
       finderIssueUnnamedHelper: "Unbenannter Hilfspunkt",
       finderIssueLongNote: "Lange Notiz",
@@ -6041,6 +6050,7 @@ button, input, textarea, select {
       input,
       filters,
       summary,
+      actionHint,
       results,
       empty,
       limitLabel
@@ -6108,6 +6118,10 @@ button, input, textarea, select {
       limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
       summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      actionHint.innerHTML = [
+        `<kbd>↑↓</kbd>`,
+        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`
+      ].join(" ");
       results.textContent = "";
       empty.hidden = matches.length > 0;
       let lastGroup = "";
@@ -7350,6 +7364,7 @@ button, input, textarea, select {
       finderInput: $("finderInput"),
       finderFilters: Array.from(document.querySelectorAll(".finder-filter")),
       finderSummary: $("finderSummary"),
+      finderActionHint: $("finderActionHint"),
       finderResults: $("finderResults"),
       finderEmpty: $("finderEmpty"),
       finderLimit: $("finderLimit"),
@@ -7482,6 +7497,7 @@ button, input, textarea, select {
       input: controls.finderInput,
       filters: controls.finderFilters,
       summary: controls.finderSummary,
+      actionHint: controls.finderActionHint,
       results: controls.finderResults,
       empty: controls.finderEmpty,
       limitLabel: controls.finderLimit

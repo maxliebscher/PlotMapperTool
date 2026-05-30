@@ -2126,6 +2126,13 @@ button, input, textarea, select {
   font-weight: 900;
 }
 
+.finder-action-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 .finder-results {
   overflow: auto;
   padding: 0 12px 12px;

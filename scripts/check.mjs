@@ -103,6 +103,7 @@ requireHtml("finderDrawer", "Finder drawer dialog");
 requireHtml("finderInput", "Finder search input");
 requireHtml("finderResults", "Finder result list");
 requireHtml("finderLimit", "Finder result limit note");
+requireHtml("finderActionHint", "Finder jump affordance hint");
 requireHtml("viewPresetRow", "Compact view preset row");
 requireHtml("viewPresetButtons", "View preset buttons");
 assert(html.includes("flashPoint"), "Point UI should expose a visible point jump highlight helper.");

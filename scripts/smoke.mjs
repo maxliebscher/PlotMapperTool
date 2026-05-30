@@ -425,6 +425,7 @@ async function exerciseFinderDrawer(page) {
     return filters.some((button) => button.dataset.filter === "event" && /\d+/.test(button.textContent || ""))
       && filters.some((button) => button.dataset.filter === "item" && /\d+/.test(button.textContent || ""));
   }, null, { timeout: 5000 });
+  await page.waitForFunction(() => /Enter|Klick|Click/.test(document.querySelector("#finderActionHint")?.textContent || ""), null, { timeout: 5000 });
   await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
   await page.locator(".finder-filter[data-filter='view']").click();
   await page.waitForFunction(() => {

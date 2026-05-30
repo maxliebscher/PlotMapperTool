@@ -171,6 +171,7 @@
       finderInput: $("finderInput"),
       finderFilters: Array.from(document.querySelectorAll(".finder-filter")),
       finderSummary: $("finderSummary"),
+      finderActionHint: $("finderActionHint"),
       finderResults: $("finderResults"),
       finderEmpty: $("finderEmpty"),
       finderLimit: $("finderLimit"),
@@ -303,6 +304,7 @@
       input: controls.finderInput,
       filters: controls.finderFilters,
       summary: controls.finderSummary,
+      actionHint: controls.finderActionHint,
       results: controls.finderResults,
       empty: controls.finderEmpty,
       limitLabel: controls.finderLimit

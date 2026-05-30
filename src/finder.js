@@ -102,6 +102,7 @@
       input,
       filters,
       summary,
+      actionHint,
       results,
       empty,
       limitLabel
@@ -169,6 +170,10 @@
       limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
       summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      actionHint.innerHTML = [
+        `<kbd>↑↓</kbd>`,
+        `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`
+      ].join(" ");
       results.textContent = "";
       empty.hidden = matches.length > 0;
       let lastGroup = "";
