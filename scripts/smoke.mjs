@@ -462,6 +462,10 @@ async function exerciseFinderDrawer(page) {
   await page.keyboard.press("ArrowDown");
   await page.waitForFunction(() => document.querySelector(".finder-result")?.dataset.stableProbe === "kept", null, { timeout: 5000 });
   await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
+  await page.keyboard.press("PageDown");
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result")[11]?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("PageUp");
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result")[3]?.classList.contains("is-selected"), null, { timeout: 5000 });
   await page.keyboard.press("Enter");
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
   await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 0, null, { timeout: 5000 });

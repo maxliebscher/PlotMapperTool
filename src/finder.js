@@ -119,6 +119,7 @@
     let activeFilter = "all";
     let matches = [];
     let selection = 0;
+    let lastKeyboardMoveAt = 0;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -216,6 +217,7 @@
           entry.kind === "point" && typeof hooks.onInspect === "function" ? `<span class="finder-result-inspect">${PM.escapeHtml(PM.I18n.t(locale, "inspectPoint"))}</span>` : ""
         ].join("");
         button.addEventListener("mouseenter", () => {
+          if (Date.now() - lastKeyboardMoveAt < 220) return;
           if (selection === index) return;
           selection = index;
           syncSelection();
@@ -275,6 +277,12 @@
       return matches.slice(0, RESULT_LIMIT)[selection];
     }
 
+    function moveSelection(delta) {
+      lastKeyboardMoveAt = Date.now();
+      selection = PM.clamp(selection + delta, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+      syncSelection();
+    }
+
     input.addEventListener("input", () => {
       selection = 0;
       render();
@@ -282,13 +290,19 @@
     input.addEventListener("keydown", (event) => {
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        selection = PM.clamp(selection + 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
-        syncSelection();
+        moveSelection(1);
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
-        selection = PM.clamp(selection - 1, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
-        syncSelection();
+        moveSelection(-1);
+      }
+      if (event.key === "PageDown") {
+        event.preventDefault();
+        moveSelection(8);
+      }
+      if (event.key === "PageUp") {
+        event.preventDefault();
+        moveSelection(-8);
       }
       if (event.key === "Enter") {
         event.preventDefault();
