@@ -283,6 +283,12 @@
       syncSelection();
     }
 
+    function setSelection(index) {
+      lastKeyboardMoveAt = Date.now();
+      selection = PM.clamp(index, 0, Math.max(0, Math.min(matches.length, RESULT_LIMIT) - 1));
+      syncSelection();
+    }
+
     input.addEventListener("input", () => {
       selection = 0;
       render();
@@ -303,6 +309,14 @@
       if (event.key === "PageUp") {
         event.preventDefault();
         moveSelection(-8);
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        setSelection(0);
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        setSelection(Math.min(matches.length, RESULT_LIMIT) - 1);
       }
       if (event.key === "Enter") {
         event.preventDefault();
