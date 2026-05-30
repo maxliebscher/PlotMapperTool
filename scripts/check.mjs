@@ -119,6 +119,7 @@ assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutoria
 const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "";
 assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
 assert(/Home|End|Pos1|Ende/.test(helpBlock), "Tutorial copy should mention Finder start/end navigation.");
+assert(/Ctrl<\/kbd>\+<kbd>Enter|Ctrl\+Enter|Ctrl<\/kbd> \+ <kbd>Enter/.test(helpBlock) && /Inspector/.test(helpBlock), "Tutorial copy should mention the Finder inspector shortcut.");
 requireHtml("routeLineStyle", "Route line style i18n key");
 requireHtml("routePoint", "Route point story picker i18n key");
 requireHtml("routePointFor", "Route point active route i18n key");
