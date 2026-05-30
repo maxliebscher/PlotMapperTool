@@ -711,11 +711,22 @@ async function exercisePresentation(page) {
 }
 
 async function exerciseReader(page) {
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("reader stale query");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
   await page.click("#readerButton");
   await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
   await page.click("#readerFind");
   await page.waitForSelector("#readerModal", { state: "hidden" });
   await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => {
+    const allFilter = document.querySelector(".finder-filter[data-filter='all']");
+    return document.querySelector("#finderInput")?.value === ""
+      && allFilter?.classList.contains("is-active");
+  }, null, { timeout: 5000 });
   await page.keyboard.press("Escape");
   await page.waitForSelector("#finderDrawer", { state: "hidden" });
 

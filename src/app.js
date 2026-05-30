@@ -83,7 +83,7 @@
         if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
       },
       onFind: () => {
-        openFinder();
+        openFinder("");
       }
     });
 
