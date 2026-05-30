@@ -6041,6 +6041,14 @@ button, input, textarea, select {
     return PM.I18n.t(locale, "finderLimitOverflow").replace("{count}", String(hidden));
   }
 
+  function filterLabel(filter, locale) {
+    if (filter === "all") return PM.I18n.t(locale, "finderAll");
+    if (filter === "issue") return PM.I18n.t(locale, "finderIssues");
+    if (filter === "view") return PM.I18n.t(locale, "finderInView");
+    if (filter === "note") return PM.I18n.t(locale, "notes");
+    return PM.I18n.t(locale, filter);
+  }
+
   function createFinderDrawer(elements, store, options) {
     const hooks = options || {};
     const {
@@ -6082,12 +6090,7 @@ button, input, textarea, select {
 
     function renderFilters(locale, counts) {
       filters.forEach((button) => {
-        const key = button.dataset.filter === "issue" ? "finderIssues"
-          : button.dataset.filter === "view" ? "finderInView"
-          : button.dataset.filter === "note" ? "notes"
-            : button.dataset.filter === "all" ? "finderAll"
-              : button.dataset.filter;
-        const label = PM.I18n.t(locale, key);
+        const label = filterLabel(button.dataset.filter, locale);
         const count = counts[button.dataset.filter] || 0;
         button.innerHTML = [
           `<span>${PM.escapeHtml(label)}</span>`,
@@ -6118,7 +6121,8 @@ button, input, textarea, select {
       const visibleMatches = matches.slice(0, RESULT_LIMIT);
       limitLabel.textContent = limitText(matches.length, visibleMatches.length, locale);
       selection = PM.clamp(selection, 0, Math.max(0, visibleMatches.length - 1));
-      summary.textContent = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      const countSummary = `${matches.length} ${t("finderMatches")} - ${visibleMatches.length} ${t("finderVisible")}`;
+      summary.textContent = activeFilter === "all" ? countSummary : `${filterLabel(activeFilter, locale)}: ${countSummary}`;
       actionHint.innerHTML = [
         `<kbd>↑↓</kbd>`,
         `<span>${PM.escapeHtml(t("finderJumpHint"))}</span>`
