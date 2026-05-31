@@ -316,6 +316,7 @@
         pointInspector.open(pointId, options || { mode: "dock" });
       },
       onRoute: (routeId) => {
+        if (store.getLiveState().settings.filters.route === false) store.setFilter("route", true);
         store.setActiveRoute(routeId);
         routePanelOpen = true;
         renderRoutePanel(store.getState());
@@ -541,10 +542,11 @@
       const state = store.getLiveState();
       const point = state.points.find((candidate) => candidate.id === pointId);
       if (!point) return;
+      if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
       if (point.type === "route" && point.routeId) {
         store.setActiveRoute(point.routeId);
-      } else if (state.settings.filters[point.type] === false) {
-        store.setFilter(point.type, true);
       }
       if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
       renderer.centerOnPoint(point);
@@ -566,6 +568,7 @@
         return;
       }
       if (entry.kind === "route") {
+        if (state.settings.filters.route === false) store.setFilter("route", true);
         store.setActiveRoute(entry.routeId);
         routePanelOpen = true;
         renderRoutePanel(store.getState());

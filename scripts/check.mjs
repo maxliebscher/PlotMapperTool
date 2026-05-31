@@ -114,6 +114,7 @@ assert(html.includes("PM.createPointInspector"), "App should create the optional
 assert(html.includes("PM.createFinderDrawer"), "App should create the optional large-project finder drawer.");
 assert(html.includes("finderIssues"), "Finder should expose a scale-oriented issue filter.");
 assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
+assert(html.includes('store.setFilter("route", true)'), "Route jumps should reveal hidden route points before opening route context.");
 assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Close controls.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
 const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "";

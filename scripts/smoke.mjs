@@ -489,6 +489,18 @@ async function exerciseFinderDrawer(page) {
   await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 0, null, { timeout: 5000 });
   await page.waitForSelector(".point.is-jump-target");
 
+  await page.click("#filter-route");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === false, null, { timeout: 5000 });
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("Smoke Route");
+  await page.locator(".finder-filter[data-filter='route']").click();
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result").length >= 1, null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === true, null, { timeout: 5000 });
+  await page.waitForSelector(".point.is-jump-target");
+
   await page.click("#finderButton");
   await page.waitForSelector("#finderDrawer:not([hidden])");
   await page.locator("#finderInput").fill("finder");
