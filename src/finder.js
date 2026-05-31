@@ -264,7 +264,6 @@
           hooks.onInspect(entry.pointId, { mode: "dock" });
           return;
         }
-        close();
         if (typeof hooks.onJumpPoint === "function") hooks.onJumpPoint(entry.pointId);
         return;
       }

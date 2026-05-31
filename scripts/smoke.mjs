@@ -528,9 +528,10 @@ async function exerciseFinderDrawer(page) {
   await page.keyboard.press("Home");
   await page.waitForFunction(() => document.querySelectorAll(".finder-result")[0]?.classList.contains("is-selected"), null, { timeout: 5000 });
   await page.keyboard.press("Enter");
-  await page.waitForSelector("#finderDrawer", { state: "hidden" });
-  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 0, null, { timeout: 5000 });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
   await page.waitForSelector(".point.is-jump-target");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
 
   await page.click("#filter-route");
   await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === false, null, { timeout: 5000 });
