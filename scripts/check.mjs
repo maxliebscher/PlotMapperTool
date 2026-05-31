@@ -92,6 +92,7 @@ requireHtml("minimapPanel", "Optional viewport minimap panel");
 requireHtml("minimapCanvas", "Minimap overview canvas");
 requireHtml("minimapViewport", "Minimap viewport marker");
 requireHtml("minimapResize", "Minimap resize handle");
+requireHtml("wheelZoomControl", "Optional mouse wheel zoom control");
 requireHtml("pointInspector", "Optional point inspector panel");
 requireHtml("pointInspectorMode", "Point inspector dock/floating mode toggle");
 requireHtml("pointInspectorSave", "Point inspector apply button");
@@ -110,6 +111,10 @@ assert(html.includes("flashPoint"), "Point UI should expose a visible point jump
 assert(html.includes("commandAction"), "Command palette should label point results with explicit jump actions.");
 assert(html.includes("reader-jump"), "Reader should expose explicit jump-to-map controls.");
 assert(html.includes("PM.createMinimap"), "App should create the optional viewport minimap controller.");
+assert(html.includes('class="minimap-action minimap-close-action"'), "Minimap close should be visually separated from Auto/Pin mode buttons.");
+assert(/mode:\s*\["auto",\s*"pin",\s*"off"\]\.includes\(raw\.mode\)\s*\?\s*raw\.mode\s*:\s*"auto"/.test(html), "Minimap should default to Auto mode when no UI preference is stored.");
+assert(/viewport\.addEventListener\("pointerdown"/.test(html), "Minimap viewport rectangle should be draggable.");
+assert(/wheelZoomEnabled/.test(html) && /wheelZoomControl/.test(html), "Mouse wheel zoom should be available as an opt-in UI preference.");
 assert(html.includes("PM.createPointInspector"), "App should create the optional point inspector controller.");
 assert(html.includes("PM.createFinderDrawer"), "App should create the optional large-project finder drawer.");
 assert(html.includes("finderIssues"), "Finder should expose a scale-oriented issue filter.");

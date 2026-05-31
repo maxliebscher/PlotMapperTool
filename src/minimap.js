@@ -60,6 +60,7 @@
     let prefs = loadPrefs();
     let drag = null;
     let resize = null;
+    let viewportDrag = null;
     let latestState = store.getState();
 
     function persist(patch) {
@@ -193,6 +194,32 @@
     canvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       jumpTo(event.clientX, event.clientY);
+    });
+    viewport.addEventListener("pointerdown", (event) => {
+      viewportDrag = {
+        pointerId: event.pointerId
+      };
+      viewport.setPointerCapture(event.pointerId);
+      viewport.classList.add("is-moving");
+      jumpTo(event.clientX, event.clientY);
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!viewportDrag || event.pointerId !== viewportDrag.pointerId) return;
+      jumpTo(event.clientX, event.clientY);
+      event.preventDefault();
+    });
+    viewport.addEventListener("pointerup", (event) => {
+      if (!viewportDrag || event.pointerId !== viewportDrag.pointerId) return;
+      viewport.releasePointerCapture(event.pointerId);
+      viewport.classList.remove("is-moving");
+      viewportDrag = null;
+      event.preventDefault();
+    });
+    viewport.addEventListener("pointercancel", () => {
+      viewportDrag = null;
+      viewport.classList.remove("is-moving");
     });
     canvas.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;

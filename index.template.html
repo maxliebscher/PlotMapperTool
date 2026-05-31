@@ -112,6 +112,7 @@
     <div id="viewPresetRow" class="control-row view-presets">
       <span id="viewPresetLabel" class="inline-caption">Views</span>
       <div id="viewPresetButtons" class="view-preset-buttons" role="group" aria-label="View presets"></div>
+      <label class="wheel-zoom-toggle"><input id="wheelZoomControl" type="checkbox"><span>Wheel zoom</span></label>
     </div>
 
     <div class="control-row slider-row">
@@ -149,7 +150,7 @@
       <span class="minimap-actions">
         <button id="minimapAuto" class="minimap-action" type="button" title="Auto">A</button>
         <button id="minimapPin" class="minimap-action" type="button" title="Pin">P</button>
-        <button id="minimapClose" class="minimap-action" type="button" title="Close">x</button>
+        <button id="minimapClose" class="minimap-action minimap-close-action" type="button" title="Close">x</button>
       </span>
     </header>
     <div id="minimapCanvas" class="minimap-canvas" role="button" tabindex="0" aria-label="Jump on the map">

@@ -152,6 +152,7 @@ async function exerciseCommandPalette(page) {
 }
 
 async function exerciseMinimap(page) {
+  await page.waitForFunction(() => PM.minimap.getPrefs().mode === "auto", null, { timeout: 5000 });
   await setInputValue(page, "#zoomControl", "2");
   await page.waitForSelector("#minimapPanel:not([hidden])");
   await page.waitForFunction(() => {
@@ -165,6 +166,14 @@ async function exerciseMinimap(page) {
       && viewport.getBoundingClientRect().width > 10
       && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
   }, null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector("#minimapAuto")?.classList.contains("is-active"), null, { timeout: 5000 });
+
+  const closeOffset = await page.evaluate(() => {
+    const pin = document.querySelector("#minimapPin").getBoundingClientRect();
+    const close = document.querySelector("#minimapClose").getBoundingClientRect();
+    return close.left - pin.right;
+  });
+  assert(closeOffset >= 8, `Minimap close action should be separated from mode buttons, got ${closeOffset}px.`);
 
   const beforeDrag = await page.locator("#minimapPanel").boundingBox();
   const dragHandle = await page.locator("#minimapDrag").boundingBox();
@@ -184,6 +193,21 @@ async function exerciseMinimap(page) {
   await page.mouse.up();
   await page.waitForFunction((width) => document.querySelector("#minimapPanel").getBoundingClientRect().width > width + 20, beforeResize.width, { timeout: 5000 });
 
+  const beforeViewportDrag = await page.evaluate(() => ({
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  const viewportBox = await page.locator("#minimapViewport").boundingBox();
+  assert(viewportBox, "Minimap viewport rectangle should be measurable.");
+  await page.mouse.move(viewportBox.x + viewportBox.width / 2, viewportBox.y + viewportBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(viewportBox.x + viewportBox.width / 2 - 38, viewportBox.y + viewportBox.height / 2 - 22, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, beforeViewportDrag, { timeout: 5000 });
+
   const beforeJump = await page.evaluate(() => ({
     panX: PM.store.getLiveState().settings.panX,
     panY: PM.store.getLiveState().settings.panY
@@ -202,6 +226,22 @@ async function exerciseMinimap(page) {
   await page.waitForSelector("#minimapPanel:not([hidden])");
   await page.click("#minimapClose");
   await page.waitForSelector("#minimapPanel", { state: "hidden" });
+}
+
+async function exerciseWheelZoom(page) {
+  await page.evaluate(() => PM.store.setSettings({ zoom: 1, panX: 0, panY: 0 }));
+  await page.waitForFunction(() => PM.store.getLiveState().settings.zoom === 1, null, { timeout: 5000 });
+  const point = await canvasPoint(page, 0.82, 0.82);
+  await page.mouse.wheel(0, -500);
+  await page.waitForTimeout(80);
+  const disabledZoom = await page.evaluate(() => PM.store.getLiveState().settings.zoom);
+  assert(disabledZoom === 1, `Wheel zoom should be opt-in, got zoom ${disabledZoom}.`);
+  await setCheckbox(page, "#wheelZoomControl", true);
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("pmUiPrefsV1") || "{}").wheelZoomEnabled === true, null, { timeout: 5000 });
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.wheel(0, -500);
+  await page.waitForFunction(() => PM.store.getLiveState().settings.zoom > 1, null, { timeout: 5000 });
+  await setCheckbox(page, "#wheelZoomControl", false);
 }
 
 async function addRoutePoint(page) {
@@ -808,6 +848,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await page.click("#pmSplash");
   await loadProject(page, fixturePath);
   await exerciseMinimap(page);
+  await exerciseWheelZoom(page);
   await exerciseCommandPalette(page);
   await addRoutePoint(page);
   await addPlacePoint(page);

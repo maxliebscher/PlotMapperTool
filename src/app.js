@@ -40,7 +40,8 @@
       const raw = input || {};
       return {
         toolbarCollapsed: Boolean(raw.toolbarCollapsed),
-        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100)
+        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100),
+        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled)
       };
     }
     function loadUiPrefs() {
@@ -254,7 +255,8 @@
         item: $("filter-item")
       },
       viewPresetLabel: $("viewPresetLabel"),
-      viewPresetButtons: $("viewPresetButtons")
+      viewPresetButtons: $("viewPresetButtons"),
+      wheelZoom: $("wheelZoomControl")
     };
     const minimap = PM.createMinimap({
       panel: controls.minimapPanel,
@@ -340,6 +342,7 @@
       root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
       root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
       controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
+      controls.wheelZoom.checked = Boolean(uiPrefs.wheelZoomEnabled);
       controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
     }
 
@@ -802,7 +805,8 @@
         showDuration: "durationToggle",
         showEdit: "editToggle",
         focusMode: "focus",
-        chapterMode: "chapterStart"
+        chapterMode: "chapterStart",
+        wheelZoomControl: "wheelZoom"
       };
       Object.entries(labelMap).forEach(([id, key]) => {
         const input = $(id);
@@ -996,6 +1000,7 @@
     controls.pointSize.addEventListener("input", () => store.setSettings({ pointSizePx: controls.pointSize.value }));
     controls.helperPointSize.addEventListener("input", () => store.setSettings({ helperPointSizePx: controls.helperPointSize.value }));
     controls.toolbarOpacity.addEventListener("input", () => persistUiPrefs({ toolbarOpacity: controls.toolbarOpacity.value }));
+    controls.wheelZoom.addEventListener("change", () => persistUiPrefs({ wheelZoomEnabled: controls.wheelZoom.checked }));
     controls.fontScale.addEventListener("input", () => store.setSettings({ fontScale: controls.fontScale.value }));
     Object.entries(controls.filters).forEach(([type, input]) => {
       input.addEventListener("change", () => store.setFilter(type, input.checked));
@@ -1070,6 +1075,34 @@
       canvas.classList.remove("dragging");
       pan = null;
     });
+    function isWheelZoomUiTarget(target) {
+      return Boolean(target && target.closest && target.closest([
+        ".toolbar",
+        ".toolbar-restore",
+        ".minimap-panel",
+        ".point-inspector",
+        ".context-menu",
+        ".command-palette",
+        ".finder-drawer",
+        ".modal",
+        ".presentation-dock",
+        ".presentation-fog-panel",
+        ".info-panel"
+      ].join(",")));
+    }
+
+    document.addEventListener("wheel", (event) => {
+      if (!uiPrefs.wheelZoomEnabled || !store.getLiveState().map.dataUrl) return;
+      if (isWheelZoomUiTarget(event.target)) return;
+      event.preventDefault();
+      menu.close();
+      closeRouteColorPopover();
+      const current = Number(store.getLiveState().settings.zoom) || 1;
+      const factor = Math.exp(-event.deltaY * 0.0015);
+      const next = PM.clamp(current * factor, 1, 5);
+      if (Math.abs(next - current) < 0.005) return;
+      renderer.zoomAtClient(event.clientX, event.clientY, next);
+    }, { passive: false, capture: true });
     canvas.addEventListener("dblclick", (event) => {
       const state = store.getLiveState();
       if (!state.map.dataUrl) return;

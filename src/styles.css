@@ -589,6 +589,7 @@ button, input, textarea, select {
 
 .minimap-actions {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
 }
 
@@ -610,6 +611,21 @@ button, input, textarea, select {
 .minimap-action.is-active {
   border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
   background: color-mix(in srgb, var(--surface-2) 78%, var(--accent) 16%);
+}
+
+.minimap-close-action {
+  position: relative;
+  margin-left: 8px;
+}
+
+.minimap-close-action::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: color-mix(in srgb, var(--border) 72%, transparent);
 }
 
 .minimap-canvas {
@@ -643,7 +659,12 @@ button, input, textarea, select {
   box-shadow:
     0 0 0 999px rgba(0, 0, 0, 0.25),
     0 0 0 3px color-mix(in srgb, var(--accent) 38%, transparent);
-  pointer-events: none;
+  cursor: move;
+  pointer-events: auto;
+}
+
+.minimap-viewport.is-moving {
+  cursor: grabbing;
 }
 
 .minimap-footer {
@@ -1109,6 +1130,31 @@ button, input, textarea, select {
   font-weight: 850;
   line-height: 1.1;
   white-space: nowrap;
+}
+
+.wheel-zoom-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.wheel-zoom-toggle input {
+  accent-color: var(--accent);
+}
+
+.wheel-zoom-toggle:has(input:checked) {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--text);
 }
 
 .view-preset:hover,

@@ -116,6 +116,29 @@
       });
     }
 
+    function zoomAtClient(clientX, clientY, targetZoom) {
+      const size = getViewportSize();
+      const imgWidth = imageReady ? image.naturalWidth : latestState.map.width;
+      const imgHeight = imageReady ? image.naturalHeight : latestState.map.height;
+      if (!imgWidth || !imgHeight) return;
+      const canvasRect = canvas.getBoundingClientRect();
+      const currentRect = getImageRect(size.width, size.height, latestState);
+      if (!currentRect.w || !currentRect.h) return;
+      const localX = clientX - canvasRect.left;
+      const localY = clientY - canvasRect.top;
+      const mapX = PM.clamp((localX - currentRect.x) / currentRect.w, 0, 1);
+      const mapY = PM.clamp((localY - currentRect.y) / currentRect.h, 0, 1);
+      const zoom = PM.clamp(Number(targetZoom) || latestState.settings.zoom, 1, 5);
+      const scale = Math.min(size.width / imgWidth, size.height / imgHeight) * zoom;
+      const w = imgWidth * scale;
+      const h = imgHeight * scale;
+      store.setSettings({
+        zoom,
+        panX: localX - (size.width - w) / 2 - mapX * w,
+        panY: localY - (size.height - h) / 2 - mapY * h
+      });
+    }
+
     function dashForRoute(route) {
       if (!route) return [];
       if (route.lineStyle === "dashed") return [14, 10];
@@ -501,6 +524,7 @@
       mapToClient,
       clientToMap,
       centerOnPoint,
+      zoomAtClient,
       getImageRect,
       visibleMapBounds,
       exportPng,
