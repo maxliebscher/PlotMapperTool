@@ -2821,12 +2821,11 @@ button, input, textarea, select {
       <div class="head-actions">
         <button id="readerButton" class="btn" type="button">Reader</button>
         <button id="presentationButton" class="btn" type="button">Present</button>
-        <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
         <button id="finderButton" class="btn" type="button">Finder</button>
         <button id="helpButton" class="btn" type="button">Help</button>
         <button id="langToggle" class="btn small" type="button">DE</button>
         <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
-        <button id="minimapToggle" class="btn icon" type="button" title="Minimap" aria-label="Minimap">&#9635;</button>
+        <button id="minimapToggle" class="btn" type="button" title="Minimap" aria-label="Minimap">&#128506;&#65039; MiniMap</button>
         <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
@@ -3371,7 +3370,7 @@ button, input, textarea, select {
       png: "PNG",
       clear: "Clear",
       help: "Help",
-      helpTitle: "Tutorial",
+      helpTitle: "Help",
       close: "Close",
       empty: "Load a map image to begin.",
       emptyStep1: "1) Load image",
@@ -3425,7 +3424,7 @@ button, input, textarea, select {
       loadFailed: "Could not load the file.",
       exportFailed: "Export failed.",
       popupBlocked: "Please allow pop-ups for PDF export.",
-      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Focus Mode:</strong> hides non-route points</li><li><strong>Finder:</strong> searches large point lists, filters hints/types/current view, and jumps back to the map; use <kbd>PageDown</kbd>/<kbd>PageUp</kbd> and <kbd>Home</kbd>/<kbd>End</kbd> for long lists; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> opens the selected point in the Inspector</li><li><strong>Views:</strong> small presets switch between all points, route, places/NPC, and notes without editing project data</li><li><strong>Wheel zoom</strong> is optional; when enabled, mouse wheel zooms into the map at the pointer</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, drag the viewport rectangle, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
+      helpHtml: "<p><strong>Welcome!</strong> Quick start:</p><ol><li><strong>Load image</strong> (top left)</li><li><strong>Double-click</strong> on the map and choose the next point type directly</li><li>Use the point <strong>context menu</strong> via (=)</li></ol><h3>Routes</h3><ul><li><strong>Active route:</strong> open the route panel to add, rename, hide, delete, color, style, and size routes</li><li><strong>Color:</strong> click a swatch, then confirm with OK; Escape or Cancel discards the change</li><li><strong>Arrows:</strong> Off, Middle, Repeat, or Target</li><li><strong>Presentation:</strong> each visible route keeps its own reveal step; nearby context points appear along the revealed path</li></ul><h3>Filters & Display</h3><ul><li><strong>Views:</strong> small presets switch between all points, route, places/NPC, and notes without editing project data</li><li><strong>Finder:</strong> searches large point lists, filters hints/types/current view, and jumps back to the map; use <kbd>PageDown</kbd>/<kbd>PageUp</kbd> and <kbd>Home</kbd>/<kbd>End</kbd> for long lists; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> opens the selected point in the Inspector</li><li><strong>Wheel zoom</strong> is optional; when enabled, mouse wheel zooms into the map at the pointer</li><li><strong>Notes, Chapters, Duration, Lines, Edit buttons</strong> can be toggled</li><li><strong>Zoom, map opacity, font, point size, helper point size, and menu opacity</strong> use sliders</li><li><strong>Minimap:</strong> appears automatically at higher zoom; drag its head, drag the viewport rectangle, resize the corner, or close it</li><li>The main menu can be collapsed without entering Presentation</li></ul><h3>Project / Export</h3><ul><li><strong>Save project</strong> writes a versioned .plotmap.json file</li><li><strong>Load project</strong> opens a .plotmap.json file</li><li><strong>Reader</strong> provides HTML/PDF reading views</li><li><strong>PNG</strong> renders the current view; browser and PNG are aligned for route visuals, notes, and duration labels</li></ul><h3>Keyboard</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: search commands, points, routes</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: page zoom</li><li><kbd>T</kbd>: cycle theme</li><li><kbd>Esc</kbd>: close modals / skip splash</li></ul><h3>Tips</h3><ul><li>Start with one main route, then add alternatives only when they help the story</li><li>Use helper points for branching or line shaping</li><li>The app is built to run offline; external info links only need internet when clicked</li></ul><p>Video tutorial coming soon ✨</p>"
     },
     de: {
       noProject: "Kein Projekt geladen",
@@ -3521,7 +3520,7 @@ button, input, textarea, select {
       menuOpacity: "Menü",
       collapseMenu: "Menü einklappen",
       expandMenu: "Menü ausklappen",
-      focus: "Fokus-Modus",
+      focus: "Fokus",
       chapterStart: "Kapitel-Nummerierung",
       undo: "Rückgängig",
       redo: "Wiederholen",
@@ -3548,8 +3547,8 @@ button, input, textarea, select {
       presentationFogMemory: "Alten Pfad schwächer",
       png: "PNG",
       clear: "Leeren",
-      help: "Anleitung",
-      helpTitle: "Tutorial",
+      help: "Hilfe",
+      helpTitle: "Hilfe",
       close: "Schließen",
       empty: "Lade eine Karte, um zu beginnen.",
       emptyStep1: "1) Bild laden",
@@ -3603,7 +3602,7 @@ button, input, textarea, select {
       loadFailed: "Datei konnte nicht geladen werden.",
       exportFailed: "Export fehlgeschlagen.",
       popupBlocked: "Bitte Pop-ups für PDF-Export erlauben.",
-      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Fokus-Modus:</strong> blendet Nicht-Routenpunkte aus</li><li><strong>Finder:</strong> durchsucht große Punktlisten, filtert Hinweise/Punktarten/aktuellen Ausschnitt und springt zurück zur Karte; <kbd>PageDown</kbd>/<kbd>PageUp</kbd> und <kbd>Home</kbd>/<kbd>End</kbd> helfen bei langen Listen; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> öffnet den ausgewählten Punkt im Inspector</li><li><strong>Ansichten:</strong> kleine Presets wechseln zwischen Alles, Route, Orte/NPC und Notizen, ohne Projektdaten zu verändern</li><li><strong>Mausrad-Zoom</strong> ist optional; aktiviert zoomt das Mausrad an der Cursorposition in die Karte</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ausschnittfenster ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
+      helpHtml: "<p><strong>Willkommen!</strong> Schnellstart:</p><ol><li><strong>Bild laden</strong> (oben links)</li><li><strong>Doppelklick</strong> auf die Karte und direkt auswählen, was als Nächstes kommt</li><li>Punkt-<strong>Kontextmenü</strong> über (=) nutzen</li></ol><h3>Routen</h3><ul><li><strong>Aktiver Pfad:</strong> Pfad-Menü öffnen, um Pfade anzulegen, umzubenennen, auszublenden, zu löschen, zu färben und Linienart/Stärke zu setzen</li><li><strong>Farbe:</strong> Farbfeld anklicken, dann mit OK bestätigen; Escape oder Abbrechen verwirft die Änderung</li><li><strong>Pfeile:</strong> Aus, Mitte, Mehrfach oder Ziel</li><li><strong>Präsentation:</strong> jeder sichtbare Pfad hat eigenen Fortschritt; nahe Kontextpunkte erscheinen entlang des aufgedeckten Bereichs</li></ul><h3>Filter & Darstellung</h3><ul><li><strong>Ansichten:</strong> kleine Presets wechseln zwischen Alles, Route, Orte/NPC und Notizen, ohne Projektdaten zu verändern</li><li><strong>Finder:</strong> durchsucht große Punktlisten, filtert Hinweise/Punktarten/aktuellen Ausschnitt und springt zurück zur Karte; <kbd>PageDown</kbd>/<kbd>PageUp</kbd> und <kbd>Home</kbd>/<kbd>End</kbd> helfen bei langen Listen; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> öffnet den ausgewählten Punkt im Inspector</li><li><strong>Mausrad-Zoom</strong> ist optional; aktiviert zoomt das Mausrad an der Cursorposition in die Karte</li><li><strong>Notizen, Kapitel, Dauer, Linien, Edit-Buttons</strong> lassen sich ein- und ausblenden</li><li><strong>Zoom, Karten-Deckkraft, Schrift, Punktgröße, Hilfspunkte und Menüdeckkraft</strong> laufen über Regler</li><li><strong>Minimap:</strong> erscheint automatisch bei höherem Zoom; Kopf ziehen, Ausschnittfenster ziehen, Ecke skalieren oder schließen</li><li>Das große Menü kann auch ohne Präsentation eingeklappt werden</li></ul><h3>Projekt / Export</h3><ul><li><strong>Projekt speichern</strong> schreibt eine versionierte .plotmap.json Datei</li><li><strong>Projekt laden</strong> öffnet eine .plotmap.json Datei</li><li><strong>Reader</strong> erzeugt HTML/PDF-Leseansichten</li><li><strong>PNG</strong> rendert die aktuelle Ansicht; Route, Notizen und Dauer sind an den Browser-View angeglichen</li></ul><h3>Tastatur</h3><ul><li><kbd>Ctrl</kbd> + <kbd>K</kbd>: Befehle, Punkte, Routen suchen</li><li><kbd>Ctrl</kbd> + <kbd>Scroll</kbd>: Seitenzoom</li><li><kbd>T</kbd>: Theme wechseln</li><li><kbd>Esc</kbd>: Modals schließen / Splash überspringen</li></ul><h3>Tipps</h3><ul><li>Erst den Hauptpfad bauen, Alternativen nur wenn sie der Story wirklich helfen</li><li>Hilfspunkte für Abzweigungen oder Linienform nutzen</li><li>Die App ist offline gebaut; externe Info-Links brauchen nur beim Anklicken Internet</li></ul><p>Video-Tutorial kommt noch ✨</p>"
     }
   };
 
@@ -4679,11 +4678,10 @@ button, input, textarea, select {
       paletteAction("present", PM.I18n.t(locale, "present"), locale === "de" ? "Präsentationsmodus starten" : "Start presentation mode", "\u25B6", "presentation reveal fog präsentation"),
       paletteAction("export-png", PM.I18n.t(locale, "png"), locale === "de" ? "Aktuelle Ansicht als Bild exportieren" : "Export current view as image", "\uD83D\uDCF7", "export png bild image"),
       paletteAction("routes", PM.I18n.t(locale, "routes"), locale === "de" ? "Routenverwaltung öffnen" : "Open route management", "\u21C4", "route pfad panel farbe linie"),
-      paletteAction("focus", PM.I18n.t(locale, "focus"), locale === "de" ? "Fokus-Modus umschalten" : "Toggle focus mode", "\u25C9", "focus fokus filter"),
       paletteAction("finder", PM.I18n.t(locale, "finder"), locale === "de" ? "Große Punktliste durchsuchen und zur Karte springen" : "Search large point lists and jump to the map", "\u2315", "finder suchen search punkte points hinweise"),
       paletteAction("finder-issues", PM.I18n.t(locale, "finderIssues"), locale === "de" ? "Projekt-Hinweise im Finder prüfen" : "Review project hints in Finder", "!", "hinweise hints probleme problems check fehlende labels lange notizen"),
       paletteAction("finder-view", PM.I18n.t(locale, "finderInView"), locale === "de" ? "Finder auf aktuellen Kartenausschnitt begrenzen" : "Limit Finder to the current map view", "\u25A7", "finder ausschnitt view viewport sichtbar visible current"),
-      paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\u25A3", "minimap overview ausschnitt viewport orientierung"),
+      paletteAction("minimap", PM.I18n.t(locale, "minimap"), locale === "de" ? "Orientierungs-Minimap ein- oder ausschalten" : "Toggle orientation minimap", "\uD83D\uDDFA\uFE0F", "minimap overview ausschnitt viewport orientierung"),
       paletteAction("collapse-menu", PM.I18n.t(locale, "collapseMenu"), locale === "de" ? "Mehr Karte, weniger Menü" : "More map, less menu", "\u25B4", "collapse menu einklappen")
     ];
     if (Array.isArray(PM.VIEW_PRESETS)) {
@@ -7563,7 +7561,6 @@ button, input, textarea, select {
       presentationFogMemory: $("presentationFogMemory"),
       presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
-      focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
       chapterStart: $("chapterStart"),
       routePanelToggle: $("routePanelToggle"),
@@ -7940,7 +7937,6 @@ button, input, textarea, select {
         persistUiPrefs({ toolbarCollapsed: false });
         renderRoutePanel(store.getState());
       }
-      if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "finder") openFinder("");
       if (entry.action === "finder-view") openFinder("", "view");
       if (entry.action === "finder-issues") openFinder("", "issue");
@@ -8075,7 +8071,7 @@ button, input, textarea, select {
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
       controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
-      controls.minimapToggle.textContent = "\u25A3";
+      controls.minimapToggle.textContent = `\uD83D\uDDFA\uFE0F ${PM.I18n.t(locale, "minimap")}`;
       controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
       controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
       controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
@@ -8157,7 +8153,6 @@ button, input, textarea, select {
         showNotes: "notesToggle",
         showDuration: "durationToggle",
         showEdit: "editToggle",
-        focusMode: "focus",
         chapterMode: "chapterStart",
         wheelZoomControl: "wheelZoom"
       };
@@ -8216,7 +8211,6 @@ button, input, textarea, select {
       controls.showNotes.checked = state.settings.showNotes;
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
-      controls.focusMode.checked = state.settings.focusMode;
       const route = PM.getActiveRoute(state.settings, state.routes);
       controls.chapterMode.checked = route.showNumbers !== false;
       controls.chapterStart.value = String(route.startNumber);
@@ -8337,7 +8331,6 @@ button, input, textarea, select {
     bindSettingCheckbox(controls.showNotes, "showNotes");
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
-    bindSettingCheckbox(controls.focusMode, "focusMode");
     controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
     controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
     controls.routePanelToggle.addEventListener("click", () => {

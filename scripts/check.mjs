@@ -45,8 +45,10 @@ assert(html.includes("PM.createPresentationController"), "App should create the 
 assert(html.includes("getPresentationReveal"), "Point UI should receive presentation reveal state.");
 assert(html.includes("ArrowRight") && html.includes("PageDown") && html.includes("ArrowLeft") && html.includes("PageUp"), "Presentation keyboard navigation should be wired.");
 assert(html.includes("Home") && html.includes("End") && html.includes("Escape"), "Presentation reset, show-all, and exit shortcuts should be wired.");
-requireHtml("helpTitle", "Tutorial modal title");
-requireHtml("Tutorial", "Tutorial copy");
+requireHtml("helpTitle", "Help modal title");
+assert(/help:\s*"Hilfe"/.test(html), "German help toolbar label should be Hilfe.");
+assert(!html.includes('id="focusMode"'), "Focus mode should not be exposed as a primary toolbar control.");
+assert(!html.includes('action:"focus"') && !html.includes("action:focus"), "Focus mode should not be exposed as a command palette action.");
 requireHtml("Schlie", "Localized tutorial close label");
 requireHtml("saveProject", "Project save control");
 requireHtml("loadProject", "Project load control");
@@ -88,6 +90,7 @@ requireHtml("toolbarOpacityControl", "Menu opacity control");
 requireHtml("toolbarCollapse", "Normal-mode menu collapse control");
 requireHtml("toolbarRestore", "Collapsed menu restore control");
 requireHtml("minimapToggle", "Minimap toolbar toggle");
+assert(html.includes('\\uD83D\\uDDFA\\uFE0F ${PM.I18n.t(locale, "minimap")}'), "Minimap toolbar button should include the map icon and label.");
 requireHtml("minimapPanel", "Optional viewport minimap panel");
 requireHtml("minimapCanvas", "Minimap overview canvas");
 requireHtml("minimapViewport", "Minimap viewport marker");
@@ -126,6 +129,7 @@ const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] ||
 assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
 assert(/Home|End|Pos1|Ende/.test(helpBlock), "Tutorial copy should mention Finder start/end navigation.");
 assert(/Ctrl<\/kbd>\+<kbd>Enter|Ctrl\+Enter|Ctrl<\/kbd> \+ <kbd>Enter/.test(helpBlock) && /Inspector/.test(helpBlock), "Tutorial copy should mention the Finder inspector shortcut.");
+assert(!/Focus Mode|Fokus-Modus/.test(helpBlock), "Help copy should not document the removed toolbar focus mode.");
 requireHtml("routeLineStyle", "Route line style i18n key");
 requireHtml("routePoint", "Route point story picker i18n key");
 requireHtml("routePointFor", "Route point active route i18n key");

@@ -246,19 +246,14 @@ async function exerciseWheelZoom(page) {
 
 async function addRoutePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  const wasFocused = await page.locator("#focusMode").isChecked();
-  if (!wasFocused) await setCheckbox(page, "#focusMode", true);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.62, 0.7), force: true });
   await page.waitForSelector(".context-menu .route-type-choice");
   await page.locator(".context-menu .route-type-choice").click();
   await waitForPointCount(page, before + 1);
-  if (!wasFocused) await setCheckbox(page, "#focusMode", false);
 }
 
 async function addPlacePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  const isFocused = await page.locator("#focusMode").isChecked();
-  if (isFocused) await setCheckbox(page, "#focusMode", false);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.36, 0.82), force: true });
   await page.locator(".context-menu button", { hasText: "Place" }).click();
   await waitForPointCount(page, before + 1);
@@ -348,7 +343,6 @@ async function exerciseRouteManagement(page) {
   }, activeRouteId, { timeout: 5000 });
 
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  await setCheckbox(page, "#focusMode", false);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.74, 0.72), force: true });
   await page.locator(".context-menu .route-type-choice").click();
   await waitForPointCount(page, before + 1);
@@ -658,12 +652,9 @@ async function toggleControls(page) {
   await page.click("#toolbarRestore");
   await page.waitForFunction(() => !document.documentElement.classList.contains("toolbar-collapsed"), null, { timeout: 5000 });
   await page.waitForSelector("#toolbar");
-  await setCheckbox(page, "#focusMode", true);
-  await page.waitForFunction(() => document.documentElement.classList.contains("focus-mode"), null, { timeout: 5000 });
   await setCheckbox(page, "#filter-place", false);
   await page.waitForFunction(() => PM.store.getLiveState().settings.filters.place === false, null, { timeout: 5000 });
   await setCheckbox(page, "#filter-place", true);
-  await setCheckbox(page, "#focusMode", false);
 }
 
 async function visiblePointCount(page) {

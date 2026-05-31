@@ -210,7 +210,6 @@
       presentationFogMemory: $("presentationFogMemory"),
       presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
-      focusMode: $("focusMode"),
       chapterMode: $("chapterMode"),
       chapterStart: $("chapterStart"),
       routePanelToggle: $("routePanelToggle"),
@@ -587,7 +586,6 @@
         persistUiPrefs({ toolbarCollapsed: false });
         renderRoutePanel(store.getState());
       }
-      if (entry.action === "focus") store.setSettings({ focusMode: !store.getLiveState().settings.focusMode });
       if (entry.action === "finder") openFinder("");
       if (entry.action === "finder-view") openFinder("", "view");
       if (entry.action === "finder-issues") openFinder("", "issue");
@@ -722,7 +720,7 @@
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
       controls.helpButton.textContent = PM.I18n.t(locale, "help");
       controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
-      controls.minimapToggle.textContent = "\u25A3";
+      controls.minimapToggle.textContent = `\uD83D\uDDFA\uFE0F ${PM.I18n.t(locale, "minimap")}`;
       controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
       controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
       controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
@@ -804,7 +802,6 @@
         showNotes: "notesToggle",
         showDuration: "durationToggle",
         showEdit: "editToggle",
-        focusMode: "focus",
         chapterMode: "chapterStart",
         wheelZoomControl: "wheelZoom"
       };
@@ -863,7 +860,6 @@
       controls.showNotes.checked = state.settings.showNotes;
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
-      controls.focusMode.checked = state.settings.focusMode;
       const route = PM.getActiveRoute(state.settings, state.routes);
       controls.chapterMode.checked = route.showNumbers !== false;
       controls.chapterStart.value = String(route.startNumber);
@@ -984,7 +980,6 @@
     bindSettingCheckbox(controls.showNotes, "showNotes");
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
-    bindSettingCheckbox(controls.focusMode, "focusMode");
     controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
     controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
     controls.routePanelToggle.addEventListener("click", () => {
