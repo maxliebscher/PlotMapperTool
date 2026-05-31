@@ -200,10 +200,11 @@
       const point = activePoint();
       if (!point) return;
       const state = store.getLiveState();
+      if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
       if (point.type === "route" && point.routeId) {
         store.setActiveRoute(point.routeId);
-      } else if (state.settings.filters[point.type] === false) {
-        store.setFilter(point.type, true);
       }
       if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
       renderer.centerOnPoint(point);

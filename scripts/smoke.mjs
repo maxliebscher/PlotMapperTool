@@ -365,7 +365,10 @@ async function exercisePointInspector(page) {
       && point.helper === true;
   }, pointId, { timeout: 5000 });
   const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
+  await page.click("#filter-route");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === false, null, { timeout: 5000 });
   await page.click("#pointInspectorJump");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === true, null, { timeout: 5000 });
   await page.waitForSelector(".point.is-jump-target");
   await page.waitForFunction((before) => PM.store.getLiveState().settings.panX !== before || PM.store.getLiveState().settings.zoom > 1, panBefore, { timeout: 5000 });
   await page.click("#pointInspectorClose");
