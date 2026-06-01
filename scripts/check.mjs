@@ -42,7 +42,9 @@ assert(!/\b(?:Export MD|Import MD|markdownInput)\b/.test(html), "Legacy Markdown
 ].forEach(([pattern, message]) => assert(!pattern.test(html), message));
 assert(html.includes("\\uD83D\\uDCD6 ${PM.I18n.t(locale, \"reader\")}"), "Reader toolbar button should include the book icon prefix.");
 assert(html.includes("PM.createPresentationController"), "App should create the presentation controller.");
+assert(html.includes("PM.presentation = PM.createPresentationController"), "Presentation controller should be exposed for QA and focused UI checks.");
 assert(html.includes("getPresentationReveal"), "Point UI should receive presentation reveal state.");
+assert(html.includes("pmPresentationViewV1"), "Presentation view choice should persist locally.");
 assert(html.includes("ArrowRight") && html.includes("PageDown") && html.includes("ArrowLeft") && html.includes("PageUp"), "Presentation keyboard navigation should be wired.");
 assert(html.includes("Home") && html.includes("End") && html.includes("Escape"), "Presentation reset, show-all, and exit shortcuts should be wired.");
 requireHtml("helpTitle", "Help modal title");
@@ -54,12 +56,18 @@ requireHtml("saveProject", "Project save control");
 requireHtml("loadProject", "Project load control");
 requireHtml("projectInput", "Project input control");
 requireHtml("exportPng", "PNG export control");
+requireHtml("exportReaderHtml", "Project menu Reader HTML export control");
+requireHtml("printReaderPdf", "Project menu Reader PDF print control");
 requireHtml("projectMenu", "Grouped project action menu");
 requireHtml("optionsMenu", "Grouped options menu");
+assert(html.includes("closeOpenToolbarMenus"), "Toolbar menus should close when clicking outside.");
+assert(html.includes("color-popover-primary"), "Route color OK action should be visually promoted.");
 requireHtml("saveStatus", "Save status metadata label");
 requireHtml("sliderPanelToggle", "Display slider collapse control");
 requireHtml("sliderPanel", "Collapsible display slider panel");
-requireHtml("showChapterControlsPref", "Chapter controls visibility preference");
+assert(!html.includes("showChapterControlsPref"), "Chapter numbering row should not be duplicated in the options menu.");
+assert(!html.includes("id=\"chapterMode\"") && !html.includes("id=\"chapterStart\""), "Legacy global chapter numbering controls should be removed from the main menu.");
+requireHtml("showRouteControlsPref", "Route settings visibility preference");
 requireHtml("showVisibilityControlsPref", "Visibility row preference");
 requireHtml("showTypeControlsPref", "Point type row preference");
 requireHtml("showViewControlsPref", "View preset row preference");
@@ -72,6 +80,9 @@ requireHtml("readerFind", "Reader finder handoff control");
 requireHtml("readerExportHtml", "Reader HTML export control");
 requireHtml("presentationButton", "Presentation mode toolbar button");
 requireHtml("presentationDock", "Presentation dock");
+requireHtml("presentationViewModes", "Presentation view mode selector");
+requireHtml("presentationFocusCard", "Presentation focus card");
+requireHtml("presentationProgressRail", "Presentation progress rail");
 requireHtml("presentationRoutes", "Presentation route progress controls");
 requireHtml("presentationPrev", "Presentation previous control");
 requireHtml("presentationNext", "Presentation next control");
@@ -81,12 +92,20 @@ requireHtml("presentationExportPng", "Presentation PNG export control");
 requireHtml("presentationExit", "Presentation exit control");
 requireHtml("presentationFogToggle", "Presentation fog settings toggle");
 requireHtml("presentationFogPanel", "Presentation fog settings panel");
+requireHtml("presentationRevealLabel", "Presentation visibility section label");
+requireHtml("presentationThemePrev", "Presentation fog panel previous theme control");
+requireHtml("presentationThemeToggle", "Presentation fog panel theme control");
+requireHtml("presentationThemeNext", "Presentation fog panel next theme control");
 requireHtml("presentationFogMode", "Presentation fog mode control");
+requireHtml("presentationFogStyle", "Presentation fog edge style control");
 requireHtml("presentationFogOutside", "Presentation fog outside visibility control");
 requireHtml("presentationFogFocus", "Presentation fog focus radius control");
 requireHtml("presentationFogTrail", "Presentation fog trail width control");
 requireHtml("presentationFogSoftness", "Presentation fog edge softness control");
 requireHtml("presentationFogMemory", "Presentation fog trail memory control");
+assert(html.includes("presentationViewShortC"), "Presentation mode buttons should show a short active label.");
+assert(html.includes("blur(${edgeBlur * 1.25}px)") && html.includes("blur(${edgeBlur * 0.58}px)"), "Presentation fog reveal should use layered blurred mask edges.");
+assert(html.includes('fogSettings.edgeStyle === "game"'), "Presentation fog should support a game-style blurred reveal.");
 requireHtml("routePanelToggle", "Collapsible route panel toggle");
 requireHtml("routePanel", "Collapsible route management panel");
 requireHtml("routeRows", "Route management rows");
@@ -108,7 +127,15 @@ requireHtml("minimapPanel", "Optional viewport minimap panel");
 requireHtml("minimapCanvas", "Minimap overview canvas");
 requireHtml("minimapViewport", "Minimap viewport marker");
 requireHtml("minimapResize", "Minimap resize handle");
+requireHtml("minimapRoutes", "Minimap route visibility toggle");
+requireHtml("minimap-routes-action", "Readable minimap route visibility label");
 requireHtml("wheelZoomControl", "Optional mouse wheel zoom control");
+requireHtml("wheelZoomMenuControl", "Options menu mouse wheel zoom control");
+requireHtml("showWheelZoomControlPref", "Mouse wheel toolbar visibility preference");
+requireHtml("showSliderControlsPref", "Display slider visibility preference");
+requireHtml("langSelect", "Language select control");
+requireHtml("themePrev", "Previous theme control");
+requireHtml("themeNext", "Next theme control");
 requireHtml("pointInspector", "Optional point inspector panel");
 requireHtml("pointInspectorMode", "Point inspector dock/floating mode toggle");
 requireHtml("pointInspectorSave", "Point inspector apply button");
@@ -130,13 +157,16 @@ assert(html.includes("PM.createMinimap"), "App should create the optional viewpo
 assert(html.includes('class="minimap-action minimap-close-action"'), "Minimap close should be visually separated from Auto/Pin mode buttons.");
 assert(/mode:\s*\["auto",\s*"pin",\s*"off"\]\.includes\(raw\.mode\)\s*\?\s*raw\.mode\s*:\s*"auto"/.test(html), "Minimap should default to Auto mode when no UI preference is stored.");
 assert(/viewport\.addEventListener\("pointerdown"/.test(html), "Minimap viewport rectangle should be draggable.");
-assert(/wheelZoomEnabled/.test(html) && /wheelZoomControl/.test(html), "Mouse wheel zoom should be available as an opt-in UI preference.");
+assert(/wheelZoomEnabled/.test(html) && /wheelZoomMenuControl/.test(html), "Mouse wheel zoom should be available as an options-menu opt-in UI preference.");
+assert(/showWheelZoomControl/.test(html), "Mouse wheel zoom toolbar visibility should be a saved UI preference.");
+assert(/sliderPanelCollapsed/.test(html) && /showSliderControlsPref/.test(html), "Display sliders should be controllable from the options menu.");
 assert(html.includes("PM.createPointInspector"), "App should create the optional point inspector controller.");
 assert(html.includes("PM.createFinderDrawer"), "App should create the optional large-project finder drawer.");
 assert(html.includes("finderIssues"), "Finder should expose a scale-oriented issue filter.");
 assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
 assert(html.includes('store.setFilter("route", true)'), "Route jumps should reveal hidden route points before opening route context.");
-assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Close controls.");
+assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapRoutes") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Routes/Close controls.");
+assert(html.includes("showRoutes: raw.showRoutes !== false"), "Minimap route visibility should persist as a local preference.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
 const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "";
 assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
@@ -513,7 +543,11 @@ assert(activeRouteReveal.visibleIds.has("timmy-2"), "Presentation should reveal 
 
 const defaultFog = PM.normalizePresentationFogSettings();
 assertEqual(defaultFog.mode, "focus", "Focus fog should be the default presentation fog mode.");
-assertEqual(defaultFog.outsideVisibility, 0.22, "Default focus fog should keep only a little outside map visibility.");
+assertEqual(defaultFog.edgeStyle, "game", "Guide/game fog edge style should be the default presentation fog style.");
+assertEqual(defaultFog.outsideVisibility, 0.04, "Default focus fog should start close to the low-visibility game-like setting.");
+assertEqual(defaultFog.focusRadius, 0.08, "Default focus radius should start compact.");
+assertEqual(defaultFog.trailRadius, 0.06, "Default trail width should start near the preferred guide path width.");
+assertEqual(defaultFog.edgeSoftness, 0.01, "Default edge softness should start crisp within the guide path style.");
 assertEqual(defaultFog.trailMemory, true, "Default focus fog should keep the old trail subtler than the current point.");
 const clampedFog = PM.normalizePresentationFogSettings({
   mode: "missing",
@@ -521,13 +555,15 @@ const clampedFog = PM.normalizePresentationFogSettings({
   trailRadius: -5,
   focusRadius: 999,
   edgeSoftness: "x",
+  edgeStyle: "missing",
   trailMemory: false
 });
 assertEqual(clampedFog.mode, "focus", "Invalid fog mode should clamp to focus.");
 assertEqual(clampedFog.outsideVisibility, 0.45, "Outside visibility should clamp to maximum.");
 assertEqual(clampedFog.trailRadius, 0.03, "Trail radius should clamp to minimum.");
 assertEqual(clampedFog.focusRadius, 0.28, "Focus radius should clamp to maximum.");
-assertEqual(clampedFog.edgeSoftness, 0.06, "Invalid edge softness should fall back to default.");
+assertEqual(clampedFog.edgeSoftness, 0.01, "Invalid edge softness should fall back to default.");
+assertEqual(clampedFog.edgeStyle, "game", "Invalid edge style should fall back to default.");
 assertEqual(clampedFog.trailMemory, false, "Trail memory should preserve explicit false.");
 
 const json = PM.Serialization.projectToJson(project);

@@ -43,10 +43,11 @@
         toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100),
         wheelZoomEnabled: Boolean(raw.wheelZoomEnabled),
         tooltipsEnabled: raw.tooltipsEnabled !== false,
-        showChapterControls: raw.showChapterControls !== false,
+        showRouteControls: raw.showRouteControls !== false,
         showVisibilityControls: raw.showVisibilityControls !== false,
         showTypeControls: raw.showTypeControls !== false,
         showViewControls: raw.showViewControls !== false,
+        showWheelZoomControl: Boolean(raw.showWheelZoomControl),
         sliderPanelCollapsed: Boolean(raw.sliderPanelCollapsed)
       };
     }
@@ -111,23 +112,32 @@
       sliderPanelToggle: $("sliderPanelToggle"),
       sliderPanel: $("sliderPanel"),
       tooltipsPref: $("tooltipsPref"),
-      showChapterControlsPref: $("showChapterControlsPref"),
+      wheelZoomMenuControl: $("wheelZoomMenuControl"),
+      showWheelZoomControlPref: $("showWheelZoomControlPref"),
+      showRouteControlsPref: $("showRouteControlsPref"),
+      wheelZoomPrefLabel: $("wheelZoomPrefLabel"),
+      showWheelZoomControlPrefLabel: $("showWheelZoomControlPrefLabel"),
+      showRouteControlsPrefLabel: $("showRouteControlsPrefLabel"),
+      showSliderControlsPref: $("showSliderControlsPref"),
+      showSliderControlsPrefLabel: $("showSliderControlsPrefLabel"),
       showVisibilityControlsPref: $("showVisibilityControlsPref"),
       showTypeControlsPref: $("showTypeControlsPref"),
       showViewControlsPref: $("showViewControlsPref"),
       tooltipsPrefLabel: $("tooltipsPrefLabel"),
-      showChapterControlsPrefLabel: $("showChapterControlsPrefLabel"),
       showVisibilityControlsPrefLabel: $("showVisibilityControlsPrefLabel"),
       showTypeControlsPrefLabel: $("showTypeControlsPrefLabel"),
       showViewControlsPrefLabel: $("showViewControlsPrefLabel"),
-      chapterControls: document.querySelector(".chapter-controls"),
+      routeControls: document.querySelector(".route-controls"),
       visibilityControls: document.querySelector(".toggles"),
       typeControls: document.querySelector(".types"),
       viewControls: $("viewPresetRow"),
       pointTypesLabel: $("pointTypesLabel"),
       visibilityLabel: $("visibilityLabel"),
-      langToggle: $("langToggle"),
+      languagePrefLabel: $("languagePrefLabel"),
+      langSelect: $("langSelect"),
+      themePrev: $("themePrev"),
       themeToggle: $("themeToggle"),
+      themeNext: $("themeNext"),
       minimapToggle: $("minimapToggle"),
       minimapPanel: $("minimapPanel"),
       minimapDrag: $("minimapDrag"),
@@ -137,6 +147,7 @@
       minimapResize: $("minimapResize"),
       minimapAuto: $("minimapAuto"),
       minimapPin: $("minimapPin"),
+      minimapRoutes: $("minimapRoutes"),
       minimapClose: $("minimapClose"),
       pointInspector: $("pointInspector"),
       pointInspectorDrag: $("pointInspectorDrag"),
@@ -175,6 +186,7 @@
       infoButton: $("infoButton"),
       infoClose: $("infoClose"),
       badgeVersion: $("badgeVersion"),
+      emptyTitle: $("emptyTitle"),
       emptySub: $("emptySub"),
       emptyStep1: $("emptyStep1"),
       emptyStep2: $("emptyStep2"),
@@ -206,14 +218,22 @@
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
+      projectExportLabel: $("projectExportLabel"),
       exportPng: $("exportPng"),
+      exportReaderHtml: $("exportReaderHtml"),
+      printReaderPdf: $("printReaderPdf"),
       clearAll: $("clearAll"),
       undo: $("undoButton"),
       redo: $("redoButton"),
       readerButton: $("readerButton"),
       presentationButton: $("presentationButton"),
       presentationDock: $("presentationDock"),
+      presentationViewModes: $("presentationViewModes"),
       presentationRoutes: $("presentationRoutes"),
+      presentationFocusCard: $("presentationFocusCard"),
+      presentationFocusTitle: $("presentationFocusTitle"),
+      presentationFocusBody: $("presentationFocusBody"),
+      presentationProgressRail: $("presentationProgressRail"),
       presentationStep: $("presentationStep"),
       presentationPrev: $("presentationPrev"),
       presentationNext: $("presentationNext"),
@@ -224,8 +244,15 @@
       presentationFogPanel: $("presentationFogPanel"),
       presentationFogTitle: $("presentationFogTitle"),
       presentationFogClose: $("presentationFogClose"),
+      presentationRevealLabel: $("presentationRevealLabel"),
+      presentationThemeLabel: $("presentationThemeLabel"),
+      presentationThemePrev: $("presentationThemePrev"),
+      presentationThemeToggle: $("presentationThemeToggle"),
+      presentationThemeNext: $("presentationThemeNext"),
       presentationFogMode: $("presentationFogMode"),
       presentationFogModeLabel: $("presentationFogModeLabel"),
+      presentationFogStyle: $("presentationFogStyle"),
+      presentationFogStyleLabel: $("presentationFogStyleLabel"),
       presentationFogOutside: $("presentationFogOutside"),
       presentationFogOutsideLabel: $("presentationFogOutsideLabel"),
       presentationFogFocus: $("presentationFogFocus"),
@@ -237,8 +264,6 @@
       presentationFogMemory: $("presentationFogMemory"),
       presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
-      chapterMode: $("chapterMode"),
-      chapterStart: $("chapterStart"),
       routePanelToggle: $("routePanelToggle"),
       activeRouteLabel: $("activeRouteLabel"),
       routePanel: $("routePanel"),
@@ -293,6 +318,7 @@
       resizeHandle: controls.minimapResize,
       autoButton: controls.minimapAuto,
       pinButton: controls.minimapPin,
+      routesButton: controls.minimapRoutes,
       closeButton: controls.minimapClose,
       toggleButton: controls.minimapToggle,
       mainCanvas: $("mapCanvas"),
@@ -348,7 +374,7 @@
         store.setActiveRoute(routeId);
         routePanelOpen = true;
         renderRoutePanel(store.getState());
-        persistUiPrefs({ toolbarCollapsed: false });
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
       }
     });
     PM.finder = finder;
@@ -370,15 +396,20 @@
       root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
       controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
       controls.wheelZoom.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.wheelZoomMenuControl.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.showWheelZoomControlPref.checked = Boolean(uiPrefs.showWheelZoomControl);
+      controls.showRouteControlsPref.checked = Boolean(uiPrefs.showRouteControls);
+      controls.showSliderControlsPref.checked = !uiPrefs.sliderPanelCollapsed;
       controls.tooltipsPref.checked = Boolean(uiPrefs.tooltipsEnabled);
-      controls.showChapterControlsPref.checked = Boolean(uiPrefs.showChapterControls);
       controls.showVisibilityControlsPref.checked = Boolean(uiPrefs.showVisibilityControls);
       controls.showTypeControlsPref.checked = Boolean(uiPrefs.showTypeControls);
       controls.showViewControlsPref.checked = Boolean(uiPrefs.showViewControls);
-      controls.chapterControls.hidden = !uiPrefs.showChapterControls;
+      controls.routeControls.hidden = !uiPrefs.showRouteControls;
+      if (!uiPrefs.showRouteControls) controls.routePanel.hidden = true;
       controls.visibilityControls.hidden = !uiPrefs.showVisibilityControls;
       controls.typeControls.hidden = !uiPrefs.showTypeControls;
       controls.viewControls.hidden = !uiPrefs.showViewControls;
+      controls.wheelZoom.parentElement.hidden = !uiPrefs.showWheelZoomControl;
       controls.sliderPanel.hidden = Boolean(uiPrefs.sliderPanelCollapsed);
       controls.sliderPanelToggle.setAttribute("aria-expanded", String(!uiPrefs.sliderPanelCollapsed));
       controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
@@ -614,7 +645,7 @@
         store.setActiveRoute(entry.routeId);
         routePanelOpen = true;
         renderRoutePanel(store.getState());
-        persistUiPrefs({ toolbarCollapsed: false });
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
         closeCommandPalette();
         return;
       }
@@ -623,7 +654,7 @@
       if (entry.action === "export-png") exportCurrentPng();
       if (entry.action === "routes") {
         routePanelOpen = true;
-        persistUiPrefs({ toolbarCollapsed: false });
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
         renderRoutePanel(store.getState());
       }
       if (entry.action === "finder") openFinder("");
@@ -646,6 +677,14 @@
     function closeRouteColorPopover() {
       controls.routeColorPopover.hidden = true;
       routeColorEdit = null;
+    }
+
+    function closeOpenToolbarMenus(event) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      [controls.projectMenu, controls.optionsMenu].forEach((details) => {
+        if (details.open && !details.contains(target)) details.open = false;
+      });
     }
 
     function commitRouteColorPopover() {
@@ -671,7 +710,7 @@
     function renderRoutePanel(state) {
       const locale = state.settings.locale;
       const active = PM.getActiveRoute(state.settings, state.routes);
-      controls.routePanel.hidden = !routePanelOpen;
+      controls.routePanel.hidden = !uiPrefs.showRouteControls || !routePanelOpen;
       controls.routePanelToggle.setAttribute("aria-expanded", String(routePanelOpen));
       controls.routePanelCaret.textContent = routePanelOpen ? "\u25b4" : "\u25be";
       controls.activeRouteLabel.textContent = `${PM.I18n.t(locale, "activeRoute")}: ${active.name}`;
@@ -721,11 +760,16 @@
       });
     }
 
-    PM.createPresentationController({
+    PM.presentation = PM.createPresentationController({
       root: document.documentElement,
       button: controls.presentationButton,
       dock: controls.presentationDock,
+      viewModes: controls.presentationViewModes,
       routeList: controls.presentationRoutes,
+      focusCard: controls.presentationFocusCard,
+      focusTitle: controls.presentationFocusTitle,
+      focusBody: controls.presentationFocusBody,
+      progressRail: controls.presentationProgressRail,
       step: controls.presentationStep,
       previousButton: controls.presentationPrev,
       nextButton: controls.presentationNext,
@@ -735,6 +779,7 @@
       fogPanel: controls.presentationFogPanel,
       fogCloseButton: controls.presentationFogClose,
       fogMode: controls.presentationFogMode,
+      fogStyle: controls.presentationFogStyle,
       fogOutside: controls.presentationFogOutside,
       fogFocus: controls.presentationFogFocus,
       fogTrail: controls.presentationFogTrail,
@@ -757,11 +802,12 @@
       controls.imageLoadLabel.querySelector("span").textContent = PM.I18n.t(locale, "loadMap");
       controls.projectMenuSummary.textContent = PM.I18n.t(locale, "projectMenu");
       controls.optionsMenuSummary.textContent = PM.I18n.t(locale, "optionsMenu");
-      controls.saveProject.textContent = PM.I18n.t(locale, "saveProject");
-      controls.loadProject.textContent = PM.I18n.t(locale, "loadProject");
+      controls.saveProject.textContent = `\uD83D\uDCBE ${PM.I18n.t(locale, "saveProject")}`;
+      controls.loadProject.textContent = `\uD83D\uDCC2 ${PM.I18n.t(locale, "loadProject")}`;
+      controls.projectExportLabel.textContent = PM.I18n.t(locale, "export");
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
-      controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.helpButton.textContent = `\uD83D\uDEDF ${PM.I18n.t(locale, "help")}`;
       controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
       controls.minimapToggle.textContent = `\uD83D\uDDFA\uFE0F ${PM.I18n.t(locale, "minimap")}`;
       controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
@@ -770,11 +816,14 @@
       controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));
       controls.toolbarRestore.setAttribute("title", PM.I18n.t(locale, "expandMenu"));
-      controls.undo.textContent = PM.I18n.t(locale, "undo");
-      controls.redo.textContent = PM.I18n.t(locale, "redo");
+      controls.undo.textContent = "\u21B6";
+      controls.redo.textContent = "\u21B7";
+      controls.undo.setAttribute("aria-label", PM.I18n.t(locale, "undo"));
+      controls.redo.setAttribute("aria-label", PM.I18n.t(locale, "redo"));
       controls.readerButton.textContent = `\uD83D\uDCD6 ${PM.I18n.t(locale, "reader")}`;
       controls.presentationButton.textContent = PM.I18n.t(locale, "present");
       controls.presentationDock.setAttribute("aria-label", PM.I18n.t(locale, "presentation"));
+      controls.presentationViewModes.setAttribute("aria-label", PM.I18n.t(locale, "presentationView"));
       controls.presentationRoutes.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
       controls.presentationPrev.setAttribute("aria-label", PM.I18n.t(locale, "presentationPrevious"));
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
@@ -783,14 +832,25 @@
       controls.presentationExportPng.textContent = PM.I18n.t(locale, "png");
       controls.presentationExportPng.setAttribute("aria-label", PM.I18n.t(locale, "presentationExportPng"));
       controls.presentationExportPng.setAttribute("title", PM.I18n.t(locale, "presentationExportPng"));
-      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
-      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
-      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
+      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogToggle.setAttribute("title", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentation");
       controls.presentationFogClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.presentationThemeLabel.textContent = PM.I18n.t(locale, "theme");
+      controls.presentationThemePrev.setAttribute("aria-label", PM.I18n.t(locale, "themePrevious"));
+      controls.presentationThemeToggle.textContent = `\uD83C\uDFA8 ${PM.I18n.t(locale, "theme")}`;
+      controls.presentationThemeToggle.setAttribute("aria-label", PM.I18n.t(locale, "themeTooltip"));
+      controls.presentationThemeNext.setAttribute("aria-label", PM.I18n.t(locale, "themeNext"));
+      controls.presentationRevealLabel.textContent = PM.I18n.t(locale, "presentationReveal");
       controls.presentationFogModeLabel.textContent = PM.I18n.t(locale, "presentationFogMode");
       controls.presentationFogMode.options[0].textContent = PM.I18n.t(locale, "presentationFogOff");
       controls.presentationFogMode.options[1].textContent = PM.I18n.t(locale, "presentationFogFocus");
       controls.presentationFogMode.options[2].textContent = PM.I18n.t(locale, "presentationFogAll");
+      controls.presentationFogStyleLabel.textContent = PM.I18n.t(locale, "presentationFogStyle");
+      controls.presentationFogStyle.options[0].textContent = PM.I18n.t(locale, "presentationFogStyleClear");
+      controls.presentationFogStyle.options[1].textContent = PM.I18n.t(locale, "presentationFogStyleSoft");
+      controls.presentationFogStyle.options[2].textContent = PM.I18n.t(locale, "presentationFogStyleGame");
       controls.presentationFogOutsideLabel.textContent = PM.I18n.t(locale, "presentationFogOutside");
       controls.presentationFogFocusLabel.textContent = PM.I18n.t(locale, "presentationFogCurrent");
       controls.presentationFogTrailLabel.textContent = PM.I18n.t(locale, "presentationFogTrail");
@@ -817,7 +877,10 @@
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
       controls.tooltipsPrefLabel.textContent = PM.I18n.t(locale, "tooltipsOption");
-      controls.showChapterControlsPrefLabel.textContent = PM.I18n.t(locale, "chapterControlsOption");
+      controls.wheelZoomPrefLabel.textContent = PM.I18n.t(locale, "wheelZoom");
+      controls.showWheelZoomControlPrefLabel.textContent = PM.I18n.t(locale, "showWheelZoomControlOption");
+      controls.showRouteControlsPrefLabel.textContent = PM.I18n.t(locale, "showRouteControlsOption");
+      controls.showSliderControlsPrefLabel.textContent = PM.I18n.t(locale, "showSliderControlsOption");
       controls.showVisibilityControlsPrefLabel.textContent = PM.I18n.t(locale, "visibilityControlsOption");
       controls.showTypeControlsPrefLabel.textContent = PM.I18n.t(locale, "typeControlsOption");
       controls.showViewControlsPrefLabel.textContent = PM.I18n.t(locale, "viewControlsOption");
@@ -835,10 +898,16 @@
       controls.pointInspectorSave.textContent = PM.I18n.t(locale, "applyChanges");
       controls.pointInspectorDelete.textContent = PM.I18n.t(locale, "deletePoint");
       if (pointInspector && pointInspector.isOpen()) pointInspector.render(false);
-      controls.exportPng.textContent = PM.I18n.t(locale, "png");
-      controls.clearAll.textContent = PM.I18n.t(locale, "clear");
-      controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
-      controls.themeToggle.textContent = `\u25C0 \uD83C\uDFA8 ${PM.I18n.t(locale, "theme")} \u25B6`;
+      controls.exportPng.textContent = `\uD83D\uDDBC\uFE0F ${PM.I18n.t(locale, "png")}`;
+      controls.exportReaderHtml.textContent = `\uD83C\uDF10 ${PM.I18n.t(locale, "saveHtml")}`;
+      controls.printReaderPdf.textContent = `\uD83D\uDCC4 ${PM.I18n.t(locale, "printPdf")}`;
+      controls.clearAll.textContent = `\uD83E\uDDF9 ${PM.I18n.t(locale, "clear")}`;
+      controls.languagePrefLabel.textContent = `\uD83D\uDD20 ${PM.I18n.t(locale, "language")}`;
+      controls.langSelect.value = locale;
+      controls.langSelect.setAttribute("aria-label", PM.I18n.t(locale, "language"));
+      controls.themeToggle.textContent = `\uD83C\uDFA8 ${PM.I18n.t(locale, "theme")}`;
+      controls.themePrev.setAttribute("aria-label", PM.I18n.t(locale, "themePrevious"));
+      controls.themeNext.setAttribute("aria-label", PM.I18n.t(locale, "themeNext"));
       const labelMap = {
         "filter-route": "route",
         "filter-place": "place",
@@ -851,7 +920,6 @@
         showNotes: "notesToggle",
         showDuration: "durationToggle",
         showEdit: "editToggle",
-        chapterMode: "chapterStart",
         wheelZoomControl: "wheelZoom"
       };
       Object.entries(labelMap).forEach(([id, key]) => {
@@ -875,6 +943,7 @@
         input.setAttribute("aria-label", title);
         input.parentElement.setAttribute("title", title);
       });
+      controls.emptyTitle.textContent = PM.I18n.t(locale, "emptyTitle");
       controls.emptySub.textContent = PM.I18n.t(locale, "empty");
       controls.emptyStep1.textContent = PM.I18n.t(locale, "emptyStep1");
       controls.emptyStep2.textContent = PM.I18n.t(locale, "emptyStep2");
@@ -910,6 +979,8 @@
         [controls.saveProject, "saveProjectTooltip"],
         [controls.loadProject, "loadProjectTooltip"],
         [controls.exportPng, "exportPngTooltip"],
+        [controls.exportReaderHtml, "exportHtmlTooltip"],
+        [controls.printReaderPdf, "printPdfTooltip"],
         [controls.clearAll, "clearTooltip"],
         [controls.undo, "undoTooltip"],
         [controls.redo, "redoTooltip"],
@@ -919,8 +990,13 @@
         [controls.presentationButton, "presentationTooltip"],
         [controls.optionsMenuSummary, "optionsMenuTooltip"],
         [controls.helpButton, "helpTooltip"],
-        [controls.langToggle, "languageTooltip"],
+        [controls.langSelect, "languageTooltip"],
+        [controls.themePrev, "themeTooltip"],
         [controls.themeToggle, "themeTooltip"],
+        [controls.themeNext, "themeTooltip"],
+        [controls.presentationThemePrev, "themeTooltip"],
+        [controls.presentationThemeToggle, "themeTooltip"],
+        [controls.presentationThemeNext, "themeTooltip"],
         [controls.toolbarCollapse, "collapseMenu"],
         [controls.sliderPanelToggle, "displaySlidersTooltip"]
       ];
@@ -943,8 +1019,6 @@
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
       const route = PM.getActiveRoute(state.settings, state.routes);
-      controls.chapterMode.checked = route.showNumbers !== false;
-      controls.chapterStart.value = String(route.startNumber);
       controls.zoom.value = String(state.settings.zoom);
       controls.opacity.value = String(state.settings.opacity);
       controls.pointSize.value = String(state.settings.pointSizePx);
@@ -979,6 +1053,13 @@
       event.preventDefault();
       controls.imageInput.click();
     });
+    controls.projectMenu.addEventListener("toggle", () => {
+      if (controls.projectMenu.open) controls.optionsMenu.open = false;
+    });
+    controls.optionsMenu.addEventListener("toggle", () => {
+      if (controls.optionsMenu.open) controls.projectMenu.open = false;
+    });
+    document.addEventListener("pointerdown", closeOpenToolbarMenus, true);
 
     controls.saveProject.addEventListener("click", () => {
       const project = store.getState();
@@ -1003,6 +1084,8 @@
     });
 
     controls.exportPng.addEventListener("click", exportCurrentPng);
+    controls.exportReaderHtml.addEventListener("click", () => reader.exportHtml());
+    controls.printReaderPdf.addEventListener("click", () => reader.printPdf());
     controls.presentationExportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
@@ -1013,12 +1096,32 @@
     controls.readerButton.addEventListener("click", () => reader.open());
     controls.finderButton.addEventListener("click", () => openFinder(""));
     controls.presentationButton.addEventListener("click", () => finder.close());
-    controls.langToggle.addEventListener("click", () => {
-      const next = store.getLiveState().settings.locale === "en" ? "de" : "en";
+    controls.langSelect.addEventListener("change", () => {
+      const next = PM.I18n.normalizeLocale(controls.langSelect.value);
       store.setSettings({ locale: next });
       history.replaceState(null, "", `?lang=${next}`);
     });
+    controls.themePrev.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.previousTheme(current) });
+    });
     controls.themeToggle.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.themeNext.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.presentationThemePrev.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.previousTheme(current) });
+    });
+    controls.presentationThemeToggle.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.presentationThemeNext.addEventListener("click", () => {
       const current = store.getLiveState().settings.theme;
       store.setSettings({ theme: PM.Theme.nextTheme(current) });
     });
@@ -1068,12 +1171,12 @@
       input.addEventListener("change", () => persistUiPrefs({ [key]: input.checked }));
     }
     bindUiPrefCheckbox(controls.tooltipsPref, "tooltipsEnabled");
-    bindUiPrefCheckbox(controls.showChapterControlsPref, "showChapterControls");
+    bindUiPrefCheckbox(controls.showWheelZoomControlPref, "showWheelZoomControl");
+    bindUiPrefCheckbox(controls.showRouteControlsPref, "showRouteControls");
+    controls.showSliderControlsPref.addEventListener("change", () => persistUiPrefs({ sliderPanelCollapsed: !controls.showSliderControlsPref.checked }));
     bindUiPrefCheckbox(controls.showVisibilityControlsPref, "showVisibilityControls");
     bindUiPrefCheckbox(controls.showTypeControlsPref, "showTypeControls");
     bindUiPrefCheckbox(controls.showViewControlsPref, "showViewControls");
-    controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
-    controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
     controls.routePanelToggle.addEventListener("click", () => {
       routePanelOpen = !routePanelOpen;
       renderRoutePanel(store.getState());
@@ -1088,6 +1191,7 @@
     controls.helperPointSize.addEventListener("input", () => store.setSettings({ helperPointSizePx: controls.helperPointSize.value }));
     controls.toolbarOpacity.addEventListener("input", () => persistUiPrefs({ toolbarOpacity: controls.toolbarOpacity.value }));
     controls.wheelZoom.addEventListener("change", () => persistUiPrefs({ wheelZoomEnabled: controls.wheelZoom.checked }));
+    controls.wheelZoomMenuControl.addEventListener("change", () => persistUiPrefs({ wheelZoomEnabled: controls.wheelZoomMenuControl.checked }));
     controls.fontScale.addEventListener("input", () => store.setSettings({ fontScale: controls.fontScale.value }));
     Object.entries(controls.filters).forEach(([type, input]) => {
       input.addEventListener("change", () => store.setFilter(type, input.checked));

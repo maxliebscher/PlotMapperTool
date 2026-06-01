@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-06-01
+### Added
+- Local onboarding/toolbar mockup variant for the v1.3.0 first-start review.
+- Project-menu HTML and PDF exports next to PNG, without requiring a detour through the Reader modal.
+- Options-menu wheel zoom setting plus an optional preference for showing the wheel-zoom toggle in the main toolbar.
+- Options-menu preference for showing or hiding the route settings row.
+- Minimap route visibility toggle for hiding dense route overlays locally in the overview.
+- Presentation view modes A/B/C/D for full labels, focus card, progress rail, and compact map-first presenting, with compact active-mode labels.
+- Presentation fog settings now include the same theme switcher as the main options menu.
+- Presentation visibility settings now use Presentation/Sichtfeld labels, include Clear/Soft/Guide edge styles, and start with compact guide-path defaults.
+- Local Fog-edge smoothing demo comparing hard, blurred, and two-pass reveal masks.
+- Options-menu slider visibility checkbox and language dropdown groundwork for future locales.
+- Browser smoke coverage for project-menu HTML export and left/right theme switching.
+- Local Farbwähler-Aktionsdemo with three confirmation layout variants.
+
+### Changed
+- First-start empty note now distinguishes new maps from continuing saved projects.
+- The display slider collapse control now sits on the Views row, keeping it closer to the sliders while avoiding a new toolbar row.
+- German project action label changed from "Laden" to "Karte laden".
+- Undo/redo buttons keep compact arrow icons while retaining localized aria labels and tooltips.
+- Project menu entries now carry lightweight action icons, with the destructive clear action separated and red-tinted.
+- Toolbar keeps the main action row together on desktop-sized viewports and only wraps once space is genuinely tight.
+- Route color OK/Cancel actions are larger and more legible, with a flatter primary OK style.
+- Main toolbar no longer duplicates route numbering with a global chapter-numbering checkbox/start field.
+- Active route numbering stays controlled by per-route number/start controls in the route settings.
+- Deep theme button outlines are slightly clearer while keeping the restrained dark-blue look.
+- Presentation mode can reduce label noise or add a current-step focus card depending on the selected view.
+- Focus Fog reveal edges now use a two-pass mask for smoother transitions while keeping the visible route core clear.
+- Version bumped to `1.3.0`.
+
+### Fixed
+- Theme controls now use dedicated previous/next buttons, including narrow viewport positioning so both arrows remain clickable.
+- Project and Options popovers are more opaque for better readability over the toolbar.
+- Open Project/Options menus now close when clicking outside them.
+
 ## [1.2.0] - 2026-05-20
 ### Added
 - Optional multi-route groundwork with a collapsible route management panel.

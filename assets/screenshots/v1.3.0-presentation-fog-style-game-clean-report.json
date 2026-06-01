@@ -1,0 +1,20 @@
+{
+  "appUrl": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/PlotMapper_v1.3.0-onboarding-ui.html",
+  "metrics": {
+    "fog": {
+      "mode": "focus",
+      "outsideVisibility": 0.22,
+      "trailRadius": 0.07,
+      "focusRadius": 0.18,
+      "edgeSoftness": 0.06,
+      "edgeStyle": "game",
+      "trailMemory": true
+    },
+    "styleText": "Game",
+    "points": 151
+  },
+  "consoleItems": [],
+  "shots": {
+    "gameShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-fog-style-game-clean.png"
+  }
+}

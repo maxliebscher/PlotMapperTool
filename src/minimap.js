@@ -11,6 +11,7 @@
     const raw = input || {};
     return {
       mode: ["auto", "pin", "off"].includes(raw.mode) ? raw.mode : "auto",
+      showRoutes: raw.showRoutes !== false,
       width: clampNumber(raw.width, 270, 190, 420),
       x: raw.x === null || raw.x === undefined ? null : clampNumber(raw.x, 0, 0, innerWidth),
       y: raw.y === null || raw.y === undefined ? null : clampNumber(raw.y, 0, 0, innerHeight)
@@ -52,6 +53,7 @@
     const resizeHandle = options.resizeHandle;
     const autoButton = options.autoButton;
     const pinButton = options.pinButton;
+    const routesButton = options.routesButton;
     const closeButton = options.closeButton;
     const toggleButton = options.toggleButton;
     const store = options.store;
@@ -111,6 +113,7 @@
 
     function drawRoutes(state) {
       svg.textContent = "";
+      if (!prefs.showRoutes) return;
       const visibleRoutes = state.routes.filter((route) => route.visible);
       visibleRoutes.forEach((route) => {
         const points = state.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, state.settings, state.routes));
@@ -149,9 +152,13 @@
           : PM.I18n.t(locale, "minimapOff");
       autoButton.textContent = PM.I18n.t(locale, "minimapAutoShort");
       pinButton.textContent = PM.I18n.t(locale, "minimapPinShort");
+      routesButton.textContent = PM.I18n.t(locale, "minimapRoutesShort");
       closeButton.textContent = "x";
       autoButton.setAttribute("title", PM.I18n.t(locale, "minimapAuto"));
       pinButton.setAttribute("title", PM.I18n.t(locale, "minimapPinned"));
+      routesButton.setAttribute("title", PM.I18n.t(locale, prefs.showRoutes ? "minimapRoutesHide" : "minimapRoutesShow"));
+      routesButton.setAttribute("aria-label", PM.I18n.t(locale, prefs.showRoutes ? "minimapRoutesHide" : "minimapRoutesShow"));
+      routesButton.setAttribute("aria-pressed", String(prefs.showRoutes));
       closeButton.setAttribute("title", PM.I18n.t(locale, "close"));
       resizeHandle.setAttribute("aria-label", PM.I18n.t(locale, "minimapResize"));
       canvas.setAttribute("aria-label", PM.I18n.t(locale, "minimapJump"));
@@ -169,6 +176,7 @@
       updateLabels(state);
       autoButton.classList.toggle("is-active", prefs.mode === "auto");
       pinButton.classList.toggle("is-active", prefs.mode === "pin");
+      routesButton.classList.toggle("is-active", prefs.showRoutes);
       const hasMap = Boolean(state.map.dataUrl) && renderer.hasImage();
       const shouldShow = hasMap && (prefs.mode === "pin" || (prefs.mode === "auto" && state.settings.zoom >= 1.3));
       panel.hidden = !shouldShow;
@@ -284,6 +292,7 @@
     });
     autoButton.addEventListener("click", () => persist({ mode: "auto" }));
     pinButton.addEventListener("click", () => persist({ mode: "pin" }));
+    routesButton.addEventListener("click", () => persist({ showRoutes: !prefs.showRoutes }));
     closeButton.addEventListener("click", () => persist({ mode: "off" }));
     if (toggleButton) {
       toggleButton.addEventListener("click", () => {

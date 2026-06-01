@@ -273,33 +273,62 @@
       const scale = Math.max(1, Math.min(rect.w, rect.h));
       const trailWidth = Math.max(16, fogSettings.trailRadius * scale * (fogSettings.trailMemory ? 0.72 : 1));
       const focusRadius = Math.max(28, fogSettings.focusRadius * scale);
-      const edgeBlur = Math.max(2, fogSettings.edgeSoftness * scale);
+      const edgeBlur = PM.clamp(fogSettings.edgeSoftness * scale, 3, 56);
+      const mask = document.createElement("canvas");
+      mask.width = targetCtx.canvas.width;
+      mask.height = targetCtx.canvas.height;
+      const maskCtx = mask.getContext("2d");
+      function traceReveal(width, radius) {
+        maskCtx.lineCap = "round";
+        maskCtx.lineJoin = "round";
+        maskCtx.strokeStyle = "#000";
+        maskCtx.fillStyle = "#000";
+        maskCtx.lineWidth = width;
+        if (routePoints.length) {
+          maskCtx.beginPath();
+          routePoints.forEach((point, index) => {
+            const px = rect.x + point.x * rect.w;
+            const py = rect.y + point.y * rect.h;
+            if (index) maskCtx.lineTo(px, py);
+            else maskCtx.moveTo(px, py);
+          });
+          maskCtx.stroke();
+        }
+        if (currentPoint) {
+          const px = rect.x + currentPoint.x * rect.w;
+          const py = rect.y + currentPoint.y * rect.h;
+          maskCtx.beginPath();
+          maskCtx.arc(px, py, radius, 0, Math.PI * 2);
+          maskCtx.fill();
+        }
+      }
+      maskCtx.save();
+      if (fogSettings.edgeStyle === "game") {
+        maskCtx.filter = `blur(${edgeBlur * 1.15}px)`;
+        maskCtx.globalAlpha = 0.96;
+        traceReveal(trailWidth + edgeBlur * 1.95, focusRadius + edgeBlur * 0.9);
+        maskCtx.restore();
+      } else if (fogSettings.edgeStyle === "clear") {
+        maskCtx.filter = `blur(${edgeBlur * 0.62}px)`;
+        maskCtx.globalAlpha = 0.62;
+        traceReveal(trailWidth + edgeBlur * 0.92, focusRadius + edgeBlur * 0.36);
+        maskCtx.restore();
+        traceReveal(trailWidth, focusRadius);
+      } else {
+        maskCtx.filter = `blur(${edgeBlur * 1.25}px)`;
+        maskCtx.globalAlpha = 0.38;
+        traceReveal(trailWidth + edgeBlur * 2.35, focusRadius + edgeBlur * 1.08);
+        maskCtx.restore();
+        maskCtx.save();
+        maskCtx.filter = `blur(${edgeBlur * 0.58}px)`;
+        maskCtx.globalAlpha = 0.58;
+        traceReveal(trailWidth + edgeBlur * 1.08, focusRadius + edgeBlur * 0.48);
+        maskCtx.restore();
+        traceReveal(trailWidth, focusRadius);
+      }
       targetCtx.save();
       targetCtx.globalCompositeOperation = "destination-out";
-      targetCtx.shadowColor = "#000";
-      targetCtx.shadowBlur = edgeBlur;
-      targetCtx.lineCap = "round";
-      targetCtx.lineJoin = "round";
-      targetCtx.strokeStyle = "#000";
-      targetCtx.fillStyle = "#000";
-      if (routePoints.length) {
-        targetCtx.lineWidth = trailWidth;
-        targetCtx.beginPath();
-        routePoints.forEach((point, index) => {
-          const px = rect.x + point.x * rect.w;
-          const py = rect.y + point.y * rect.h;
-          if (index) targetCtx.lineTo(px, py);
-          else targetCtx.moveTo(px, py);
-        });
-        targetCtx.stroke();
-      }
-      if (currentPoint) {
-        const px = rect.x + currentPoint.x * rect.w;
-        const py = rect.y + currentPoint.y * rect.h;
-        targetCtx.beginPath();
-        targetCtx.arc(px, py, focusRadius, 0, Math.PI * 2);
-        targetCtx.fill();
-      }
+      targetCtx.drawImage(mask, 0, 0);
       targetCtx.restore();
     }
 

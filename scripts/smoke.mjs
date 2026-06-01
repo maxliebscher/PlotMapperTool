@@ -169,11 +169,25 @@ async function exerciseMinimap(page) {
   await page.waitForFunction(() => document.querySelector("#minimapAuto")?.classList.contains("is-active"), null, { timeout: 5000 });
 
   const closeOffset = await page.evaluate(() => {
-    const pin = document.querySelector("#minimapPin").getBoundingClientRect();
+    const routes = document.querySelector("#minimapRoutes").getBoundingClientRect();
     const close = document.querySelector("#minimapClose").getBoundingClientRect();
-    return close.left - pin.right;
+    return close.left - routes.right;
   });
   assert(closeOffset >= 8, `Minimap close action should be separated from mode buttons, got ${closeOffset}px.`);
+  await page.waitForFunction(() => document.querySelector("#minimapRoutes")?.classList.contains("is-active"), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length > 0, null, { timeout: 5000 });
+  await page.click("#minimapRoutes");
+  await page.waitForFunction(() => {
+    return !document.querySelector("#minimapRoutes")?.classList.contains("is-active")
+      && document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length === 0
+      && PM.minimap.getPrefs().showRoutes === false;
+  }, null, { timeout: 5000 });
+  await page.click("#minimapRoutes");
+  await page.waitForFunction(() => {
+    return document.querySelector("#minimapRoutes")?.classList.contains("is-active")
+      && document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length > 0
+      && PM.minimap.getPrefs().showRoutes === true;
+  }, null, { timeout: 5000 });
 
   const beforeDrag = await page.locator("#minimapPanel").boundingBox();
   const dragHandle = await page.locator("#minimapDrag").boundingBox();
@@ -236,12 +250,22 @@ async function exerciseWheelZoom(page) {
   await page.waitForTimeout(80);
   const disabledZoom = await page.evaluate(() => PM.store.getLiveState().settings.zoom);
   assert(disabledZoom === 1, `Wheel zoom should be opt-in, got zoom ${disabledZoom}.`);
-  await setCheckbox(page, "#wheelZoomControl", true);
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#wheelZoomMenuControl", true);
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("pmUiPrefsV1") || "{}").wheelZoomEnabled === true, null, { timeout: 5000 });
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
   await page.mouse.move(point.x, point.y);
   await page.mouse.wheel(0, -500);
   await page.waitForFunction(() => PM.store.getLiveState().settings.zoom > 1, null, { timeout: 5000 });
-  await setCheckbox(page, "#wheelZoomControl", false);
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#wheelZoomMenuControl", false);
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
 }
 
 async function openDetails(page, selector) {
@@ -249,6 +273,27 @@ async function openDetails(page, selector) {
     const details = document.querySelector(detailsSelector);
     if (details) details.open = true;
   }, selector);
+}
+
+async function exerciseToolbarMenus(page) {
+  await openDetails(page, "#projectMenu");
+  await page.waitForFunction(() => document.querySelector("#projectMenu")?.open === true, null, { timeout: 5000 });
+  const viewport = page.viewportSize() || { width: 1280, height: 720 };
+  await page.mouse.click(Math.max(10, viewport.width - 24), Math.max(10, viewport.height - 24));
+  await page.waitForFunction(() => document.querySelector("#projectMenu")?.open === false, null, { timeout: 5000 });
+
+  await openDetails(page, "#optionsMenu");
+  await page.waitForFunction(() => document.querySelector("#optionsMenu")?.open === true, null, { timeout: 5000 });
+  await page.mouse.click(Math.max(10, viewport.width - 24), Math.max(10, viewport.height - 24));
+  await page.waitForFunction(() => document.querySelector("#optionsMenu")?.open === false, null, { timeout: 5000 });
+
+  if (viewport.width >= 1000) {
+    await page.waitForFunction(() => {
+      const project = document.querySelector("#projectMenuSummary")?.getBoundingClientRect();
+      const collapse = document.querySelector("#toolbarCollapse")?.getBoundingClientRect();
+      return project && collapse && Math.abs(project.top - collapse.top) <= 6;
+    }, null, { timeout: 5000 });
+  }
 }
 
 async function addRoutePoint(page) {
@@ -307,6 +352,17 @@ async function exerciseRouteManagement(page) {
   await setInputValue(page, `${activeRow} .route-name-input`, "Smoke Route");
   await page.locator(`${activeRow} .route-color-button`).click();
   await page.waitForSelector("#routeColorPopover:not([hidden])");
+  await page.waitForFunction(() => {
+    const ok = document.querySelector("#routeColorOk");
+    const cancel = document.querySelector("#routeColorCancel");
+    if (!ok || !cancel) return false;
+    const okStyle = getComputedStyle(ok);
+    const cancelStyle = getComputedStyle(cancel);
+    return ok.textContent.trim().match(/^OK$/)
+      && cancel.textContent.trim().match(/Cancel|Abbrechen/)
+      && ok.getBoundingClientRect().height >= 34
+      && okStyle.backgroundColor !== cancelStyle.backgroundColor;
+  }, null, { timeout: 5000 });
   await setInputValueLiveOnly(page, "#routeColorPicker", "#8844cc");
   await page.click("#routeColorCancel");
   await page.waitForSelector("#routeColorPopover", { state: "hidden" });
@@ -609,8 +665,46 @@ async function insertMidpointAndUndoRedo(page) {
 async function toggleControls(page) {
   const initialTheme = await page.evaluate(() => document.documentElement.dataset.theme);
   await openDetails(page, "#optionsMenu");
-  await page.click("#themeToggle");
+  async function activateThemeButton(selector) {
+    await page.evaluate((id) => {
+      const button = document.querySelector(id);
+      const rect = button.getBoundingClientRect();
+      if (rect.right < 0 || rect.left > innerWidth || rect.bottom < 0 || rect.top > innerHeight) {
+        const popover = document.querySelector(".options-menu .toolbar-menu-popover")?.getBoundingClientRect();
+        const toolbar = document.querySelector("#toolbar")?.getBoundingClientRect();
+        throw new Error(`${id} outside viewport: ${JSON.stringify({
+          rect: rect.toJSON ? rect.toJSON() : rect,
+          popover: popover && (popover.toJSON ? popover.toJSON() : popover),
+          toolbar: toolbar && (toolbar.toJSON ? toolbar.toJSON() : toolbar),
+          theme: document.documentElement.dataset.theme,
+          open: document.querySelector("#optionsMenu")?.open,
+          innerWidth,
+          innerHeight,
+          scrollX,
+          scrollY
+        })}`);
+      }
+      button.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2
+      }));
+    }, selector);
+  }
+  await activateThemeButton("#themeNext");
   await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  const nextTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+  await activateThemeButton("#themePrev");
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme === theme, initialTheme, { timeout: 5000 });
+  await activateThemeButton("#themePrev");
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, nextTheme, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("en");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "en" && document.documentElement.lang === "en", null, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("de");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "de" && document.documentElement.lang === "de", null, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("en");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "en" && document.documentElement.lang === "en", null, { timeout: 5000 });
   await page.evaluate(() => {
     const details = document.querySelector("#optionsMenu");
     if (details) details.open = false;
@@ -662,6 +756,17 @@ async function toggleControls(page) {
   await page.click("#sliderPanelToggle");
   await page.waitForSelector("#sliderPanel:not([hidden])");
   await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showSliderControlsPref", false);
+  await page.waitForSelector("#sliderPanel", { state: "hidden" });
+  await setCheckbox(page, "#showSliderControlsPref", true);
+  await page.waitForSelector("#sliderPanel:not([hidden])");
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showRouteControlsPref", false);
+  await page.waitForSelector(".route-controls", { state: "hidden" });
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+  await setCheckbox(page, "#showRouteControlsPref", true);
+  await page.waitForSelector(".route-controls:not([hidden])");
+  await openDetails(page, "#optionsMenu");
   await setCheckbox(page, "#showVisibilityControlsPref", false);
   await page.waitForSelector(".toggles", { state: "hidden" });
   await setCheckbox(page, "#showVisibilityControlsPref", true);
@@ -704,9 +809,36 @@ async function exercisePresentation(page) {
   await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
   await page.waitForSelector("#presentationDock:not([hidden])");
   await page.waitForSelector(".presentation-route-pill");
+  await page.waitForFunction(() => document.querySelector(".presentation-view-mode.is-active")?.textContent?.trim().length > 1, null, { timeout: 5000 });
   assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide in presentation mode.");
   const routePills = await page.locator(".presentation-route-pill").count();
   assert(routePills >= 1, "Presentation should expose at least one route progress pill.");
+  await page.locator(".presentation-view-mode[data-view='b']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "b"
+      && !document.querySelector("#presentationFocusCard").hidden
+      && document.querySelector("#presentationFocusTitle")?.textContent?.trim().length > 0
+      && PM.presentation.getViewMode() === "b";
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='c']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "c"
+      && !document.querySelector("#presentationProgressRail").hidden
+      && document.querySelectorAll(".presentation-rail-step").length >= 1
+      && document.querySelector(".presentation-view-mode.is-active")?.textContent?.trim().includes(" ");
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='d']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "d"
+      && getComputedStyle(document.querySelector("#presentationRoutes")).display === "none";
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='a']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "a"
+      && document.querySelector("#presentationFocusCard").hidden
+      && document.querySelector("#presentationProgressRail").hidden
+      && PM.presentation.getViewMode() === "a";
+  }, null, { timeout: 5000 });
   if (routePills > 1) {
     const secondRouteId = await page.locator(".presentation-route-pill").nth(1).evaluate((button) => button.textContent);
     await page.locator(".presentation-route-pill").nth(1).click();
@@ -716,6 +848,11 @@ async function exercisePresentation(page) {
   const fogPixel = await canvasPixel(page, 0.5, 0.5);
   await page.click("#presentationFogToggle");
   await page.waitForSelector("#presentationFogPanel:not([hidden])");
+  const themeBefore = await page.evaluate(() => PM.store.getLiveState().settings.theme);
+  await page.click("#presentationThemeNext");
+  await page.waitForFunction((previous) => PM.store.getLiveState().settings.theme !== previous, themeBefore, { timeout: 5000 });
+  await page.click("#presentationThemePrev");
+  await page.waitForFunction((previous) => PM.store.getLiveState().settings.theme === previous, themeBefore, { timeout: 5000 });
   await page.selectOption("#presentationFogMode", "off");
   await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "off", null, { timeout: 5000 });
   const clearPixel = await canvasPixel(page, 0.5, 0.5);
@@ -723,6 +860,7 @@ async function exercisePresentation(page) {
   await page.selectOption("#presentationFogMode", "all");
   await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "all", null, { timeout: 5000 });
   await page.selectOption("#presentationFogMode", "focus");
+  await page.selectOption("#presentationFogStyle", "game");
   await setInputValue(page, "#presentationFogOutside", "0.12");
   await setInputValue(page, "#presentationFogFocus", "0.22");
   await setInputValue(page, "#presentationFogTrail", "0.05");
@@ -730,7 +868,7 @@ async function exercisePresentation(page) {
   await setCheckbox(page, "#presentationFogMemory", false);
   await page.waitForFunction(() => {
     const fog = PM.getPresentationFogSettings();
-    return fog.mode === "focus" && fog.outsideVisibility === 0.12 && fog.focusRadius === 0.22 && fog.trailRadius === 0.05 && fog.edgeSoftness === 0.08 && fog.trailMemory === false;
+    return fog.mode === "focus" && fog.edgeStyle === "game" && fog.outsideVisibility === 0.12 && fog.focusRadius === 0.22 && fog.trailRadius === 0.05 && fog.edgeSoftness === 0.08 && fog.trailMemory === false;
   }, null, { timeout: 5000 });
   await page.click("#presentationFogClose");
   await page.waitForSelector("#presentationFogPanel", { state: "hidden" });
@@ -846,6 +984,10 @@ async function exerciseDownloads(page) {
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".png")), null, { timeout: 5000 });
 
   await openDetails(page, "#projectMenu");
+  await page.click("#exportReaderHtml");
+  await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".html")), null, { timeout: 5000 });
+
+  await openDetails(page, "#projectMenu");
   await page.click("#saveProject");
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".plotmap.json")), null, { timeout: 5000 });
 }
@@ -866,6 +1008,7 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.click("#pmSplash");
   await loadProject(page, fixturePath);
+  await exerciseToolbarMenus(page);
   await exerciseMinimap(page);
   await exerciseWheelZoom(page);
   await exerciseCommandPalette(page);

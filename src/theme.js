@@ -16,6 +16,12 @@
     return PM.THEMES[(index + 1) % PM.THEMES.length] || PM.THEMES[0];
   }
 
+  function previousTheme(current) {
+    const index = PM.THEMES.indexOf(current);
+    const safeIndex = index < 0 ? 0 : index;
+    return PM.THEMES[(safeIndex - 1 + PM.THEMES.length) % PM.THEMES.length] || PM.THEMES[0];
+  }
+
   function savedTheme() {
     try {
       return localStorage.getItem("pmTheme") || "";
@@ -27,6 +33,7 @@
   PM.Theme = {
     applyTheme,
     nextTheme,
+    previousTheme,
     savedTheme
   };
 })(globalThis.PM);

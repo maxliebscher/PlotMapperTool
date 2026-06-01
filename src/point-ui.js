@@ -83,6 +83,7 @@
       element.classList.toggle("event", point.type === "event");
       element.classList.toggle("item", point.type === "item");
       element.classList.toggle("is-finder-preview", point.id === previewId);
+      element.classList.toggle("is-presentation-current", Boolean(revealInfo && revealInfo.active && revealInfo.routeReveals && revealInfo.routeReveals.some((entry) => entry.currentPoint && entry.currentPoint.id === point.id)));
       const screen = renderer.mapToClient(point.x, point.y);
       element.style.left = `${screen.x}px`;
       element.style.top = `${screen.y}px`;

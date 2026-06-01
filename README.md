@@ -85,10 +85,10 @@ PlotMapper helps writers, gamemasters, worldbuilders, teachers, and map-heavy pl
 - Draw one or more route lines with adjustable color, width, line style, numbering, visibility, and arrows.
 - Use helper points to shape paths or branch without changing route numbering.
 - Edit labels, locations, notes, duration, helper state, type, and deletion from the point menu.
-- Toggle filters, labels, locations, notes, duration, edit buttons, chapter numbering, and focus mode.
+- Toggle filters, labels, locations, notes, duration, edit buttons, route settings, and focus mode.
 - Keep multi-route controls collapsed until you need to manage alternate paths.
 - Tune point size, helper point size, map opacity, font size, and menu opacity without leaving the main toolbar.
-- Present visible routes step by step with independent route progress, keyboard navigation, and configurable Focus Fog.
+- Present visible routes step by step with independent route progress, four compact view modes, keyboard navigation, and configurable Focus Fog.
 - Undo/redo point and editing changes.
 - Switch themes and language between English and German.
 - Save/load projects as versioned `.plotmap.json` files.
@@ -103,7 +103,7 @@ The canonical app format is `.plotmap.json`. It stores the map image, settings, 
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.2.0",
+  "appVersion": "1.3.0",
   "map": {},
   "settings": {},
   "routes": [],
@@ -150,10 +150,10 @@ PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrende
 - Eine oder mehrere Routenlinien mit einstellbarer Farbe, Stärke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
 - Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
 - Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
-- Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Kapitel-Nummerierung und Fokus-Modus umschalten.
+- Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Pfad-Einstellungen und Fokus-Modus umschalten.
 - Multi-Routen-Steuerung eingeklappt lassen, bis alternative Pfade verwaltet werden sollen.
 - Punktgröße, Hilfspunktgröße, Karten-Deckkraft, Schriftgröße und Menüdeckkraft direkt im Hauptmenü einstellen.
-- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive Tastatursteuerung und konfigurierbarem Focus Fog.
+- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive vier kompakter Ansichtsmodi, Tastatursteuerung und konfigurierbarem Focus Fog.
 - Undo/Redo für Punkt- und Bearbeitungsschritte.
 - Themes und Sprache live zwischen Deutsch und Englisch wechseln.
 - Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
@@ -168,7 +168,7 @@ Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstell
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.2.0",
+  "appVersion": "1.3.0",
   "map": {},
   "settings": {},
   "routes": [],

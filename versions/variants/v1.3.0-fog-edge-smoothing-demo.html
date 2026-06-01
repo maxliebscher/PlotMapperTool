@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlotMapper Fog Edge Varianten</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #171b1d;
+      --panel: #22292b;
+      --border: #59706c;
+      --text: #f3f0e7;
+      --muted: #b7c5be;
+      --accent: #2fc59d;
+      --route: #0fbfa6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 22px;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      max-width: 1280px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    input { accent-color: var(--accent); }
+
+    .grid {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    figure {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #243130;
+    }
+
+    figcaption {
+      display: grid;
+      gap: 2px;
+      padding: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    strong { font-size: 13px; }
+    span { color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 860px) {
+      header { align-items: start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Fog-of-war: Kantenvergleich</h1>
+      <p>C ist der bisherige Stand. D staffelt mehrere Masken und wirkt dadurch weicher, ohne die Mitte zu verlieren.</p>
+    </div>
+    <label>Kantenweichheit <input id="softness" type="range" min="2" max="42" value="22"></label>
+  </header>
+  <main class="grid">
+    <figure>
+      <canvas id="hard"></canvas>
+      <figcaption><strong>A Hart</strong><span>Geringste Kosten, aber sichtbarer Schnitt.</span></figcaption>
+    </figure>
+    <figure>
+      <canvas id="blur"></canvas>
+      <figcaption><strong>B Nur Blur</strong><span>Sanfter, kann aber den Kern verwaschen.</span></figcaption>
+    </figure>
+    <figure>
+      <canvas id="two"></canvas>
+      <figcaption><strong>C Zwei-Pass</strong><span>Bisheriger App-Stand: weich plus klarer Kern.</span></figcaption>
+    </figure>
+    <figure>
+      <canvas id="feather"></canvas>
+      <figcaption><strong>D Feather</strong><span>Mehrere Alpha-Stufen; sanfterer Übergang, Kern bleibt lesbar.</span></figcaption>
+    </figure>
+  </main>
+  <script>
+    const path = [[0.16, 0.78], [0.28, 0.62], [0.42, 0.68], [0.54, 0.45], [0.68, 0.34], [0.82, 0.2]];
+    const canvases = ["hard", "blur", "two", "feather"].map((id) => document.getElementById(id));
+    const softness = document.getElementById("softness");
+
+    function setup(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * devicePixelRatio);
+      canvas.height = Math.round(rect.height * devicePixelRatio);
+      return canvas.getContext("2d");
+    }
+
+    function drawMap(ctx, w, h) {
+      ctx.fillStyle = "#b6d2bb";
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 22; i += 1) {
+        ctx.strokeStyle = i % 2 ? "#7a9886" : "#d58e7d";
+        ctx.lineWidth = 2 * devicePixelRatio;
+        ctx.beginPath();
+        ctx.moveTo((i * 29 % 100) / 100 * w, 0);
+        ctx.bezierCurveTo(0.2 * w, (i * 37 % 100) / 100 * h, 0.8 * w, (i * 19 % 100) / 100 * h, w, ((i * 13 + 20) % 100) / 100 * h);
+        ctx.stroke();
+      }
+      path.forEach(([x, y], index) => {
+        ctx.fillStyle = index === 3 ? "#f4f1e9" : getComputedStyle(document.documentElement).getPropertyValue("--route").trim();
+        ctx.strokeStyle = "#0c1c1a";
+        ctx.lineWidth = 3 * devicePixelRatio;
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, 13 * devicePixelRatio, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+    }
+
+    function trace(ctx, w, h, width, radius) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#000";
+      ctx.fillStyle = "#000";
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      path.forEach(([x, y], index) => index ? ctx.lineTo(x * w, y * h) : ctx.moveTo(x * w, y * h));
+      ctx.stroke();
+      const [fx, fy] = path[3];
+      ctx.beginPath();
+      ctx.arc(fx * w, fy * h, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function draw(canvas, mode) {
+      const ctx = setup(canvas);
+      const { width: w, height: h } = canvas;
+      drawMap(ctx, w, h);
+      const overlay = document.createElement("canvas");
+      overlay.width = w;
+      overlay.height = h;
+      const o = overlay.getContext("2d");
+      o.drawImage(canvas, 0, 0);
+      o.filter = "grayscale(1) brightness(.58)";
+      o.drawImage(canvas, 0, 0);
+      o.filter = "none";
+      o.fillStyle = "rgba(0, 0, 0, .58)";
+      o.fillRect(0, 0, w, h);
+      o.globalCompositeOperation = "destination-out";
+      if (mode === "hard") {
+        trace(o, w, h, 44 * devicePixelRatio, 74 * devicePixelRatio);
+      } else {
+        const mask = document.createElement("canvas");
+        mask.width = w;
+        mask.height = h;
+        const m = mask.getContext("2d");
+        const soft = Number(softness.value) * devicePixelRatio;
+        if (mode === "feather") {
+          m.filter = `blur(${soft * 1.25}px)`;
+          m.globalAlpha = 0.38;
+          trace(m, w, h, 84 * devicePixelRatio, 102 * devicePixelRatio);
+          m.filter = `blur(${soft * 0.58}px)`;
+          m.globalAlpha = 0.58;
+          trace(m, w, h, 60 * devicePixelRatio, 82 * devicePixelRatio);
+          m.filter = "none";
+          m.globalAlpha = 1;
+          trace(m, w, h, 36 * devicePixelRatio, 68 * devicePixelRatio);
+        } else {
+          m.filter = `blur(${soft}px)`;
+          m.globalAlpha = mode === "two" ? 0.76 : 1;
+          trace(m, w, h, 54 * devicePixelRatio, 86 * devicePixelRatio);
+          m.filter = "none";
+          if (mode === "two") trace(m, w, h, 36 * devicePixelRatio, 68 * devicePixelRatio);
+        }
+        o.drawImage(mask, 0, 0);
+      }
+      ctx.drawImage(overlay, 0, 0);
+    }
+
+    function render() {
+      draw(canvases[0], "hard");
+      draw(canvases[1], "blur");
+      draw(canvases[2], "two");
+      draw(canvases[3], "feather");
+    }
+
+    addEventListener("resize", render);
+    softness.addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>

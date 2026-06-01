@@ -2,13 +2,17 @@
   "use strict";
 
   const FOG_MODES = ["off", "focus", "all"];
+  const FOG_STYLES = ["clear", "soft", "game"];
+  const VIEW_MODES = ["a", "b", "c", "d"];
+  const VIEW_PREF_KEY = "pmPresentationViewV1";
   const CONTEXT_REVEAL_RADIUS = 0.065;
   const DEFAULT_FOG_SETTINGS = {
     mode: "focus",
-    outsideVisibility: 0.22,
-    trailRadius: 0.07,
-    focusRadius: 0.18,
-    edgeSoftness: 0.06,
+    outsideVisibility: 0.04,
+    trailRadius: 0.06,
+    focusRadius: 0.08,
+    edgeSoftness: 0.01,
+    edgeStyle: "game",
     trailMemory: true
   };
 
@@ -20,12 +24,14 @@
   function normalizePresentationFogSettings(input) {
     const raw = input || {};
     const mode = FOG_MODES.includes(raw.mode) ? raw.mode : DEFAULT_FOG_SETTINGS.mode;
+    const edgeStyle = FOG_STYLES.includes(raw.edgeStyle) ? raw.edgeStyle : DEFAULT_FOG_SETTINGS.edgeStyle;
     return {
       mode,
       outsideVisibility: PM.clamp(numberOrFallback(raw.outsideVisibility, DEFAULT_FOG_SETTINGS.outsideVisibility), 0.02, 0.45),
       trailRadius: PM.clamp(numberOrFallback(raw.trailRadius, DEFAULT_FOG_SETTINGS.trailRadius), 0.03, 0.18),
       focusRadius: PM.clamp(numberOrFallback(raw.focusRadius, DEFAULT_FOG_SETTINGS.focusRadius), 0.08, 0.28),
       edgeSoftness: PM.clamp(numberOrFallback(raw.edgeSoftness, DEFAULT_FOG_SETTINGS.edgeSoftness), 0.01, 0.14),
+      edgeStyle,
       trailMemory: raw.trailMemory === undefined ? DEFAULT_FOG_SETTINGS.trailMemory : Boolean(raw.trailMemory)
     };
   }
@@ -199,6 +205,23 @@
     return Boolean(target && target.closest && target.closest("input, textarea, select, [contenteditable='true']"));
   }
 
+  function loadPresentationView() {
+    try {
+      const value = localStorage.getItem(VIEW_PREF_KEY);
+      return VIEW_MODES.includes(value) ? value : "a";
+    } catch (_error) {
+      return "a";
+    }
+  }
+
+  function savePresentationView(value) {
+    try {
+      localStorage.setItem(VIEW_PREF_KEY, value);
+    } catch (_error) {
+      // Presentation view is a local UI preference only.
+    }
+  }
+
   function createPresentationController(options) {
     const root = options.root;
     const store = options.store;
@@ -208,7 +231,12 @@
     const elements = {
       button: options.button,
       dock: options.dock,
+      viewModes: options.viewModes,
       routeList: options.routeList,
+      focusCard: options.focusCard,
+      focusTitle: options.focusTitle,
+      focusBody: options.focusBody,
+      progressRail: options.progressRail,
       step: options.step,
       previousButton: options.previousButton,
       nextButton: options.nextButton,
@@ -218,6 +246,7 @@
       fogPanel: options.fogPanel,
       fogCloseButton: options.fogCloseButton,
       fogMode: options.fogMode,
+      fogStyle: options.fogStyle,
       fogOutside: options.fogOutside,
       fogFocus: options.fogFocus,
       fogTrail: options.fogTrail,
@@ -228,6 +257,7 @@
     let state = normalizePresentationState({ active: false, step: 0, showAll: false }, 0);
     let fogSettings = normalizePresentationFogSettings();
     let fogPanelOpen = false;
+    let viewMode = loadPresentationView();
 
     function routeSummaries() {
       const live = store.getLiveState();
@@ -288,6 +318,77 @@
       });
     }
 
+    function activePointFor(active) {
+      if (!active || !active.route) return null;
+      const live = store.getLiveState();
+      const routeInfo = PM.computeRouteInfo(live.points, live.settings, active.route);
+      const step = state.routeSteps[active.route.id] || 0;
+      return routeInfo.numberedRoutes[Math.max(0, step - 1)] || null;
+    }
+
+    function pointTitle(point, step) {
+      if (!point) return t("presentationEmpty");
+      const label = point.label || `${PM.I18n.t(store.getLiveState().settings.locale, "chapter")} ${step}`;
+      return `${step} · ${label}`;
+    }
+
+    function updateFocusCard(active) {
+      if (!elements.focusCard) return;
+      const point = activePointFor(active);
+      const step = active && active.route ? (state.routeSteps[active.route.id] || 0) : 0;
+      elements.focusCard.hidden = !state.active || viewMode !== "b" || !point;
+      if (!state.active || viewMode !== "b" || !point) return;
+      elements.focusTitle.textContent = pointTitle(point, step);
+      elements.focusBody.textContent = [point.location, point.note, PM.formatDurationLabel(point.duration)].filter(Boolean).join(" · ");
+    }
+
+    function updateProgressRail(active) {
+      if (!elements.progressRail) return;
+      elements.progressRail.textContent = "";
+      elements.progressRail.hidden = !state.active || viewMode !== "c" || !active || !active.length;
+      if (elements.progressRail.hidden) return;
+      const live = store.getLiveState();
+      elements.progressRail.style.setProperty("--presentation-route-color", active.route.color || "var(--accent)");
+      const routeInfo = PM.computeRouteInfo(live.points, live.settings, active.route);
+      const currentStep = state.routeSteps[active.route.id] || 1;
+      const points = routeInfo.numberedRoutes;
+      const indexes = new Set([0, currentStep - 2, currentStep - 1, currentStep, points.length - 1].filter((index) => index >= 0 && index < points.length));
+      Array.from(indexes).sort((a, b) => a - b).forEach((index) => {
+        const point = points[index];
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `presentation-rail-step${index + 1 === currentStep ? " is-active" : ""}`;
+        item.innerHTML = [
+          `<span>${PM.escapeHtml(String(index + 1))}</span>`,
+          `<strong>${PM.escapeHtml(point.label || `${PM.I18n.t(live.settings.locale, "chapter")} ${index + 1}`)}</strong>`
+        ].join("");
+        item.addEventListener("click", () => {
+          state = normalizeForSummaries({
+            ...state,
+            showAll: false,
+            routeSteps: { ...state.routeSteps, [active.route.id]: index + 1 }
+          }, routeSummaries());
+          update();
+        });
+        elements.progressRail.appendChild(item);
+      });
+    }
+
+    function updateViewModeControls() {
+      root.dataset.presentationView = state.active ? viewMode : "";
+      if (!elements.viewModes) return;
+      elements.viewModes.querySelectorAll("[data-view]").forEach((button) => {
+        const value = button.dataset.view;
+        const isActive = value === viewMode;
+        const key = String(value).toUpperCase();
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+        button.setAttribute("title", t(`presentationView${key}`));
+        button.setAttribute("aria-label", t(`presentationView${key}`));
+        button.textContent = isActive ? `${key} ${t(`presentationViewShort${key}`)}` : key;
+      });
+    }
+
     function update() {
       const summaries = routeSummaries();
       state = normalizeForSummaries(state, summaries);
@@ -304,12 +405,16 @@
       elements.fogToggleButton.disabled = !state.active;
       elements.exitButton.disabled = !state.active;
       elements.fogMode.value = fogSettings.mode;
+      elements.fogStyle.value = fogSettings.edgeStyle;
       elements.fogOutside.value = String(fogSettings.outsideVisibility);
       elements.fogFocus.value = String(fogSettings.focusRadius);
       elements.fogTrail.value = String(fogSettings.trailRadius);
       elements.fogSoftness.value = String(fogSettings.edgeSoftness);
       elements.fogMemory.checked = fogSettings.trailMemory;
       renderRouteControls(summaries);
+      updateViewModeControls();
+      updateFocusCard(active);
+      updateProgressRail(active);
       onChange();
     }
 
@@ -324,6 +429,13 @@
     function exit() {
       fogPanelOpen = false;
       state = normalizeForSummaries({ active: false, step: 0, showAll: false }, routeSummaries());
+      update();
+    }
+
+    function setViewMode(next) {
+      if (!VIEW_MODES.includes(next)) return;
+      viewMode = next;
+      savePresentationView(viewMode);
       update();
     }
 
@@ -424,9 +536,17 @@
     elements.nextButton.addEventListener("click", next);
     elements.showAllButton.addEventListener("click", showAll);
     elements.resetButton.addEventListener("click", reset);
+    if (elements.viewModes) {
+      elements.viewModes.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-view]");
+        if (!button) return;
+        setViewMode(button.dataset.view);
+      });
+    }
     elements.fogToggleButton.addEventListener("click", toggleFogPanel);
     elements.fogCloseButton.addEventListener("click", closeFogPanel);
     elements.fogMode.addEventListener("change", () => patchFogSettings({ mode: elements.fogMode.value }));
+    elements.fogStyle.addEventListener("change", () => patchFogSettings({ edgeStyle: elements.fogStyle.value }));
     elements.fogOutside.addEventListener("input", () => patchFogSettings({ outsideVisibility: elements.fogOutside.value }));
     elements.fogFocus.addEventListener("input", () => patchFogSettings({ focusRadius: elements.fogFocus.value }));
     elements.fogTrail.addEventListener("input", () => patchFogSettings({ trailRadius: elements.fogTrail.value }));
@@ -445,6 +565,10 @@
       next,
       showAll,
       reset,
+      setViewMode,
+      getViewMode() {
+        return viewMode;
+      },
       getPresentationReveal,
       getPresentationFogSettings
     };
