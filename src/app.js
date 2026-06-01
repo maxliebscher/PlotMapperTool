@@ -41,7 +41,13 @@
       return {
         toolbarCollapsed: Boolean(raw.toolbarCollapsed),
         toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100),
-        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled)
+        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled),
+        tooltipsEnabled: raw.tooltipsEnabled !== false,
+        showChapterControls: raw.showChapterControls !== false,
+        showVisibilityControls: raw.showVisibilityControls !== false,
+        showTypeControls: raw.showTypeControls !== false,
+        showViewControls: raw.showViewControls !== false,
+        sliderPanelCollapsed: Boolean(raw.sliderPanelCollapsed)
       };
     }
     function loadUiPrefs() {
@@ -97,6 +103,27 @@
       imageInput: $("imageInput"),
       projectInput: $("projectInput"),
       fileName: $("fileName"),
+      saveStatus: $("saveStatus"),
+      projectMenu: $("projectMenu"),
+      projectMenuSummary: $("projectMenuSummary"),
+      optionsMenu: $("optionsMenu"),
+      optionsMenuSummary: $("optionsMenuSummary"),
+      sliderPanelToggle: $("sliderPanelToggle"),
+      sliderPanel: $("sliderPanel"),
+      tooltipsPref: $("tooltipsPref"),
+      showChapterControlsPref: $("showChapterControlsPref"),
+      showVisibilityControlsPref: $("showVisibilityControlsPref"),
+      showTypeControlsPref: $("showTypeControlsPref"),
+      showViewControlsPref: $("showViewControlsPref"),
+      tooltipsPrefLabel: $("tooltipsPrefLabel"),
+      showChapterControlsPrefLabel: $("showChapterControlsPrefLabel"),
+      showVisibilityControlsPrefLabel: $("showVisibilityControlsPrefLabel"),
+      showTypeControlsPrefLabel: $("showTypeControlsPrefLabel"),
+      showViewControlsPrefLabel: $("showViewControlsPrefLabel"),
+      chapterControls: document.querySelector(".chapter-controls"),
+      visibilityControls: document.querySelector(".toggles"),
+      typeControls: document.querySelector(".types"),
+      viewControls: $("viewPresetRow"),
       pointTypesLabel: $("pointTypesLabel"),
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
@@ -339,9 +366,21 @@
     function applyUiPrefs() {
       const root = document.documentElement;
       root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
+      root.classList.toggle("tooltips-disabled", !uiPrefs.tooltipsEnabled);
       root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
       controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
       controls.wheelZoom.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.tooltipsPref.checked = Boolean(uiPrefs.tooltipsEnabled);
+      controls.showChapterControlsPref.checked = Boolean(uiPrefs.showChapterControls);
+      controls.showVisibilityControlsPref.checked = Boolean(uiPrefs.showVisibilityControls);
+      controls.showTypeControlsPref.checked = Boolean(uiPrefs.showTypeControls);
+      controls.showViewControlsPref.checked = Boolean(uiPrefs.showViewControls);
+      controls.chapterControls.hidden = !uiPrefs.showChapterControls;
+      controls.visibilityControls.hidden = !uiPrefs.showVisibilityControls;
+      controls.typeControls.hidden = !uiPrefs.showTypeControls;
+      controls.viewControls.hidden = !uiPrefs.showViewControls;
+      controls.sliderPanel.hidden = Boolean(uiPrefs.sliderPanelCollapsed);
+      controls.sliderPanelToggle.setAttribute("aria-expanded", String(!uiPrefs.sliderPanelCollapsed));
       controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
     }
 
@@ -349,6 +388,7 @@
       uiPrefs = normalizeUiPrefs({ ...uiPrefs, ...patch });
       saveUiPrefs(uiPrefs);
       applyUiPrefs();
+      applyToolbarTooltips();
     }
 
     function activeRoute() {
@@ -713,7 +753,10 @@
     function setButtonText() {
       const locale = store.getLiveState().settings.locale;
       controls.fileName.textContent = store.getLiveState().map.name || PM.I18n.t(locale, "noProject");
+      controls.saveStatus.textContent = store.isDirty() ? PM.I18n.t(locale, "unsavedStatus") : PM.I18n.t(locale, "savedStatus");
       controls.imageLoadLabel.querySelector("span").textContent = PM.I18n.t(locale, "loadMap");
+      controls.projectMenuSummary.textContent = PM.I18n.t(locale, "projectMenu");
+      controls.optionsMenuSummary.textContent = PM.I18n.t(locale, "optionsMenu");
       controls.saveProject.textContent = PM.I18n.t(locale, "saveProject");
       controls.loadProject.textContent = PM.I18n.t(locale, "loadProject");
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
@@ -773,6 +816,12 @@
       controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
+      controls.tooltipsPrefLabel.textContent = PM.I18n.t(locale, "tooltipsOption");
+      controls.showChapterControlsPrefLabel.textContent = PM.I18n.t(locale, "chapterControlsOption");
+      controls.showVisibilityControlsPrefLabel.textContent = PM.I18n.t(locale, "visibilityControlsOption");
+      controls.showTypeControlsPrefLabel.textContent = PM.I18n.t(locale, "typeControlsOption");
+      controls.showViewControlsPrefLabel.textContent = PM.I18n.t(locale, "viewControlsOption");
+      controls.sliderPanelToggle.textContent = `${uiPrefs.sliderPanelCollapsed ? "\u25BE" : "\u25B4"} ${PM.I18n.t(locale, "displaySliders")}`;
       controls.pointInspector.setAttribute("aria-label", PM.I18n.t(locale, "pointInspector"));
       controls.pointInspectorClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
       controls.pointInspectorTypeLabel.textContent = PM.I18n.t(locale, "pointType");
@@ -789,7 +838,7 @@
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
-      controls.themeToggle.textContent = "\uD83C\uDFA8";
+      controls.themeToggle.textContent = `\u25C0 \uD83C\uDFA8 ${PM.I18n.t(locale, "theme")} \u25B6`;
       const labelMap = {
         "filter-route": "route",
         "filter-place": "place",
@@ -843,6 +892,39 @@
       renderViewPresets(store.getLiveState());
       if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
+      applyToolbarTooltips();
+    }
+
+    function setTooltip(element, text) {
+      if (!element) return;
+      element.dataset.tooltipText = text || "";
+      if (uiPrefs.tooltipsEnabled && text) element.setAttribute("title", text);
+      else element.removeAttribute("title");
+    }
+
+    function applyToolbarTooltips() {
+      const locale = store.getLiveState().settings.locale;
+      const pairs = [
+        [controls.projectMenuSummary, "projectMenuTooltip"],
+        [controls.imageLoadLabel, "loadMapTooltip"],
+        [controls.saveProject, "saveProjectTooltip"],
+        [controls.loadProject, "loadProjectTooltip"],
+        [controls.exportPng, "exportPngTooltip"],
+        [controls.clearAll, "clearTooltip"],
+        [controls.undo, "undoTooltip"],
+        [controls.redo, "redoTooltip"],
+        [controls.finderButton, "finderTooltip"],
+        [controls.minimapToggle, "minimapTooltip"],
+        [controls.readerButton, "readerTooltip"],
+        [controls.presentationButton, "presentationTooltip"],
+        [controls.optionsMenuSummary, "optionsMenuTooltip"],
+        [controls.helpButton, "helpTooltip"],
+        [controls.langToggle, "languageTooltip"],
+        [controls.themeToggle, "themeTooltip"],
+        [controls.toolbarCollapse, "collapseMenu"],
+        [controls.sliderPanelToggle, "displaySlidersTooltip"]
+      ];
+      pairs.forEach(([element, key]) => setTooltip(element, PM.I18n.t(locale, key)));
     }
 
     function syncControls(state) {
@@ -903,6 +985,7 @@
       const name = `${PM.safeFilename(project.map.name, "PlotMap")}_${PM.formatDateStamp()}.plotmap.json`;
       PM.downloadText(name, PM.Serialization.projectToJson(project), "application/json;charset=utf-8");
       store.markSaved();
+      syncControls(store.getState());
     });
 
     controls.loadProject.addEventListener("click", () => controls.projectInput.click());
@@ -950,6 +1033,7 @@
       persistUiPrefs({ toolbarCollapsed: true });
     });
     controls.toolbarRestore.addEventListener("click", () => persistUiPrefs({ toolbarCollapsed: false }));
+    controls.sliderPanelToggle.addEventListener("click", () => persistUiPrefs({ sliderPanelCollapsed: !uiPrefs.sliderPanelCollapsed }));
     controls.routeColorPicker.addEventListener("input", () => setRouteColorPreview(controls.routeColorPicker.value));
     controls.routeColorOk.addEventListener("click", commitRouteColorPopover);
     controls.routeColorCancel.addEventListener("click", closeRouteColorPopover);
@@ -980,6 +1064,14 @@
     bindSettingCheckbox(controls.showNotes, "showNotes");
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
+    function bindUiPrefCheckbox(input, key) {
+      input.addEventListener("change", () => persistUiPrefs({ [key]: input.checked }));
+    }
+    bindUiPrefCheckbox(controls.tooltipsPref, "tooltipsEnabled");
+    bindUiPrefCheckbox(controls.showChapterControlsPref, "showChapterControls");
+    bindUiPrefCheckbox(controls.showVisibilityControlsPref, "showVisibilityControls");
+    bindUiPrefCheckbox(controls.showTypeControlsPref, "showTypeControls");
+    bindUiPrefCheckbox(controls.showViewControlsPref, "showViewControls");
     controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
     controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
     controls.routePanelToggle.addEventListener("click", () => {

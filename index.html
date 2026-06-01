@@ -89,6 +89,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body {
   width: 100%;
   height: 100%;
@@ -907,18 +909,10 @@ button, input, textarea, select {
   margin-bottom: 8px;
 }
 
-.head-left {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
 .file-name {
   color: var(--muted);
   font-size: 13px;
-  max-width: 220px;
+  max-width: min(520px, 60vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -932,19 +926,34 @@ button, input, textarea, select {
 }
 
 .head-actions {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
 }
 
-.toolbar-grid {
-  display: flex;
+.action-cluster {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 6px;
 }
 
-.toolbar-grid.commands {
-  margin-top: 9px;
+.toolbar-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 7px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+#saveStatus {
+  color: var(--text);
+  font-weight: 760;
+}
+
+.toolbar-meta-separator {
+  opacity: 0.75;
 }
 
 #imageInput,
@@ -972,8 +981,8 @@ button, input, textarea, select {
 }
 
 .toolbar-head .file-button {
-  min-width: 70px;
-  min-height: 40px;
+  min-width: 0;
+  min-height: 32px;
   border-radius: 12px;
 }
 
@@ -983,44 +992,106 @@ button, input, textarea, select {
 
 .head-actions #readerButton,
 .head-actions #presentationButton,
-.head-actions .toggle-button,
-.head-actions #helpButton {
-  min-width: 100px;
-}
-
-.toggle-button {
-  position: relative;
-}
-
-.toggle-button input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toggle-button:has(input:checked) {
-  background: var(--surface-2);
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-}
-
-.commands #undoButton,
-.commands #redoButton {
-  min-width: 118px;
-}
-
-.commands #saveProject,
-.commands #loadProject {
+.head-actions #finderButton {
   min-width: 96px;
 }
 
-.commands #exportPng {
-  min-width: 62px;
+.toolbar-menu {
+  position: relative;
 }
 
-.commands #clearAll {
-  min-width: 104px;
+.toolbar-menu > summary {
+  list-style: none;
+}
+
+.toolbar-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.toolbar-menu[open] > summary {
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+}
+
+.save-button {
+  position: relative;
+  min-width: 120px;
+}
+
+.save-button::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #f0c85d;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--surface) 75%, transparent);
+}
+
+.toolbar-menu-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 7px;
+  min-width: 210px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 96%, #000 4%);
+  box-shadow: var(--shadow);
+}
+
+.options-menu .toolbar-menu-popover {
+  left: auto;
+  right: 0;
+}
+
+.toolbar-menu-popover.wide {
+  min-width: 290px;
+}
+
+.toolbar-menu-popover .btn,
+.toolbar-menu-popover .file-button {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.option-divider {
+  height: 1px;
+  background: var(--border);
+  opacity: 0.85;
+}
+
+.setting-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 30px;
+  padding: 6px 7px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.setting-line input {
+  accent-color: var(--accent);
+}
+
+.display-controls-head {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 7px;
+}
+
+.slider-panel[hidden] {
+  display: none;
 }
 
 .btn:hover,
@@ -1116,6 +1187,10 @@ button, input, textarea, select {
 
 .view-presets {
   align-items: center;
+}
+
+.slider-panel .slider-row:first-child {
+  margin-top: 0;
 }
 
 .view-preset-buttons {
@@ -2651,11 +2726,6 @@ button, input, textarea, select {
     gap: 8px;
   }
 
-  .head-left {
-    flex: 1 1 100%;
-    gap: 10px;
-  }
-
   .file-name {
     max-width: calc(100vw - 118px);
   }
@@ -2668,15 +2738,14 @@ button, input, textarea, select {
 
   .head-actions #readerButton,
   .head-actions #presentationButton,
-  .head-actions .toggle-button,
-  .head-actions #finderButton,
-  .head-actions #helpButton {
+  .head-actions #finderButton {
     flex: 1 1 104px;
     min-width: 0;
   }
 
   .head-actions #langToggle,
-  .head-actions #themeToggle {
+  .head-actions #themeToggle,
+  .head-actions #toolbarCollapse {
     flex: 0 0 auto;
   }
 
@@ -2692,10 +2761,6 @@ button, input, textarea, select {
 
   .empty-hint > div {
     width: min(420px, calc(100vw - 48px));
-  }
-
-  .toolbar-grid.commands .btn {
-    flex: 1 1 120px;
   }
 
   .control-row {
@@ -2813,24 +2878,50 @@ button, input, textarea, select {
 
   <section id="toolbar" class="toolbar" aria-label="PlotMapper controls">
     <header class="toolbar-head">
-      <div class="head-left">
-        <label class="file-button" for="imageInput" role="button" tabindex="0"><span>Load map</span></label>
-        <input id="imageInput" type="file" accept="image/*" aria-hidden="true" tabindex="-1">
-        <div id="fileName" class="file-name">No project loaded</div>
-      </div>
       <div class="head-actions">
+        <details id="projectMenu" class="toolbar-menu project-menu">
+          <summary id="projectMenuSummary" class="btn save-button">Project</summary>
+          <div class="toolbar-menu-popover">
+            <label class="file-button" for="imageInput" role="button" tabindex="0"><span>Load map</span></label>
+            <button id="saveProject" class="btn" type="button">Save project</button>
+            <button id="loadProject" class="btn" type="button">Load project</button>
+            <button id="exportPng" class="btn" type="button">PNG</button>
+            <button id="clearAll" class="btn danger" type="button">Clear</button>
+          </div>
+        </details>
+        <div class="action-cluster undo-redo-cluster">
+          <button id="undoButton" class="btn icon" type="button">↶</button>
+          <button id="redoButton" class="btn icon" type="button">↷</button>
+        </div>
+        <button id="finderButton" class="btn" type="button">Finder</button>
+        <button id="minimapToggle" class="btn" type="button" title="Minimap" aria-label="Minimap">&#128506;&#65039; MiniMap</button>
         <button id="readerButton" class="btn" type="button">Reader</button>
         <button id="presentationButton" class="btn" type="button">Present</button>
-        <button id="finderButton" class="btn" type="button">Finder</button>
-        <button id="helpButton" class="btn" type="button">Help</button>
-        <button id="langToggle" class="btn small" type="button">DE</button>
-        <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
-        <button id="minimapToggle" class="btn" type="button" title="Minimap" aria-label="Minimap">&#128506;&#65039; MiniMap</button>
+        <details id="optionsMenu" class="toolbar-menu options-menu">
+          <summary id="optionsMenuSummary" class="btn">Options</summary>
+          <div class="toolbar-menu-popover wide">
+            <button id="helpButton" class="btn" type="button">Help</button>
+            <button id="langToggle" class="btn" type="button">DE</button>
+            <button id="themeToggle" class="btn" type="button" title="Theme">&#127912;</button>
+            <div class="option-divider" aria-hidden="true"></div>
+            <label class="setting-line"><span id="tooltipsPrefLabel">Tooltips</span><input id="tooltipsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showChapterControlsPrefLabel">Chapter numbering row</span><input id="showChapterControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showVisibilityControlsPrefLabel">Visibility filters</span><input id="showVisibilityControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showTypeControlsPrefLabel">Point type filters</span><input id="showTypeControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showViewControlsPrefLabel">View filters</span><input id="showViewControlsPref" type="checkbox" checked></label>
+          </div>
+        </details>
         <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
 
+    <input id="imageInput" type="file" accept="image/*" aria-hidden="true" tabindex="-1">
     <input id="projectInput" type="file" accept=".plotmap.json,application/json" aria-hidden="true" tabindex="-1">
+    <div class="toolbar-meta">
+      <span id="saveStatus">Saved</span>
+      <span class="toolbar-meta-separator" aria-hidden="true">·</span>
+      <span id="fileName" class="file-name">No project loaded</span>
+    </div>
 
     <div class="control-row chapter-controls">
       <label><input id="chapterMode" type="checkbox"><span>Chapter start</span></label>
@@ -2888,25 +2979,21 @@ button, input, textarea, select {
       <label class="wheel-zoom-toggle"><input id="wheelZoomControl" type="checkbox"><span>Wheel zoom</span></label>
     </div>
 
-    <div class="control-row slider-row">
-      <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
-      <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
-      <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
+    <div class="display-controls-head">
+      <button id="sliderPanelToggle" class="btn small" type="button" aria-expanded="true" aria-controls="sliderPanel">&#9652; Sliders</button>
     </div>
+    <div id="sliderPanel" class="slider-panel">
+      <div class="control-row slider-row">
+        <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
+        <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+        <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
+      </div>
 
-    <div class="control-row slider-row">
-      <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
-      <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
-      <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
-    </div>
-
-    <div class="toolbar-grid commands">
-      <button id="undoButton" class="btn" type="button">Undo</button>
-      <button id="redoButton" class="btn" type="button">Redo</button>
-      <button id="saveProject" class="btn" type="button">Save project</button>
-      <button id="loadProject" class="btn" type="button">Load project</button>
-      <button id="exportPng" class="btn" type="button">PNG</button>
-      <button id="clearAll" class="btn danger" type="button">Clear</button>
+      <div class="control-row slider-row">
+        <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
+        <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
+        <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
+      </div>
     </div>
   </section>
 
@@ -3342,6 +3429,34 @@ button, input, textarea, select {
       wheelZoom: "Wheel zoom",
       collapseMenu: "Collapse menu",
       expandMenu: "Open menu",
+      projectMenu: "\uD83D\uDCBE Project",
+      optionsMenu: "\u2699 Options",
+      savedStatus: "Saved",
+      unsavedStatus: "Unsaved changes",
+      displaySliders: "Sliders",
+      theme: "Theme",
+      tooltipsOption: "Show tooltips",
+      chapterControlsOption: "Chapter numbering row",
+      visibilityControlsOption: "Visibility filters",
+      typeControlsOption: "Point type filters",
+      viewControlsOption: "View filters",
+      projectMenuTooltip: "Open project actions: load map, save/load project, export PNG, or clear map",
+      loadMapTooltip: "Load a new background map",
+      saveProjectTooltip: "Save the current project as .plotmap.json",
+      loadProjectTooltip: "Open a saved .plotmap.json project",
+      exportPngTooltip: "Export the current view as PNG",
+      clearTooltip: "Clear all points and routes from the map",
+      undoTooltip: "Undo last change",
+      redoTooltip: "Redo last undone change",
+      finderTooltip: "Search points, routes, and notes and jump to the map",
+      minimapTooltip: "Show or hide the orientation minimap",
+      readerTooltip: "Open the linear reader view",
+      presentationTooltip: "Start presentation mode",
+      optionsMenuTooltip: "Open help, language, theme, and toolbar display options",
+      helpTooltip: "Open help and quick reference",
+      languageTooltip: "Switch language",
+      themeTooltip: "Switch color theme",
+      displaySlidersTooltip: "Show or hide display sliders",
       focus: "Focus",
       chapterStart: "Chapter numbering",
       undo: "Undo",
@@ -3520,6 +3635,34 @@ button, input, textarea, select {
       menuOpacity: "Menü",
       collapseMenu: "Menü einklappen",
       expandMenu: "Menü ausklappen",
+      projectMenu: "\uD83D\uDCBE Projekt",
+      optionsMenu: "\u2699 Optionen",
+      savedStatus: "Gespeichert",
+      unsavedStatus: "Ungespeichert",
+      displaySliders: "Regler",
+      theme: "Thema",
+      tooltipsOption: "Tooltips anzeigen",
+      chapterControlsOption: "Kapitel-Nummerierung zeigen",
+      visibilityControlsOption: "Sichtbarkeits-Filter zeigen",
+      typeControlsOption: "Punktarten-Filter zeigen",
+      viewControlsOption: "Ansichten-Filter zeigen",
+      projectMenuTooltip: "Projektaktionen öffnen: Karte laden, Projekt speichern/laden, PNG exportieren oder Karte leeren",
+      loadMapTooltip: "Neue Hintergrundkarte laden",
+      saveProjectTooltip: "Aktuelles Projekt als .plotmap.json speichern",
+      loadProjectTooltip: "Gespeichertes .plotmap.json Projekt öffnen",
+      exportPngTooltip: "Aktuelle Ansicht als PNG exportieren",
+      clearTooltip: "Alle Punkte und Routen von der Karte entfernen",
+      undoTooltip: "Letzte Änderung rückgängig machen",
+      redoTooltip: "Rückgängig gemachte Änderung wiederholen",
+      finderTooltip: "Punkte, Routen und Notizen suchen und zur Karte springen",
+      minimapTooltip: "Orientierungs-Minimap ein- oder ausblenden",
+      readerTooltip: "Lineare Reader-Ansicht öffnen",
+      presentationTooltip: "Präsentationsmodus starten",
+      optionsMenuTooltip: "Hilfe, Sprache, Thema und Menü-Anzeigeoptionen öffnen",
+      helpTooltip: "Hilfe und Kurzreferenz öffnen",
+      languageTooltip: "Sprache wechseln",
+      themeTooltip: "Farbschema wechseln",
+      displaySlidersTooltip: "Display-Regler ein- oder ausblenden",
       focus: "Fokus",
       chapterStart: "Kapitel-Nummerierung",
       undo: "Rückgängig",
@@ -7392,7 +7535,13 @@ button, input, textarea, select {
       return {
         toolbarCollapsed: Boolean(raw.toolbarCollapsed),
         toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100),
-        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled)
+        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled),
+        tooltipsEnabled: raw.tooltipsEnabled !== false,
+        showChapterControls: raw.showChapterControls !== false,
+        showVisibilityControls: raw.showVisibilityControls !== false,
+        showTypeControls: raw.showTypeControls !== false,
+        showViewControls: raw.showViewControls !== false,
+        sliderPanelCollapsed: Boolean(raw.sliderPanelCollapsed)
       };
     }
     function loadUiPrefs() {
@@ -7448,6 +7597,27 @@ button, input, textarea, select {
       imageInput: $("imageInput"),
       projectInput: $("projectInput"),
       fileName: $("fileName"),
+      saveStatus: $("saveStatus"),
+      projectMenu: $("projectMenu"),
+      projectMenuSummary: $("projectMenuSummary"),
+      optionsMenu: $("optionsMenu"),
+      optionsMenuSummary: $("optionsMenuSummary"),
+      sliderPanelToggle: $("sliderPanelToggle"),
+      sliderPanel: $("sliderPanel"),
+      tooltipsPref: $("tooltipsPref"),
+      showChapterControlsPref: $("showChapterControlsPref"),
+      showVisibilityControlsPref: $("showVisibilityControlsPref"),
+      showTypeControlsPref: $("showTypeControlsPref"),
+      showViewControlsPref: $("showViewControlsPref"),
+      tooltipsPrefLabel: $("tooltipsPrefLabel"),
+      showChapterControlsPrefLabel: $("showChapterControlsPrefLabel"),
+      showVisibilityControlsPrefLabel: $("showVisibilityControlsPrefLabel"),
+      showTypeControlsPrefLabel: $("showTypeControlsPrefLabel"),
+      showViewControlsPrefLabel: $("showViewControlsPrefLabel"),
+      chapterControls: document.querySelector(".chapter-controls"),
+      visibilityControls: document.querySelector(".toggles"),
+      typeControls: document.querySelector(".types"),
+      viewControls: $("viewPresetRow"),
       pointTypesLabel: $("pointTypesLabel"),
       visibilityLabel: $("visibilityLabel"),
       langToggle: $("langToggle"),
@@ -7690,9 +7860,21 @@ button, input, textarea, select {
     function applyUiPrefs() {
       const root = document.documentElement;
       root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
+      root.classList.toggle("tooltips-disabled", !uiPrefs.tooltipsEnabled);
       root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
       controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
       controls.wheelZoom.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.tooltipsPref.checked = Boolean(uiPrefs.tooltipsEnabled);
+      controls.showChapterControlsPref.checked = Boolean(uiPrefs.showChapterControls);
+      controls.showVisibilityControlsPref.checked = Boolean(uiPrefs.showVisibilityControls);
+      controls.showTypeControlsPref.checked = Boolean(uiPrefs.showTypeControls);
+      controls.showViewControlsPref.checked = Boolean(uiPrefs.showViewControls);
+      controls.chapterControls.hidden = !uiPrefs.showChapterControls;
+      controls.visibilityControls.hidden = !uiPrefs.showVisibilityControls;
+      controls.typeControls.hidden = !uiPrefs.showTypeControls;
+      controls.viewControls.hidden = !uiPrefs.showViewControls;
+      controls.sliderPanel.hidden = Boolean(uiPrefs.sliderPanelCollapsed);
+      controls.sliderPanelToggle.setAttribute("aria-expanded", String(!uiPrefs.sliderPanelCollapsed));
       controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
     }
 
@@ -7700,6 +7882,7 @@ button, input, textarea, select {
       uiPrefs = normalizeUiPrefs({ ...uiPrefs, ...patch });
       saveUiPrefs(uiPrefs);
       applyUiPrefs();
+      applyToolbarTooltips();
     }
 
     function activeRoute() {
@@ -8064,7 +8247,10 @@ button, input, textarea, select {
     function setButtonText() {
       const locale = store.getLiveState().settings.locale;
       controls.fileName.textContent = store.getLiveState().map.name || PM.I18n.t(locale, "noProject");
+      controls.saveStatus.textContent = store.isDirty() ? PM.I18n.t(locale, "unsavedStatus") : PM.I18n.t(locale, "savedStatus");
       controls.imageLoadLabel.querySelector("span").textContent = PM.I18n.t(locale, "loadMap");
+      controls.projectMenuSummary.textContent = PM.I18n.t(locale, "projectMenu");
+      controls.optionsMenuSummary.textContent = PM.I18n.t(locale, "optionsMenu");
       controls.saveProject.textContent = PM.I18n.t(locale, "saveProject");
       controls.loadProject.textContent = PM.I18n.t(locale, "loadProject");
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
@@ -8124,6 +8310,12 @@ button, input, textarea, select {
       controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
+      controls.tooltipsPrefLabel.textContent = PM.I18n.t(locale, "tooltipsOption");
+      controls.showChapterControlsPrefLabel.textContent = PM.I18n.t(locale, "chapterControlsOption");
+      controls.showVisibilityControlsPrefLabel.textContent = PM.I18n.t(locale, "visibilityControlsOption");
+      controls.showTypeControlsPrefLabel.textContent = PM.I18n.t(locale, "typeControlsOption");
+      controls.showViewControlsPrefLabel.textContent = PM.I18n.t(locale, "viewControlsOption");
+      controls.sliderPanelToggle.textContent = `${uiPrefs.sliderPanelCollapsed ? "\u25BE" : "\u25B4"} ${PM.I18n.t(locale, "displaySliders")}`;
       controls.pointInspector.setAttribute("aria-label", PM.I18n.t(locale, "pointInspector"));
       controls.pointInspectorClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
       controls.pointInspectorTypeLabel.textContent = PM.I18n.t(locale, "pointType");
@@ -8140,7 +8332,7 @@ button, input, textarea, select {
       controls.exportPng.textContent = PM.I18n.t(locale, "png");
       controls.clearAll.textContent = PM.I18n.t(locale, "clear");
       controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
-      controls.themeToggle.textContent = "\uD83C\uDFA8";
+      controls.themeToggle.textContent = `\u25C0 \uD83C\uDFA8 ${PM.I18n.t(locale, "theme")} \u25B6`;
       const labelMap = {
         "filter-route": "route",
         "filter-place": "place",
@@ -8194,6 +8386,39 @@ button, input, textarea, select {
       renderViewPresets(store.getLiveState());
       if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
+      applyToolbarTooltips();
+    }
+
+    function setTooltip(element, text) {
+      if (!element) return;
+      element.dataset.tooltipText = text || "";
+      if (uiPrefs.tooltipsEnabled && text) element.setAttribute("title", text);
+      else element.removeAttribute("title");
+    }
+
+    function applyToolbarTooltips() {
+      const locale = store.getLiveState().settings.locale;
+      const pairs = [
+        [controls.projectMenuSummary, "projectMenuTooltip"],
+        [controls.imageLoadLabel, "loadMapTooltip"],
+        [controls.saveProject, "saveProjectTooltip"],
+        [controls.loadProject, "loadProjectTooltip"],
+        [controls.exportPng, "exportPngTooltip"],
+        [controls.clearAll, "clearTooltip"],
+        [controls.undo, "undoTooltip"],
+        [controls.redo, "redoTooltip"],
+        [controls.finderButton, "finderTooltip"],
+        [controls.minimapToggle, "minimapTooltip"],
+        [controls.readerButton, "readerTooltip"],
+        [controls.presentationButton, "presentationTooltip"],
+        [controls.optionsMenuSummary, "optionsMenuTooltip"],
+        [controls.helpButton, "helpTooltip"],
+        [controls.langToggle, "languageTooltip"],
+        [controls.themeToggle, "themeTooltip"],
+        [controls.toolbarCollapse, "collapseMenu"],
+        [controls.sliderPanelToggle, "displaySlidersTooltip"]
+      ];
+      pairs.forEach(([element, key]) => setTooltip(element, PM.I18n.t(locale, key)));
     }
 
     function syncControls(state) {
@@ -8254,6 +8479,7 @@ button, input, textarea, select {
       const name = `${PM.safeFilename(project.map.name, "PlotMap")}_${PM.formatDateStamp()}.plotmap.json`;
       PM.downloadText(name, PM.Serialization.projectToJson(project), "application/json;charset=utf-8");
       store.markSaved();
+      syncControls(store.getState());
     });
 
     controls.loadProject.addEventListener("click", () => controls.projectInput.click());
@@ -8301,6 +8527,7 @@ button, input, textarea, select {
       persistUiPrefs({ toolbarCollapsed: true });
     });
     controls.toolbarRestore.addEventListener("click", () => persistUiPrefs({ toolbarCollapsed: false }));
+    controls.sliderPanelToggle.addEventListener("click", () => persistUiPrefs({ sliderPanelCollapsed: !uiPrefs.sliderPanelCollapsed }));
     controls.routeColorPicker.addEventListener("input", () => setRouteColorPreview(controls.routeColorPicker.value));
     controls.routeColorOk.addEventListener("click", commitRouteColorPopover);
     controls.routeColorCancel.addEventListener("click", closeRouteColorPopover);
@@ -8331,6 +8558,14 @@ button, input, textarea, select {
     bindSettingCheckbox(controls.showNotes, "showNotes");
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
+    function bindUiPrefCheckbox(input, key) {
+      input.addEventListener("change", () => persistUiPrefs({ [key]: input.checked }));
+    }
+    bindUiPrefCheckbox(controls.tooltipsPref, "tooltipsEnabled");
+    bindUiPrefCheckbox(controls.showChapterControlsPref, "showChapterControls");
+    bindUiPrefCheckbox(controls.showVisibilityControlsPref, "showVisibilityControls");
+    bindUiPrefCheckbox(controls.showTypeControlsPref, "showTypeControls");
+    bindUiPrefCheckbox(controls.showViewControlsPref, "showViewControls");
     controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
     controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
     controls.routePanelToggle.addEventListener("click", () => {

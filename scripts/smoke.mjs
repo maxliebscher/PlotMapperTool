@@ -244,6 +244,13 @@ async function exerciseWheelZoom(page) {
   await setCheckbox(page, "#wheelZoomControl", false);
 }
 
+async function openDetails(page, selector) {
+  await page.evaluate((detailsSelector) => {
+    const details = document.querySelector(detailsSelector);
+    if (details) details.open = true;
+  }, selector);
+}
+
 async function addRoutePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.62, 0.7), force: true });
@@ -601,8 +608,13 @@ async function insertMidpointAndUndoRedo(page) {
 
 async function toggleControls(page) {
   const initialTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+  await openDetails(page, "#optionsMenu");
   await page.click("#themeToggle");
   await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
   await page.locator(".view-preset", { hasText: /Route/ }).click();
   await page.waitForFunction(() => {
     const settings = PM.store.getLiveState().settings;
@@ -645,6 +657,19 @@ async function toggleControls(page) {
   }, null, { timeout: 5000 });
   await setInputValue(page, "#toolbarOpacityControl", "72");
   await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue("--toolbar-opacity").trim() === "0.72", null, { timeout: 5000 });
+  await page.click("#sliderPanelToggle");
+  await page.waitForSelector("#sliderPanel", { state: "hidden" });
+  await page.click("#sliderPanelToggle");
+  await page.waitForSelector("#sliderPanel:not([hidden])");
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showVisibilityControlsPref", false);
+  await page.waitForSelector(".toggles", { state: "hidden" });
+  await setCheckbox(page, "#showVisibilityControlsPref", true);
+  await page.waitForSelector(".toggles:not([hidden])");
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
   await page.click("#toolbarCollapse");
   await page.waitForFunction(() => document.documentElement.classList.contains("toolbar-collapsed"), null, { timeout: 5000 });
   assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide when collapsed.");
@@ -816,9 +841,11 @@ async function exerciseDownloads(page) {
     };
   });
 
+  await openDetails(page, "#projectMenu");
   await page.click("#exportPng");
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".png")), null, { timeout: 5000 });
 
+  await openDetails(page, "#projectMenu");
   await page.click("#saveProject");
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".plotmap.json")), null, { timeout: 5000 });
 }

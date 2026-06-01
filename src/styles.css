@@ -81,6 +81,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body {
   width: 100%;
   height: 100%;
@@ -899,18 +901,10 @@ button, input, textarea, select {
   margin-bottom: 8px;
 }
 
-.head-left {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
 .file-name {
   color: var(--muted);
   font-size: 13px;
-  max-width: 220px;
+  max-width: min(520px, 60vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -924,19 +918,34 @@ button, input, textarea, select {
 }
 
 .head-actions {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
 }
 
-.toolbar-grid {
-  display: flex;
+.action-cluster {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 6px;
 }
 
-.toolbar-grid.commands {
-  margin-top: 9px;
+.toolbar-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 7px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+#saveStatus {
+  color: var(--text);
+  font-weight: 760;
+}
+
+.toolbar-meta-separator {
+  opacity: 0.75;
 }
 
 #imageInput,
@@ -964,8 +973,8 @@ button, input, textarea, select {
 }
 
 .toolbar-head .file-button {
-  min-width: 70px;
-  min-height: 40px;
+  min-width: 0;
+  min-height: 32px;
   border-radius: 12px;
 }
 
@@ -975,44 +984,106 @@ button, input, textarea, select {
 
 .head-actions #readerButton,
 .head-actions #presentationButton,
-.head-actions .toggle-button,
-.head-actions #helpButton {
-  min-width: 100px;
-}
-
-.toggle-button {
-  position: relative;
-}
-
-.toggle-button input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toggle-button:has(input:checked) {
-  background: var(--surface-2);
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-}
-
-.commands #undoButton,
-.commands #redoButton {
-  min-width: 118px;
-}
-
-.commands #saveProject,
-.commands #loadProject {
+.head-actions #finderButton {
   min-width: 96px;
 }
 
-.commands #exportPng {
-  min-width: 62px;
+.toolbar-menu {
+  position: relative;
 }
 
-.commands #clearAll {
-  min-width: 104px;
+.toolbar-menu > summary {
+  list-style: none;
+}
+
+.toolbar-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.toolbar-menu[open] > summary {
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+}
+
+.save-button {
+  position: relative;
+  min-width: 120px;
+}
+
+.save-button::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #f0c85d;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--surface) 75%, transparent);
+}
+
+.toolbar-menu-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 7px;
+  min-width: 210px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 96%, #000 4%);
+  box-shadow: var(--shadow);
+}
+
+.options-menu .toolbar-menu-popover {
+  left: auto;
+  right: 0;
+}
+
+.toolbar-menu-popover.wide {
+  min-width: 290px;
+}
+
+.toolbar-menu-popover .btn,
+.toolbar-menu-popover .file-button {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.option-divider {
+  height: 1px;
+  background: var(--border);
+  opacity: 0.85;
+}
+
+.setting-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 30px;
+  padding: 6px 7px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.setting-line input {
+  accent-color: var(--accent);
+}
+
+.display-controls-head {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 7px;
+}
+
+.slider-panel[hidden] {
+  display: none;
 }
 
 .btn:hover,
@@ -1108,6 +1179,10 @@ button, input, textarea, select {
 
 .view-presets {
   align-items: center;
+}
+
+.slider-panel .slider-row:first-child {
+  margin-top: 0;
 }
 
 .view-preset-buttons {
@@ -2643,11 +2718,6 @@ button, input, textarea, select {
     gap: 8px;
   }
 
-  .head-left {
-    flex: 1 1 100%;
-    gap: 10px;
-  }
-
   .file-name {
     max-width: calc(100vw - 118px);
   }
@@ -2660,15 +2730,14 @@ button, input, textarea, select {
 
   .head-actions #readerButton,
   .head-actions #presentationButton,
-  .head-actions .toggle-button,
-  .head-actions #finderButton,
-  .head-actions #helpButton {
+  .head-actions #finderButton {
     flex: 1 1 104px;
     min-width: 0;
   }
 
   .head-actions #langToggle,
-  .head-actions #themeToggle {
+  .head-actions #themeToggle,
+  .head-actions #toolbarCollapse {
     flex: 0 0 auto;
   }
 
@@ -2684,10 +2753,6 @@ button, input, textarea, select {
 
   .empty-hint > div {
     width: min(420px, calc(100vw - 48px));
-  }
-
-  .toolbar-grid.commands .btn {
-    flex: 1 1 120px;
   }
 
   .control-row {
