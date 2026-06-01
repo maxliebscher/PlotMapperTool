@@ -168,7 +168,7 @@ assert(html.includes('store.setFilter("route", true)'), "Route jumps should reve
 assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapRoutes") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Routes/Close controls.");
 assert(html.includes("showRoutes: raw.showRoutes !== false"), "Minimap route visibility should persist as a local preference.");
 assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
-const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || "";
+const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\r?\n\s*},?\r?\n|,\r?\n\s*\w+:)/)?.[0] || "";
 assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
 assert(/Home|End|Pos1|Ende/.test(helpBlock), "Tutorial copy should mention Finder start/end navigation.");
 assert(/Ctrl<\/kbd>\+<kbd>Enter|Ctrl\+Enter|Ctrl<\/kbd> \+ <kbd>Enter/.test(helpBlock) && /Inspector/.test(helpBlock), "Tutorial copy should mention the Finder inspector shortcut.");
