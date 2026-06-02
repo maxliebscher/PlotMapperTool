@@ -40,7 +40,15 @@
       const raw = input || {};
       return {
         toolbarCollapsed: Boolean(raw.toolbarCollapsed),
-        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100)
+        toolbarOpacity: PM.clamp(parseInt(raw.toolbarOpacity, 10) || 86, 55, 100),
+        wheelZoomEnabled: Boolean(raw.wheelZoomEnabled),
+        tooltipsEnabled: raw.tooltipsEnabled !== false,
+        showRouteControls: raw.showRouteControls !== false,
+        showVisibilityControls: raw.showVisibilityControls !== false,
+        showTypeControls: raw.showTypeControls !== false,
+        showViewControls: raw.showViewControls !== false,
+        showWheelZoomControl: Boolean(raw.showWheelZoomControl),
+        sliderPanelCollapsed: Boolean(raw.sliderPanelCollapsed)
       };
     }
     function loadUiPrefs() {
@@ -59,7 +67,12 @@
     }
     const store = PM.createStore(PM.createEmptyProject({ locale: initialLocale, theme: initialTheme }));
     const renderer = PM.createRenderer($("mapCanvas"), store);
-    const menu = PM.createMenuController($("menuLayer"), store);
+    let pointInspector = null;
+    const menu = PM.createMenuController($("menuLayer"), store, {
+      onInspect: (pointId, anchor) => {
+        if (pointInspector) pointInspector.open(pointId, { mode: "float", anchor });
+      }
+    });
     const pointUi = PM.createPointUi($("pointLayer"), $("midLayer"), $("routeLayer"), store, renderer, menu);
     const reader = PM.createReader({
       modal: $("readerModal"),
@@ -67,12 +80,20 @@
       cards: $("readerCards"),
       closeButton: $("readerClose"),
       extrasToggle: $("readerExtras"),
+      findButton: $("readerFind"),
       exportHtmlButton: $("readerExportHtml"),
       printPdfButton: $("readerPrintPdf"),
       title: $("readerTitle"),
       hint: $("readerHint"),
       extrasLabel: $("readerExtras").nextElementSibling
-    }, store, renderer);
+    }, store, renderer, {
+      onInspect: (pointId, options) => {
+        if (pointInspector) pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onFind: () => {
+        openFinder("");
+      }
+    });
 
     PM.store = store;
     PM.renderer = renderer;
@@ -83,18 +104,89 @@
       imageInput: $("imageInput"),
       projectInput: $("projectInput"),
       fileName: $("fileName"),
+      saveStatus: $("saveStatus"),
+      projectMenu: $("projectMenu"),
+      projectMenuSummary: $("projectMenuSummary"),
+      optionsMenu: $("optionsMenu"),
+      optionsMenuSummary: $("optionsMenuSummary"),
+      sliderPanelToggle: $("sliderPanelToggle"),
+      sliderPanel: $("sliderPanel"),
+      tooltipsPref: $("tooltipsPref"),
+      wheelZoomMenuControl: $("wheelZoomMenuControl"),
+      showWheelZoomControlPref: $("showWheelZoomControlPref"),
+      showRouteControlsPref: $("showRouteControlsPref"),
+      wheelZoomPrefLabel: $("wheelZoomPrefLabel"),
+      showWheelZoomControlPrefLabel: $("showWheelZoomControlPrefLabel"),
+      showRouteControlsPrefLabel: $("showRouteControlsPrefLabel"),
+      showSliderControlsPref: $("showSliderControlsPref"),
+      showSliderControlsPrefLabel: $("showSliderControlsPrefLabel"),
+      showVisibilityControlsPref: $("showVisibilityControlsPref"),
+      showTypeControlsPref: $("showTypeControlsPref"),
+      showViewControlsPref: $("showViewControlsPref"),
+      tooltipsPrefLabel: $("tooltipsPrefLabel"),
+      showVisibilityControlsPrefLabel: $("showVisibilityControlsPrefLabel"),
+      showTypeControlsPrefLabel: $("showTypeControlsPrefLabel"),
+      showViewControlsPrefLabel: $("showViewControlsPrefLabel"),
+      routeControls: document.querySelector(".route-controls"),
+      visibilityControls: document.querySelector(".toggles"),
+      typeControls: document.querySelector(".types"),
+      viewControls: $("viewPresetRow"),
       pointTypesLabel: $("pointTypesLabel"),
       visibilityLabel: $("visibilityLabel"),
-      langToggle: $("langToggle"),
+      languagePrefLabel: $("languagePrefLabel"),
+      langSelect: $("langSelect"),
+      themePrev: $("themePrev"),
       themeToggle: $("themeToggle"),
+      themeNext: $("themeNext"),
+      minimapToggle: $("minimapToggle"),
+      minimapPanel: $("minimapPanel"),
+      minimapDrag: $("minimapDrag"),
+      minimapCanvas: $("minimapCanvas"),
+      minimapSvg: $("minimapSvg"),
+      minimapViewport: $("minimapViewport"),
+      minimapResize: $("minimapResize"),
+      minimapAuto: $("minimapAuto"),
+      minimapPin: $("minimapPin"),
+      minimapRoutes: $("minimapRoutes"),
+      minimapClose: $("minimapClose"),
+      pointInspector: $("pointInspector"),
+      pointInspectorDrag: $("pointInspectorDrag"),
+      pointInspectorTitle: $("pointInspectorTitle"),
+      pointInspectorSub: $("pointInspectorSub"),
+      pointInspectorRoute: $("pointInspectorRoute"),
+      pointInspectorRouteSwatch: $("pointInspectorRouteSwatch"),
+      pointInspectorRouteName: $("pointInspectorRouteName"),
+      pointInspectorClose: $("pointInspectorClose"),
+      pointInspectorMode: $("pointInspectorMode"),
+      pointInspectorJump: $("pointInspectorJump"),
+      pointInspectorSave: $("pointInspectorSave"),
+      pointInspectorDelete: $("pointInspectorDelete"),
+      pointInspectorType: $("pointInspectorType"),
+      pointInspectorTypeLabel: $("pointInspectorTypeLabel"),
+      pointInspectorRouteField: $("pointInspectorRouteField"),
+      pointInspectorRouteLabel: $("pointInspectorRouteLabel"),
+      pointInspectorRouteSelect: $("pointInspectorRouteSelect"),
+      pointInspectorHelperField: $("pointInspectorHelperField"),
+      pointInspectorHelper: $("pointInspectorHelper"),
+      pointInspectorHelperLabel: $("pointInspectorHelperLabel"),
+      pointInspectorLabel: $("pointInspectorLabel"),
+      pointInspectorLabelLabel: $("pointInspectorLabelLabel"),
+      pointInspectorLocation: $("pointInspectorLocation"),
+      pointInspectorLocationLabel: $("pointInspectorLocationLabel"),
+      pointInspectorDuration: $("pointInspectorDuration"),
+      pointInspectorDurationLabel: $("pointInspectorDurationLabel"),
+      pointInspectorNote: $("pointInspectorNote"),
+      pointInspectorNoteLabel: $("pointInspectorNoteLabel"),
       toolbarCollapse: $("toolbarCollapse"),
       toolbarRestore: $("toolbarRestore"),
       toolbarRestoreLabel: $("toolbarRestoreLabel"),
       helpButton: $("helpButton"),
+      finderButton: $("finderButton"),
       infoPanel: $("infoPanel"),
       infoButton: $("infoButton"),
       infoClose: $("infoClose"),
       badgeVersion: $("badgeVersion"),
+      emptyTitle: $("emptyTitle"),
       emptySub: $("emptySub"),
       emptyStep1: $("emptyStep1"),
       emptyStep2: $("emptyStep2"),
@@ -103,28 +195,64 @@
       helpBackdrop: $("helpBackdrop"),
       helpClose: $("helpClose"),
       helpBody: $("helpBody"),
+      commandBackdrop: $("commandBackdrop"),
+      commandPalette: $("commandPalette"),
+      commandTitle: $("commandTitle"),
+      commandHint: $("commandHint"),
+      commandClose: $("commandClose"),
+      commandSearchLabel: $("commandSearchLabel"),
+      commandInput: $("commandInput"),
+      commandResults: $("commandResults"),
+      commandEmpty: $("commandEmpty"),
+      finderDrawer: $("finderDrawer"),
+      finderTitle: $("finderTitle"),
+      finderHint: $("finderHint"),
+      finderClose: $("finderClose"),
+      finderInput: $("finderInput"),
+      finderFilters: Array.from(document.querySelectorAll(".finder-filter")),
+      finderSummary: $("finderSummary"),
+      finderActionHint: $("finderActionHint"),
+      finderResults: $("finderResults"),
+      finderEmpty: $("finderEmpty"),
+      finderLimit: $("finderLimit"),
       emptyHint: $("emptyHint"),
       saveProject: $("saveProject"),
       loadProject: $("loadProject"),
+      projectExportLabel: $("projectExportLabel"),
       exportPng: $("exportPng"),
+      exportReaderHtml: $("exportReaderHtml"),
+      printReaderPdf: $("printReaderPdf"),
       clearAll: $("clearAll"),
       undo: $("undoButton"),
       redo: $("redoButton"),
       readerButton: $("readerButton"),
       presentationButton: $("presentationButton"),
       presentationDock: $("presentationDock"),
+      presentationViewModes: $("presentationViewModes"),
       presentationRoutes: $("presentationRoutes"),
+      presentationFocusCard: $("presentationFocusCard"),
+      presentationFocusTitle: $("presentationFocusTitle"),
+      presentationFocusBody: $("presentationFocusBody"),
+      presentationProgressRail: $("presentationProgressRail"),
       presentationStep: $("presentationStep"),
       presentationPrev: $("presentationPrev"),
       presentationNext: $("presentationNext"),
       presentationShowAll: $("presentationShowAll"),
       presentationReset: $("presentationReset"),
       presentationFogToggle: $("presentationFogToggle"),
+      presentationExportPng: $("presentationExportPng"),
       presentationFogPanel: $("presentationFogPanel"),
       presentationFogTitle: $("presentationFogTitle"),
       presentationFogClose: $("presentationFogClose"),
+      presentationRevealLabel: $("presentationRevealLabel"),
+      presentationThemeLabel: $("presentationThemeLabel"),
+      presentationThemePrev: $("presentationThemePrev"),
+      presentationThemeToggle: $("presentationThemeToggle"),
+      presentationThemeNext: $("presentationThemeNext"),
       presentationFogMode: $("presentationFogMode"),
       presentationFogModeLabel: $("presentationFogModeLabel"),
+      presentationFogStyle: $("presentationFogStyle"),
+      presentationFogStyleLabel: $("presentationFogStyleLabel"),
       presentationFogOutside: $("presentationFogOutside"),
       presentationFogOutsideLabel: $("presentationFogOutsideLabel"),
       presentationFogFocus: $("presentationFogFocus"),
@@ -136,9 +264,6 @@
       presentationFogMemory: $("presentationFogMemory"),
       presentationFogMemoryLabel: $("presentationFogMemoryLabel"),
       presentationExit: $("presentationExit"),
-      focusMode: $("focusMode"),
-      chapterMode: $("chapterMode"),
-      chapterStart: $("chapterStart"),
       routePanelToggle: $("routePanelToggle"),
       activeRouteLabel: $("activeRouteLabel"),
       routePanel: $("routePanel"),
@@ -179,8 +304,80 @@
         char: $("filter-char"),
         event: $("filter-event"),
         item: $("filter-item")
-      }
+      },
+      viewPresetLabel: $("viewPresetLabel"),
+      viewPresetButtons: $("viewPresetButtons"),
+      wheelZoom: $("wheelZoomControl")
     };
+    const minimap = PM.createMinimap({
+      panel: controls.minimapPanel,
+      canvas: controls.minimapCanvas,
+      viewport: controls.minimapViewport,
+      svg: controls.minimapSvg,
+      dragHandle: controls.minimapDrag,
+      resizeHandle: controls.minimapResize,
+      autoButton: controls.minimapAuto,
+      pinButton: controls.minimapPin,
+      routesButton: controls.minimapRoutes,
+      closeButton: controls.minimapClose,
+      toggleButton: controls.minimapToggle,
+      mainCanvas: $("mapCanvas"),
+      store,
+      renderer
+    });
+    PM.minimap = minimap;
+    pointInspector = PM.createPointInspector({
+      panel: controls.pointInspector,
+      dragHandle: controls.pointInspectorDrag,
+      title: controls.pointInspectorTitle,
+      sub: controls.pointInspectorSub,
+      routeChip: controls.pointInspectorRoute,
+      routeSwatch: controls.pointInspectorRouteSwatch,
+      routeName: controls.pointInspectorRouteName,
+      closeButton: controls.pointInspectorClose,
+      modeButton: controls.pointInspectorMode,
+      jumpButton: controls.pointInspectorJump,
+      saveButton: controls.pointInspectorSave,
+      deleteButton: controls.pointInspectorDelete,
+      typeSelect: controls.pointInspectorType,
+      routeField: controls.pointInspectorRouteField,
+      routeSelect: controls.pointInspectorRouteSelect,
+      helperField: controls.pointInspectorHelperField,
+      helperInput: controls.pointInspectorHelper,
+      labelInput: controls.pointInspectorLabel,
+      locationInput: controls.pointInspectorLocation,
+      durationInput: controls.pointInspectorDuration,
+      noteInput: controls.pointInspectorNote
+    }, store, renderer);
+    PM.pointInspector = pointInspector;
+    const finder = PM.createFinderDrawer({
+      panel: controls.finderDrawer,
+      title: controls.finderTitle,
+      hint: controls.finderHint,
+      closeButton: controls.finderClose,
+      input: controls.finderInput,
+      filters: controls.finderFilters,
+      summary: controls.finderSummary,
+      actionHint: controls.finderActionHint,
+      results: controls.finderResults,
+      empty: controls.finderEmpty,
+      limitLabel: controls.finderLimit
+    }, store, {
+      visibleBounds: () => renderer.visibleMapBounds(),
+      onJumpPoint: (pointId) => jumpToPointId(pointId),
+      onPreviewPoint: (pointId) => pointUi.previewPoint(pointId),
+      onInspect: (pointId, options) => {
+        pointInspector.open(pointId, options || { mode: "dock" });
+      },
+      onRoute: (routeId) => {
+        if (store.getLiveState().settings.filters.route === false) store.setFilter("route", true);
+        store.setActiveRoute(routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
+      }
+    });
+    PM.finder = finder;
 
     function t(key) {
       return PM.I18n.t(store.getLiveState().settings.locale, key);
@@ -188,12 +385,33 @@
 
     let routePanelOpen = false;
     let routeColorEdit = null;
+    let commandOpen = false;
+    let commandSelection = 0;
+    let commandMatches = [];
 
     function applyUiPrefs() {
       const root = document.documentElement;
       root.classList.toggle("toolbar-collapsed", uiPrefs.toolbarCollapsed);
+      root.classList.toggle("tooltips-disabled", !uiPrefs.tooltipsEnabled);
       root.style.setProperty("--toolbar-opacity", String(uiPrefs.toolbarOpacity / 100));
       controls.toolbarOpacity.value = String(uiPrefs.toolbarOpacity);
+      controls.wheelZoom.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.wheelZoomMenuControl.checked = Boolean(uiPrefs.wheelZoomEnabled);
+      controls.showWheelZoomControlPref.checked = Boolean(uiPrefs.showWheelZoomControl);
+      controls.showRouteControlsPref.checked = Boolean(uiPrefs.showRouteControls);
+      controls.showSliderControlsPref.checked = !uiPrefs.sliderPanelCollapsed;
+      controls.tooltipsPref.checked = Boolean(uiPrefs.tooltipsEnabled);
+      controls.showVisibilityControlsPref.checked = Boolean(uiPrefs.showVisibilityControls);
+      controls.showTypeControlsPref.checked = Boolean(uiPrefs.showTypeControls);
+      controls.showViewControlsPref.checked = Boolean(uiPrefs.showViewControls);
+      controls.routeControls.hidden = !uiPrefs.showRouteControls;
+      if (!uiPrefs.showRouteControls) controls.routePanel.hidden = true;
+      controls.visibilityControls.hidden = !uiPrefs.showVisibilityControls;
+      controls.typeControls.hidden = !uiPrefs.showTypeControls;
+      controls.viewControls.hidden = !uiPrefs.showViewControls;
+      controls.wheelZoom.parentElement.hidden = !uiPrefs.showWheelZoomControl;
+      controls.sliderPanel.hidden = Boolean(uiPrefs.sliderPanelCollapsed);
+      controls.sliderPanelToggle.setAttribute("aria-expanded", String(!uiPrefs.sliderPanelCollapsed));
       controls.toolbarRestore.hidden = !uiPrefs.toolbarCollapsed;
     }
 
@@ -201,6 +419,7 @@
       uiPrefs = normalizeUiPrefs({ ...uiPrefs, ...patch });
       saveUiPrefs(uiPrefs);
       applyUiPrefs();
+      applyToolbarTooltips();
     }
 
     function activeRoute() {
@@ -250,6 +469,206 @@
       return /^#[0-9a-f]{6}$/i.test(value || "") ? String(value) : fallback;
     }
 
+    function commandKindLabel(kind, locale) {
+      const key = kind === "route" ? "commandKindRoute" : kind === "point" ? "commandKindPoint" : "commandKindAction";
+      return PM.I18n.t(locale, key);
+    }
+
+    function commandIconHtml(entry) {
+      if (entry.kind === "route" && entry.color) {
+        return `<span class="command-route-swatch" style="--route-color:${PM.escapeHtml(entry.color)}"></span>`;
+      }
+      return `<span aria-hidden="true">${PM.escapeHtml(entry.icon || "")}</span>`;
+    }
+
+    function commandActionLabel(entry, locale) {
+      if (entry.kind === "point") return PM.I18n.t(locale, "jump");
+      if (entry.kind === "route") return PM.I18n.t(locale, "routes");
+      if (entry.action === "finder-query") return PM.I18n.t(locale, "finder");
+      return commandKindLabel(entry.kind, locale);
+    }
+
+    function currentCommandEntries() {
+      const state = store.getLiveState();
+      return PM.buildCommandPaletteEntries(state, state.settings.locale);
+    }
+
+    function syncCommandSelection() {
+      Array.from(controls.commandResults.querySelectorAll(".command-result[role='option']")).forEach((node, nodeIndex) => {
+        node.classList.toggle("is-selected", nodeIndex === commandSelection);
+        node.setAttribute("aria-selected", String(nodeIndex === commandSelection));
+      });
+    }
+
+    function renderCommandPalette() {
+      if (!commandOpen) return;
+      const locale = store.getLiveState().settings.locale;
+      const query = controls.commandInput.value;
+      const entries = currentCommandEntries();
+      const totalMatches = PM.countCommandPaletteMatches(entries, query);
+      const visibleMatches = PM.filterCommandPaletteEntries(entries, query, 10);
+      const hiddenMatches = Math.max(0, totalMatches - visibleMatches.length);
+      commandMatches = visibleMatches.slice();
+      if (hiddenMatches > 0 && query.trim()) {
+        commandMatches.push({
+          id: "action:finder-query",
+          kind: "action",
+          action: "finder-query",
+          icon: "\u2315",
+          label: PM.I18n.t(locale, "finder"),
+          detail: PM.I18n.t(locale, "commandMoreResults").replace("{count}", String(hiddenMatches)),
+          query
+        });
+      }
+      commandSelection = PM.clamp(commandSelection, 0, Math.max(0, commandMatches.length - 1));
+      controls.commandResults.textContent = "";
+      controls.commandEmpty.hidden = commandMatches.length > 0;
+      commandMatches.forEach((entry, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        const moreClass = entry.action === "finder-query" ? " command-more-results" : "";
+        button.className = `command-result${moreClass}${index === commandSelection ? " is-selected" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(index === commandSelection));
+        button.innerHTML = [
+          `<span class="command-icon">${commandIconHtml(entry)}</span>`,
+          `<span class="command-copy"><strong>${PM.escapeHtml(entry.label)}</strong><span>${PM.escapeHtml(entry.detail || commandKindLabel(entry.kind, locale))}</span></span>`,
+          `<span class="command-action">${PM.escapeHtml(commandActionLabel(entry, locale))}</span>`
+        ].join("");
+        button.addEventListener("mouseenter", () => {
+          commandSelection = index;
+          syncCommandSelection();
+        });
+        button.addEventListener("click", () => executeCommandEntry(entry));
+        controls.commandResults.appendChild(button);
+      });
+    }
+
+    function openCommandPalette(seed) {
+      commandOpen = true;
+      commandSelection = 0;
+      closeRouteColorPopover();
+      menu.close();
+      finder.close();
+      controls.commandBackdrop.hidden = false;
+      controls.commandPalette.hidden = false;
+      controls.commandInput.value = seed || "";
+      renderCommandPalette();
+      controls.commandInput.focus();
+      controls.commandInput.select();
+    }
+
+    function closeCommandPalette() {
+      commandOpen = false;
+      controls.commandBackdrop.hidden = true;
+      controls.commandPalette.hidden = true;
+      controls.commandResults.textContent = "";
+    }
+
+    function renderViewPresets(state) {
+      const locale = state.settings.locale;
+      controls.viewPresetLabel.textContent = PM.I18n.t(locale, "viewPresets");
+      controls.viewPresetButtons.setAttribute("aria-label", PM.I18n.t(locale, "viewPresets"));
+      controls.viewPresetButtons.textContent = "";
+      PM.VIEW_PRESETS.forEach((preset) => {
+        const active = PM.viewPresetMatchesState(state, preset.id);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `view-preset${active ? " is-active" : ""}`;
+        button.textContent = PM.I18n.t(locale, preset.labelKey);
+        button.setAttribute("title", PM.I18n.t(locale, preset.titleKey));
+        button.setAttribute("aria-pressed", String(active));
+        button.addEventListener("click", () => {
+          closeCommandPalette();
+          closeRouteColorPopover();
+          menu.close();
+          finder.close();
+          PM.applyViewPreset(store, preset.id);
+        });
+        controls.viewPresetButtons.appendChild(button);
+      });
+    }
+
+    function openFinder(seed, filter = "all") {
+      closeCommandPalette();
+      closeRouteColorPopover();
+      menu.close();
+      finder.open(seed, filter);
+    }
+
+    async function exportCurrentPng() {
+      try {
+        const blob = await renderer.exportPng();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
+      } catch (_error) {
+        alert(t("exportFailed"));
+      }
+    }
+
+    function jumpToPointId(pointId) {
+      const state = store.getLiveState();
+      const point = state.points.find((candidate) => candidate.id === pointId);
+      if (!point) return;
+      if (state.settings.filters[point.type] === false) {
+        store.setFilter(point.type, true);
+      }
+      if (point.type === "route" && point.routeId) {
+        store.setActiveRoute(point.routeId);
+      }
+      if (state.settings.focusMode && point.type !== "route") store.setSettings({ focusMode: false });
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
+    function executeCommandEntry(entry) {
+      if (!entry) return;
+      const state = store.getLiveState();
+      if (entry.action === "finder-query") {
+        openFinder(entry.query || controls.commandInput.value || "");
+        return;
+      }
+      if (entry.kind === "point") {
+        jumpToPointId(entry.pointId);
+        closeCommandPalette();
+        return;
+      }
+      if (entry.kind === "route") {
+        if (state.settings.filters.route === false) store.setFilter("route", true);
+        store.setActiveRoute(entry.routeId);
+        routePanelOpen = true;
+        renderRoutePanel(store.getState());
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
+        closeCommandPalette();
+        return;
+      }
+      if (entry.action === "reader") reader.open();
+      if (entry.action === "present") presentation.enter();
+      if (entry.action === "export-png") exportCurrentPng();
+      if (entry.action === "routes") {
+        routePanelOpen = true;
+        persistUiPrefs({ toolbarCollapsed: false, showRouteControls: true });
+        renderRoutePanel(store.getState());
+      }
+      if (entry.action === "finder") openFinder("");
+      if (entry.action === "finder-view") openFinder("", "view");
+      if (entry.action === "finder-issues") openFinder("", "issue");
+      if (String(entry.action || "").startsWith("view:")) {
+        finder.close();
+        PM.applyViewPreset(store, entry.action.slice("view:".length));
+      }
+      if (entry.action === "collapse-menu") persistUiPrefs({ toolbarCollapsed: true });
+      if (entry.action === "minimap") minimap.setMode(minimap.getPrefs().mode === "off" ? "pin" : "off");
+      closeCommandPalette();
+    }
+
     function setRouteColorPreview(value) {
       const color = validColor(value, "#cc3333");
       controls.routeColorPicker.value = color;
@@ -258,6 +677,14 @@
     function closeRouteColorPopover() {
       controls.routeColorPopover.hidden = true;
       routeColorEdit = null;
+    }
+
+    function closeOpenToolbarMenus(event) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      [controls.projectMenu, controls.optionsMenu].forEach((details) => {
+        if (details.open && !details.contains(target)) details.open = false;
+      });
     }
 
     function commitRouteColorPopover() {
@@ -283,7 +710,7 @@
     function renderRoutePanel(state) {
       const locale = state.settings.locale;
       const active = PM.getActiveRoute(state.settings, state.routes);
-      controls.routePanel.hidden = !routePanelOpen;
+      controls.routePanel.hidden = !uiPrefs.showRouteControls || !routePanelOpen;
       controls.routePanelToggle.setAttribute("aria-expanded", String(routePanelOpen));
       controls.routePanelCaret.textContent = routePanelOpen ? "\u25b4" : "\u25be";
       controls.activeRouteLabel.textContent = `${PM.I18n.t(locale, "activeRoute")}: ${active.name}`;
@@ -333,11 +760,16 @@
       });
     }
 
-    PM.createPresentationController({
+    PM.presentation = PM.createPresentationController({
       root: document.documentElement,
       button: controls.presentationButton,
       dock: controls.presentationDock,
+      viewModes: controls.presentationViewModes,
       routeList: controls.presentationRoutes,
+      focusCard: controls.presentationFocusCard,
+      focusTitle: controls.presentationFocusTitle,
+      focusBody: controls.presentationFocusBody,
+      progressRail: controls.presentationProgressRail,
       step: controls.presentationStep,
       previousButton: controls.presentationPrev,
       nextButton: controls.presentationNext,
@@ -347,6 +779,7 @@
       fogPanel: controls.presentationFogPanel,
       fogCloseButton: controls.presentationFogClose,
       fogMode: controls.presentationFogMode,
+      fogStyle: controls.presentationFogStyle,
       fogOutside: controls.presentationFogOutside,
       fogFocus: controls.presentationFogFocus,
       fogTrail: controls.presentationFogTrail,
@@ -365,34 +798,59 @@
     function setButtonText() {
       const locale = store.getLiveState().settings.locale;
       controls.fileName.textContent = store.getLiveState().map.name || PM.I18n.t(locale, "noProject");
-      controls.imageLoadLabel.querySelector("span").textContent = PM.I18n.t(locale, "loadMap");
-      controls.saveProject.textContent = PM.I18n.t(locale, "saveProject");
-      controls.loadProject.textContent = PM.I18n.t(locale, "loadProject");
+      controls.saveStatus.textContent = store.isDirty() ? PM.I18n.t(locale, "unsavedStatus") : PM.I18n.t(locale, "savedStatus");
+      controls.imageLoadLabel.querySelector("span").textContent = `\uD83C\uDF10 ${PM.I18n.t(locale, "loadMap")}`;
+      controls.projectMenuSummary.textContent = PM.I18n.t(locale, "projectMenu");
+      controls.optionsMenuSummary.textContent = PM.I18n.t(locale, "optionsMenu");
+      controls.saveProject.textContent = `\uD83D\uDCBE ${PM.I18n.t(locale, "saveProject")}`;
+      controls.loadProject.textContent = `\uD83D\uDCC2 ${PM.I18n.t(locale, "loadProject")}`;
+      controls.projectExportLabel.textContent = PM.I18n.t(locale, "export");
       controls.pointTypesLabel.textContent = PM.I18n.t(locale, "pointTypesFilter");
       controls.visibilityLabel.textContent = PM.I18n.t(locale, "visibility");
-      controls.helpButton.textContent = PM.I18n.t(locale, "help");
+      controls.helpButton.textContent = `\uD83D\uDEDF ${PM.I18n.t(locale, "help")}`;
+      controls.finderButton.textContent = `\u2315 ${PM.I18n.t(locale, "finder")}`;
+      controls.minimapToggle.textContent = `\uD83D\uDDFA\uFE0F ${PM.I18n.t(locale, "minimap")}`;
+      controls.minimapToggle.setAttribute("aria-label", PM.I18n.t(locale, "minimap"));
+      controls.minimapToggle.setAttribute("title", PM.I18n.t(locale, "minimap"));
       controls.toolbarCollapse.setAttribute("aria-label", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarCollapse.setAttribute("title", PM.I18n.t(locale, "collapseMenu"));
       controls.toolbarRestore.setAttribute("aria-label", PM.I18n.t(locale, "expandMenu"));
       controls.toolbarRestore.setAttribute("title", PM.I18n.t(locale, "expandMenu"));
-      controls.undo.textContent = PM.I18n.t(locale, "undo");
-      controls.redo.textContent = PM.I18n.t(locale, "redo");
+      controls.undo.textContent = "\u21B6";
+      controls.redo.textContent = "\u21B7";
+      controls.undo.setAttribute("aria-label", PM.I18n.t(locale, "undo"));
+      controls.redo.setAttribute("aria-label", PM.I18n.t(locale, "redo"));
       controls.readerButton.textContent = `\uD83D\uDCD6 ${PM.I18n.t(locale, "reader")}`;
       controls.presentationButton.textContent = PM.I18n.t(locale, "present");
       controls.presentationDock.setAttribute("aria-label", PM.I18n.t(locale, "presentation"));
+      controls.presentationViewModes.setAttribute("aria-label", PM.I18n.t(locale, "presentationView"));
       controls.presentationRoutes.setAttribute("aria-label", PM.I18n.t(locale, "routes"));
       controls.presentationPrev.setAttribute("aria-label", PM.I18n.t(locale, "presentationPrevious"));
       controls.presentationNext.setAttribute("aria-label", PM.I18n.t(locale, "presentationNext"));
       controls.presentationShowAll.textContent = PM.I18n.t(locale, "presentationShowAll");
       controls.presentationReset.textContent = PM.I18n.t(locale, "presentationReset");
-      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
-      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationFogSettings"));
-      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentationFog");
+      controls.presentationExportPng.textContent = PM.I18n.t(locale, "png");
+      controls.presentationExportPng.setAttribute("aria-label", PM.I18n.t(locale, "presentationExportPng"));
+      controls.presentationExportPng.setAttribute("title", PM.I18n.t(locale, "presentationExportPng"));
+      controls.presentationFogToggle.setAttribute("aria-label", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogToggle.setAttribute("title", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogPanel.setAttribute("aria-label", PM.I18n.t(locale, "presentationSettings"));
+      controls.presentationFogTitle.textContent = PM.I18n.t(locale, "presentation");
       controls.presentationFogClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.presentationThemeLabel.textContent = PM.I18n.t(locale, "theme");
+      controls.presentationThemePrev.setAttribute("aria-label", PM.I18n.t(locale, "themePrevious"));
+      controls.presentationThemeToggle.textContent = `\uD83C\uDFA8 ${PM.I18n.t(locale, "theme")}`;
+      controls.presentationThemeToggle.setAttribute("aria-label", PM.I18n.t(locale, "themeTooltip"));
+      controls.presentationThemeNext.setAttribute("aria-label", PM.I18n.t(locale, "themeNext"));
+      controls.presentationRevealLabel.textContent = PM.I18n.t(locale, "presentationReveal");
       controls.presentationFogModeLabel.textContent = PM.I18n.t(locale, "presentationFogMode");
       controls.presentationFogMode.options[0].textContent = PM.I18n.t(locale, "presentationFogOff");
       controls.presentationFogMode.options[1].textContent = PM.I18n.t(locale, "presentationFogFocus");
       controls.presentationFogMode.options[2].textContent = PM.I18n.t(locale, "presentationFogAll");
+      controls.presentationFogStyleLabel.textContent = PM.I18n.t(locale, "presentationFogStyle");
+      controls.presentationFogStyle.options[0].textContent = PM.I18n.t(locale, "presentationFogStyleClear");
+      controls.presentationFogStyle.options[1].textContent = PM.I18n.t(locale, "presentationFogStyleSoft");
+      controls.presentationFogStyle.options[2].textContent = PM.I18n.t(locale, "presentationFogStyleGame");
       controls.presentationFogOutsideLabel.textContent = PM.I18n.t(locale, "presentationFogOutside");
       controls.presentationFogFocusLabel.textContent = PM.I18n.t(locale, "presentationFogCurrent");
       controls.presentationFogTrailLabel.textContent = PM.I18n.t(locale, "presentationFogTrail");
@@ -418,10 +876,38 @@
       controls.routeColorPicker.setAttribute("aria-label", PM.I18n.t(locale, "colorChoice"));
       controls.routeColorOk.textContent = PM.I18n.t(locale, "ok");
       controls.routeColorCancel.textContent = PM.I18n.t(locale, "cancel");
-      controls.exportPng.textContent = PM.I18n.t(locale, "png");
-      controls.clearAll.textContent = PM.I18n.t(locale, "clear");
-      controls.langToggle.textContent = locale === "en" ? "DE" : "EN";
-      controls.themeToggle.textContent = "\uD83C\uDFA8";
+      controls.tooltipsPrefLabel.textContent = PM.I18n.t(locale, "tooltipsOption");
+      controls.wheelZoomPrefLabel.textContent = PM.I18n.t(locale, "wheelZoom");
+      controls.showWheelZoomControlPrefLabel.textContent = PM.I18n.t(locale, "showWheelZoomControlOption");
+      controls.showRouteControlsPrefLabel.textContent = PM.I18n.t(locale, "showRouteControlsOption");
+      controls.showSliderControlsPrefLabel.textContent = PM.I18n.t(locale, "showSliderControlsOption");
+      controls.showVisibilityControlsPrefLabel.textContent = PM.I18n.t(locale, "visibilityControlsOption");
+      controls.showTypeControlsPrefLabel.textContent = PM.I18n.t(locale, "typeControlsOption");
+      controls.showViewControlsPrefLabel.textContent = PM.I18n.t(locale, "viewControlsOption");
+      controls.sliderPanelToggle.textContent = `${uiPrefs.sliderPanelCollapsed ? "\u25BE" : "\u25B4"} ${PM.I18n.t(locale, "displaySliders")}`;
+      controls.pointInspector.setAttribute("aria-label", PM.I18n.t(locale, "pointInspector"));
+      controls.pointInspectorClose.setAttribute("aria-label", PM.I18n.t(locale, "close"));
+      controls.pointInspectorTypeLabel.textContent = PM.I18n.t(locale, "pointType");
+      controls.pointInspectorRouteLabel.textContent = PM.I18n.t(locale, "route");
+      controls.pointInspectorHelperLabel.textContent = PM.I18n.t(locale, "helperPoint");
+      controls.pointInspectorLabelLabel.textContent = PM.I18n.t(locale, "labels");
+      controls.pointInspectorLocationLabel.textContent = PM.I18n.t(locale, "location");
+      controls.pointInspectorDurationLabel.textContent = PM.I18n.t(locale, "duration");
+      controls.pointInspectorNoteLabel.textContent = PM.I18n.t(locale, "notes");
+      controls.pointInspectorJump.textContent = PM.I18n.t(locale, "jump");
+      controls.pointInspectorSave.textContent = PM.I18n.t(locale, "applyChanges");
+      controls.pointInspectorDelete.textContent = PM.I18n.t(locale, "deletePoint");
+      if (pointInspector && pointInspector.isOpen()) pointInspector.render(false);
+      controls.exportPng.textContent = `\uD83D\uDDBC\uFE0F ${PM.I18n.t(locale, "png")}`;
+      controls.exportReaderHtml.textContent = `\uD83C\uDF10 ${PM.I18n.t(locale, "saveHtml")}`;
+      controls.printReaderPdf.textContent = `\uD83D\uDCC4 ${PM.I18n.t(locale, "printPdf")}`;
+      controls.clearAll.textContent = `\uD83E\uDDF9 ${PM.I18n.t(locale, "clear")}`;
+      controls.languagePrefLabel.textContent = `\uD83D\uDD20 ${PM.I18n.t(locale, "language")}`;
+      controls.langSelect.value = locale;
+      controls.langSelect.setAttribute("aria-label", PM.I18n.t(locale, "language"));
+      controls.themeToggle.textContent = `\uD83C\uDFA8 ${PM.I18n.t(locale, "theme")}`;
+      controls.themePrev.setAttribute("aria-label", PM.I18n.t(locale, "themePrevious"));
+      controls.themeNext.setAttribute("aria-label", PM.I18n.t(locale, "themeNext"));
       const labelMap = {
         "filter-route": "route",
         "filter-place": "place",
@@ -434,8 +920,7 @@
         showNotes: "notesToggle",
         showDuration: "durationToggle",
         showEdit: "editToggle",
-        focusMode: "focus",
-        chapterMode: "chapterStart"
+        wheelZoomControl: "wheelZoom"
       };
       Object.entries(labelMap).forEach(([id, key]) => {
         const input = $(id);
@@ -458,6 +943,7 @@
         input.setAttribute("aria-label", title);
         input.parentElement.setAttribute("title", title);
       });
+      controls.emptyTitle.textContent = PM.I18n.t(locale, "emptyTitle");
       controls.emptySub.textContent = PM.I18n.t(locale, "empty");
       controls.emptyStep1.textContent = PM.I18n.t(locale, "emptyStep1");
       controls.emptyStep2.textContent = PM.I18n.t(locale, "emptyStep2");
@@ -465,7 +951,56 @@
       controls.helpModal.querySelector("h2").textContent = PM.I18n.t(locale, "helpTitle");
       controls.helpClose.textContent = PM.I18n.t(locale, "close");
       controls.helpBody.innerHTML = PM.I18n.t(locale, "helpHtml");
+      controls.commandTitle.textContent = PM.I18n.t(locale, "commandSearch");
+      controls.commandHint.textContent = PM.I18n.t(locale, "commandSearchHint");
+      controls.commandSearchLabel.textContent = PM.I18n.t(locale, "commandSearchPlaceholder");
+      controls.commandInput.setAttribute("aria-label", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandInput.setAttribute("placeholder", PM.I18n.t(locale, "commandSearchPlaceholder"));
+      controls.commandClose.textContent = PM.I18n.t(locale, "close");
+      controls.commandEmpty.textContent = PM.I18n.t(locale, "commandNoResults");
+      renderViewPresets(store.getLiveState());
+      if (finder.isOpen()) finder.render();
       controls.badgeVersion.textContent = `v${PM.APP_VERSION}`;
+      applyToolbarTooltips();
+    }
+
+    function setTooltip(element, text) {
+      if (!element) return;
+      element.dataset.tooltipText = text || "";
+      if (uiPrefs.tooltipsEnabled && text) element.setAttribute("title", text);
+      else element.removeAttribute("title");
+    }
+
+    function applyToolbarTooltips() {
+      const locale = store.getLiveState().settings.locale;
+      const pairs = [
+        [controls.projectMenuSummary, "projectMenuTooltip"],
+        [controls.imageLoadLabel, "loadMapTooltip"],
+        [controls.saveProject, "saveProjectTooltip"],
+        [controls.loadProject, "loadProjectTooltip"],
+        [controls.exportPng, "exportPngTooltip"],
+        [controls.exportReaderHtml, "exportHtmlTooltip"],
+        [controls.printReaderPdf, "printPdfTooltip"],
+        [controls.clearAll, "clearTooltip"],
+        [controls.undo, "undoTooltip"],
+        [controls.redo, "redoTooltip"],
+        [controls.finderButton, "finderTooltip"],
+        [controls.minimapToggle, "minimapTooltip"],
+        [controls.readerButton, "readerTooltip"],
+        [controls.presentationButton, "presentationTooltip"],
+        [controls.optionsMenuSummary, "optionsMenuTooltip"],
+        [controls.helpButton, "helpTooltip"],
+        [controls.langSelect, "languageTooltip"],
+        [controls.themePrev, "themeTooltip"],
+        [controls.themeToggle, "themeTooltip"],
+        [controls.themeNext, "themeTooltip"],
+        [controls.presentationThemePrev, "themeTooltip"],
+        [controls.presentationThemeToggle, "themeTooltip"],
+        [controls.presentationThemeNext, "themeTooltip"],
+        [controls.toolbarCollapse, "collapseMenu"],
+        [controls.sliderPanelToggle, "displaySlidersTooltip"]
+      ];
+      pairs.forEach(([element, key]) => setTooltip(element, PM.I18n.t(locale, key)));
     }
 
     function syncControls(state) {
@@ -483,10 +1018,7 @@
       controls.showNotes.checked = state.settings.showNotes;
       controls.showDuration.checked = state.settings.showDuration;
       controls.showEdit.checked = state.settings.showEdit;
-      controls.focusMode.checked = state.settings.focusMode;
       const route = PM.getActiveRoute(state.settings, state.routes);
-      controls.chapterMode.checked = route.showNumbers !== false;
-      controls.chapterStart.value = String(route.startNumber);
       controls.zoom.value = String(state.settings.zoom);
       controls.opacity.value = String(state.settings.opacity);
       controls.pointSize.value = String(state.settings.pointSizePx);
@@ -521,12 +1053,20 @@
       event.preventDefault();
       controls.imageInput.click();
     });
+    controls.projectMenu.addEventListener("toggle", () => {
+      if (controls.projectMenu.open) controls.optionsMenu.open = false;
+    });
+    controls.optionsMenu.addEventListener("toggle", () => {
+      if (controls.optionsMenu.open) controls.projectMenu.open = false;
+    });
+    document.addEventListener("pointerdown", closeOpenToolbarMenus, true);
 
     controls.saveProject.addEventListener("click", () => {
       const project = store.getState();
       const name = `${PM.safeFilename(project.map.name, "PlotMap")}_${PM.formatDateStamp()}.plotmap.json`;
       PM.downloadText(name, PM.Serialization.projectToJson(project), "application/json;charset=utf-8");
       store.markSaved();
+      syncControls(store.getState());
     });
 
     controls.loadProject.addEventListener("click", () => controls.projectInput.click());
@@ -543,20 +1083,10 @@
       }
     });
 
-    controls.exportPng.addEventListener("click", async () => {
-      try {
-        const blob = await renderer.exportPng();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${PM.safeFilename(store.getLiveState().map.name, "PlotMap")}_${PM.formatDateStamp()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(link.href), 3000);
-      } catch (_error) {
-        alert(t("exportFailed"));
-      }
-    });
+    controls.exportPng.addEventListener("click", exportCurrentPng);
+    controls.exportReaderHtml.addEventListener("click", () => reader.exportHtml());
+    controls.printReaderPdf.addEventListener("click", () => reader.printPdf());
+    controls.presentationExportPng.addEventListener("click", exportCurrentPng);
 
     controls.clearAll.addEventListener("click", () => {
       if (confirm(t("clearConfirm"))) store.clearPoints();
@@ -564,12 +1094,34 @@
     controls.undo.addEventListener("click", () => store.undo());
     controls.redo.addEventListener("click", () => store.redo());
     controls.readerButton.addEventListener("click", () => reader.open());
-    controls.langToggle.addEventListener("click", () => {
-      const next = store.getLiveState().settings.locale === "en" ? "de" : "en";
+    controls.finderButton.addEventListener("click", () => openFinder(""));
+    controls.presentationButton.addEventListener("click", () => finder.close());
+    controls.langSelect.addEventListener("change", () => {
+      const next = PM.I18n.normalizeLocale(controls.langSelect.value);
       store.setSettings({ locale: next });
       history.replaceState(null, "", `?lang=${next}`);
     });
+    controls.themePrev.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.previousTheme(current) });
+    });
     controls.themeToggle.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.themeNext.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.presentationThemePrev.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.previousTheme(current) });
+    });
+    controls.presentationThemeToggle.addEventListener("click", () => {
+      const current = store.getLiveState().settings.theme;
+      store.setSettings({ theme: PM.Theme.nextTheme(current) });
+    });
+    controls.presentationThemeNext.addEventListener("click", () => {
       const current = store.getLiveState().settings.theme;
       store.setSettings({ theme: PM.Theme.nextTheme(current) });
     });
@@ -584,6 +1136,7 @@
       persistUiPrefs({ toolbarCollapsed: true });
     });
     controls.toolbarRestore.addEventListener("click", () => persistUiPrefs({ toolbarCollapsed: false }));
+    controls.sliderPanelToggle.addEventListener("click", () => persistUiPrefs({ sliderPanelCollapsed: !uiPrefs.sliderPanelCollapsed }));
     controls.routeColorPicker.addEventListener("input", () => setRouteColorPreview(controls.routeColorPicker.value));
     controls.routeColorOk.addEventListener("click", commitRouteColorPopover);
     controls.routeColorCancel.addEventListener("click", closeRouteColorPopover);
@@ -614,9 +1167,16 @@
     bindSettingCheckbox(controls.showNotes, "showNotes");
     bindSettingCheckbox(controls.showDuration, "showDuration");
     bindSettingCheckbox(controls.showEdit, "showEdit");
-    bindSettingCheckbox(controls.focusMode, "focusMode");
-    controls.chapterMode.addEventListener("change", () => patchActiveRoute({ showNumbers: controls.chapterMode.checked }));
-    controls.chapterStart.addEventListener("input", () => patchActiveRoute({ startNumber: controls.chapterStart.value }));
+    function bindUiPrefCheckbox(input, key) {
+      input.addEventListener("change", () => persistUiPrefs({ [key]: input.checked }));
+    }
+    bindUiPrefCheckbox(controls.tooltipsPref, "tooltipsEnabled");
+    bindUiPrefCheckbox(controls.showWheelZoomControlPref, "showWheelZoomControl");
+    bindUiPrefCheckbox(controls.showRouteControlsPref, "showRouteControls");
+    controls.showSliderControlsPref.addEventListener("change", () => persistUiPrefs({ sliderPanelCollapsed: !controls.showSliderControlsPref.checked }));
+    bindUiPrefCheckbox(controls.showVisibilityControlsPref, "showVisibilityControls");
+    bindUiPrefCheckbox(controls.showTypeControlsPref, "showTypeControls");
+    bindUiPrefCheckbox(controls.showViewControlsPref, "showViewControls");
     controls.routePanelToggle.addEventListener("click", () => {
       routePanelOpen = !routePanelOpen;
       renderRoutePanel(store.getState());
@@ -630,6 +1190,8 @@
     controls.pointSize.addEventListener("input", () => store.setSettings({ pointSizePx: controls.pointSize.value }));
     controls.helperPointSize.addEventListener("input", () => store.setSettings({ helperPointSizePx: controls.helperPointSize.value }));
     controls.toolbarOpacity.addEventListener("input", () => persistUiPrefs({ toolbarOpacity: controls.toolbarOpacity.value }));
+    controls.wheelZoom.addEventListener("change", () => persistUiPrefs({ wheelZoomEnabled: controls.wheelZoom.checked }));
+    controls.wheelZoomMenuControl.addEventListener("change", () => persistUiPrefs({ wheelZoomEnabled: controls.wheelZoomMenuControl.checked }));
     controls.fontScale.addEventListener("input", () => store.setSettings({ fontScale: controls.fontScale.value }));
     Object.entries(controls.filters).forEach(([type, input]) => {
       input.addEventListener("change", () => store.setFilter(type, input.checked));
@@ -646,6 +1208,28 @@
     controls.helpButton.addEventListener("click", openHelp);
     controls.helpClose.addEventListener("click", closeHelp);
     controls.helpBackdrop.addEventListener("click", closeHelp);
+    controls.commandClose.addEventListener("click", closeCommandPalette);
+    controls.commandBackdrop.addEventListener("click", closeCommandPalette);
+    controls.commandInput.addEventListener("input", () => {
+      commandSelection = 0;
+      renderCommandPalette();
+    });
+    controls.commandInput.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection + 1, 0, Math.max(0, commandMatches.length - 1));
+        syncCommandSelection();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        commandSelection = PM.clamp(commandSelection - 1, 0, Math.max(0, commandMatches.length - 1));
+        syncCommandSelection();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        executeCommandEntry(commandMatches[commandSelection]);
+      }
+    });
 
     const canvas = $("mapCanvas");
     let pan = null;
@@ -682,6 +1266,34 @@
       canvas.classList.remove("dragging");
       pan = null;
     });
+    function isWheelZoomUiTarget(target) {
+      return Boolean(target && target.closest && target.closest([
+        ".toolbar",
+        ".toolbar-restore",
+        ".minimap-panel",
+        ".point-inspector",
+        ".context-menu",
+        ".command-palette",
+        ".finder-drawer",
+        ".modal",
+        ".presentation-dock",
+        ".presentation-fog-panel",
+        ".info-panel"
+      ].join(",")));
+    }
+
+    document.addEventListener("wheel", (event) => {
+      if (!uiPrefs.wheelZoomEnabled || !store.getLiveState().map.dataUrl) return;
+      if (isWheelZoomUiTarget(event.target)) return;
+      event.preventDefault();
+      menu.close();
+      closeRouteColorPopover();
+      const current = Number(store.getLiveState().settings.zoom) || 1;
+      const factor = Math.exp(-event.deltaY * 0.0015);
+      const next = PM.clamp(current * factor, 1, 5);
+      if (Math.abs(next - current) < 0.005) return;
+      renderer.zoomAtClient(event.clientX, event.clientY, next);
+    }, { passive: false, capture: true });
     canvas.addEventListener("dblclick", (event) => {
       const state = store.getLiveState();
       if (!state.map.dataUrl) return;
@@ -696,13 +1308,29 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      const eventTarget = event.target instanceof Element ? event.target : document.body;
+      const inTextField = eventTarget.matches("input, textarea, select");
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
+      if (event.key === "/" && !inTextField && !commandOpen) {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
       if (event.key === "Escape") {
+        if (commandOpen) {
+          closeCommandPalette();
+          return;
+        }
         closeRouteColorPopover();
         menu.close();
         closeHelp();
         $("pmSplash").classList.add("hide");
       }
-      if (event.key.toLowerCase() === "t" && !event.target.matches("input, textarea")) {
+      if (event.key.toLowerCase() === "t" && !inTextField) {
         const current = store.getLiveState().settings.theme;
         store.setSettings({ theme: PM.Theme.nextTheme(current) });
       }

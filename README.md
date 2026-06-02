@@ -1,4 +1,4 @@
-# PlotMapper
+﻿# PlotMapper
 
 PlotMapper is a lightweight browser tool for planning story routes, locations, characters, events, items, notes, and reading flow directly on a map. It runs as a standalone HTML app and can be used locally or via GitHub Pages.
 
@@ -8,70 +8,69 @@ Live version: https://maxliebscher.github.io/PlotMapperTool/
 
 ## Screenshots
 
-Click any screenshot to open it full size. Zum Vergrößern anklicken.
+Click any screenshot to open it full size. Zum Vergroessern anklicken.
 
 <p align="center">
-  <a href="assets/screenshots/v1.2.0-presentation-multi-route-fog.jpg">
-    <img src="assets/screenshots/v1.2.0-presentation-multi-route-fog.jpg" alt="PlotMapper v1.2.0 multi-route presentation with independent route progress and Focus Fog" width="900">
+  <a href="assets/screenshots/v1.3.0-01-presentation-sichtfeld-panel.jpg">
+    <img src="assets/screenshots/v1.3.0-01-presentation-sichtfeld-panel.jpg" alt="PlotMapper v1.3.0 presentation mode with Sichtfeld controls, route progress, and compact dock" width="900">
   </a>
 </p>
 
 <table>
   <tr>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-focus-fog-route-reveal.jpg">
-        <img src="assets/screenshots/v1.2.0-focus-fog-route-reveal.jpg" alt="Focus Fog revealing the explored route while the rest of the map stays readable">
+      <a href="assets/screenshots/v1.3.0-02-presentation-route-progress.jpg">
+        <img src="assets/screenshots/v1.3.0-02-presentation-route-progress.jpg" alt="Presentation route progress with guide-style Sichtfeld and independent faction progress">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-route-management-de.jpg">
-        <img src="assets/screenshots/v1.2.0-route-management-de.jpg" alt="German route management panel with colors, arrows, line styles, and helper point controls">
+      <a href="assets/screenshots/v1.3.0-03-editor-finder-minimap.jpg">
+        <img src="assets/screenshots/v1.3.0-03-editor-finder-minimap.jpg" alt="Editor with Finder drawer, filtered results, pinned minimap, and active route context">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-route-management-en.jpg">
-        <img src="assets/screenshots/v1.2.0-route-management-en.jpg" alt="English route management panel with multiple routes and compact controls">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-story-picker-de.jpg">
-        <img src="assets/screenshots/v1.2.0-story-picker-de.jpg" alt="German Story Picker for choosing the next point type directly on the map">
-      </a>
-    </td>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-story-picker-en.jpg">
-        <img src="assets/screenshots/v1.2.0-story-picker-en.jpg" alt="English high-contrast Story Picker with route, place, character, event, and item choices">
-      </a>
-    </td>
-    <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-reader-context.jpg">
-        <img src="assets/screenshots/v1.2.0-reader-context.jpg" alt="Reader view with context points assigned to the nearest route chapters">
+      <a href="assets/screenshots/v1.3.0-04-route-settings-expanded.jpg">
+        <img src="assets/screenshots/v1.3.0-04-route-settings-expanded.jpg" alt="Expanded route settings with route colors, numbering, arrows, start values, styles, widths, and names">
       </a>
     </td>
   </tr>
   <tr>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-tutorial-help.jpg">
-        <img src="assets/screenshots/v1.2.0-tutorial-help.jpg" alt="Tutorial modal with quick start, editing, filters, export, keyboard, and tips">
+      <a href="assets/screenshots/v1.3.0-05-splash-screen.jpg">
+        <img src="assets/screenshots/v1.3.0-05-splash-screen.jpg" alt="PlotMapper v1.3.0 splash screen">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-editor-burgund-theme.jpg">
-        <img src="assets/screenshots/v1.2.0-editor-burgund-theme.jpg" alt="Full editor map view in the burgund theme with two visible routes">
+      <a href="assets/screenshots/v1.3.0-06-point-type-picker.jpg">
+        <img src="assets/screenshots/v1.3.0-06-point-type-picker.jpg" alt="Map-first point type picker for route points, places, characters, events, and items">
       </a>
     </td>
     <td width="33%" valign="top">
-      <a href="assets/screenshots/v1.2.0-editor-autumn-theme.jpg">
-        <img src="assets/screenshots/v1.2.0-editor-autumn-theme.jpg" alt="Full editor map view in the autumn theme with two visible routes">
+      <a href="assets/screenshots/v1.3.0-07-minimap-route-overview.jpg">
+        <img src="assets/screenshots/v1.3.0-07-minimap-route-overview.jpg" alt="Pinned minimap with route overlay toggle and draggable viewport window">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.3.0-08-options-menu.jpg">
+        <img src="assets/screenshots/v1.3.0-08-options-menu.jpg" alt="Options menu with language, theme, wheel zoom, route settings, sliders, tooltips, and filter visibility preferences">
+      </a>
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.3.0-09-reader-finder-workflow.jpg">
+        <img src="assets/screenshots/v1.3.0-09-reader-finder-workflow.jpg" alt="Reader, Finder, minimap, and route editing workflow open together for checking a long route">
+      </a>
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/screenshots/v1.3.0-10-language-options-minimap.jpg">
+        <img src="assets/screenshots/v1.3.0-10-language-options-minimap.jpg" alt="Language dropdown, options menu, route controls, and pinned minimap in the blue theme">
       </a>
     </td>
   </tr>
 </table>
 
-Presentation Mode can reveal multiple visible routes step by step. Each route keeps its own progress, nearby context points can appear along the revealed path, and Focus Fog keeps unexplored areas readable but visually pushed back.
-
+Presentation Mode can reveal multiple visible routes step by step. Each route keeps its own progress, nearby context points can appear along the revealed path, and Sichtfeld keeps unexplored areas readable but visually pushed back.
 ## English
 
 ### What is PlotMapper?
@@ -85,10 +84,10 @@ PlotMapper helps writers, gamemasters, worldbuilders, teachers, and map-heavy pl
 - Draw one or more route lines with adjustable color, width, line style, numbering, visibility, and arrows.
 - Use helper points to shape paths or branch without changing route numbering.
 - Edit labels, locations, notes, duration, helper state, type, and deletion from the point menu.
-- Toggle filters, labels, locations, notes, duration, edit buttons, chapter numbering, and focus mode.
+- Toggle filters, labels, locations, notes, duration, edit buttons, route settings, and focus mode.
 - Keep multi-route controls collapsed until you need to manage alternate paths.
 - Tune point size, helper point size, map opacity, font size, and menu opacity without leaving the main toolbar.
-- Present visible routes step by step with independent route progress, keyboard navigation, and configurable Focus Fog.
+- Present visible routes step by step with independent route progress, four compact view modes, keyboard navigation, and configurable Sichtfeld reveal.
 - Undo/redo point and editing changes.
 - Switch themes and language between English and German.
 - Save/load projects as versioned `.plotmap.json` files.
@@ -103,7 +102,7 @@ The canonical app format is `.plotmap.json`. It stores the map image, settings, 
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.2.0",
+  "appVersion": "1.3.0",
   "map": {},
   "settings": {},
   "routes": [],
@@ -150,10 +149,10 @@ PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrende
 - Eine oder mehrere Routenlinien mit einstellbarer Farbe, Stärke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
 - Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
 - Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
-- Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Kapitel-Nummerierung und Fokus-Modus umschalten.
+- Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Pfad-Einstellungen und Fokus-Modus umschalten.
 - Multi-Routen-Steuerung eingeklappt lassen, bis alternative Pfade verwaltet werden sollen.
 - Punktgröße, Hilfspunktgröße, Karten-Deckkraft, Schriftgröße und Menüdeckkraft direkt im Hauptmenü einstellen.
-- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive Tastatursteuerung und konfigurierbarem Focus Fog.
+- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive vier kompakter Ansichtsmodi, Tastatursteuerung und konfigurierbarem Sichtfeld.
 - Undo/Redo für Punkt- und Bearbeitungsschritte.
 - Themes und Sprache live zwischen Deutsch und Englisch wechseln.
 - Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
@@ -168,7 +167,7 @@ Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstell
 ```json
 {
   "schemaVersion": 1,
-  "appVersion": "1.2.0",
+  "appVersion": "1.3.0",
   "map": {},
   "settings": {},
   "routes": [],
@@ -187,7 +186,7 @@ Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App
 5. Arbeit als `.plotmap.json` speichern.
 6. Bei Bedarf PNG oder Reader HTML/PDF exportieren.
 
-Der Präsentationsmodus kann mehrere sichtbare Routen Schritt für Schritt freilegen. Jeder Pfad behält eigenen Fortschritt, nahe Kontextpunkte können entlang des aufgedeckten Bereichs erscheinen, und Focus Fog hält unerforschte Bereiche lesbar, aber visuell zurückgenommen.
+Der Präsentationsmodus kann mehrere sichtbare Routen Schritt für Schritt freilegen. Jeder Pfad behält eigenen Fortschritt, nahe Kontextpunkte können entlang des aufgedeckten Bereichs erscheinen, und Sichtfeld hält unerforschte Bereiche lesbar, aber visuell zurückgenommen.
 
 ### Entwicklung
 

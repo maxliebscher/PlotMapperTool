@@ -1,0 +1,26 @@
+{
+  "appUrl": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/PlotMapper_v1.3.0-onboarding-ui.html",
+  "demoUrl": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/variants/v1.3.0-fog-edge-smoothing-demo.html",
+  "appMetrics": {
+    "activeModeText": "C Liste",
+    "routeColor": "#50dcd3",
+    "routeColorVar": "#50dcd3",
+    "activeStepBackground": "rgb(80, 220, 211)",
+    "railBorder": "color(srgb 0.582902 0.800627 0.775686)"
+  },
+  "demoMetrics": {
+    "title": "PlotMapper Fog Edge Varianten",
+    "canvases": 4,
+    "labels": [
+      "A Hart",
+      "B Nur Blur",
+      "C Zwei-Pass",
+      "D Feather"
+    ]
+  },
+  "consoleItems": [],
+  "shots": {
+    "cShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-c-route-color.png",
+    "demoShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-fog-edge-smoothing-demo-d.png"
+  }
+}

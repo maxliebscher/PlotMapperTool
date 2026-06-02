@@ -1,13 +1,15 @@
 (function readerModule(PM) {
   "use strict";
 
-  function createReader(elements, store, renderer) {
+  function createReader(elements, store, renderer, options) {
+    const hooks = options || {};
     const {
       modal,
       backdrop,
       cards,
       closeButton,
       extrasToggle,
+      findButton,
       exportHtmlButton,
       printPdfButton,
       title,
@@ -67,12 +69,43 @@
       return button;
     }
 
+    function jumpToPoint(point) {
+      close();
+      renderer.centerOnPoint(point);
+      setTimeout(() => {
+        if (PM.flashPoint) PM.flashPoint(point.id);
+      }, 80);
+    }
+
+    function makeJumpButton(point, locale) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-jump";
+      button.textContent = text(locale, "jump");
+      button.addEventListener("click", () => jumpToPoint(point));
+      return button;
+    }
+
+    function makeInspectButton(point, locale) {
+      if (typeof hooks.onInspect !== "function") return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small reader-inspect";
+      button.textContent = text(locale, "inspectPoint");
+      button.addEventListener("click", () => {
+        close();
+        hooks.onInspect(point.id, { mode: "dock" });
+      });
+      return button;
+    }
+
     function render() {
       const state = store.getState();
       const locale = state.settings.locale;
       title.textContent = text(locale, "reader");
       hint.textContent = text(locale, "readerHint");
       extrasLabel.textContent = text(locale, "contextPoints");
+      findButton.textContent = text(locale, "finder");
       exportHtmlButton.textContent = text(locale, "saveHtml");
       printPdfButton.textContent = text(locale, "printPdf");
       closeButton.textContent = "x";
@@ -96,10 +129,7 @@
         number.className = "reader-num";
         number.title = text(locale, "jump");
         number.textContent = String(chapter.step);
-        number.addEventListener("click", () => {
-          close();
-          renderer.centerOnPoint(point);
-        });
+        number.addEventListener("click", () => jumpToPoint(point));
         const heading = document.createElement("h3");
         heading.textContent = point.label || `${text(locale, "chapter")} ${chapter.step}`;
         head.append(number, heading);
@@ -110,6 +140,9 @@
           head.appendChild(pill);
         }
         const form = editForm(point, locale);
+        head.appendChild(makeJumpButton(point, locale));
+        const inspectButton = makeInspectButton(point, locale);
+        if (inspectButton) head.appendChild(inspectButton);
         head.appendChild(makeEditButton(form, locale));
         card.append(head, form);
         if (point.note) {
@@ -144,7 +177,13 @@
               body.appendChild(dur);
             }
             const extraForm = editForm(extra, locale);
-            item.append(type, body, makeEditButton(extraForm, locale), extraForm);
+            const actions = document.createElement("div");
+            actions.className = "reader-extra-actions";
+            const extraInspect = makeInspectButton(extra, locale);
+            actions.append(makeJumpButton(extra, locale));
+            if (extraInspect) actions.append(extraInspect);
+            actions.append(makeEditButton(extraForm, locale));
+            item.append(type, body, actions, extraForm);
             list.appendChild(item);
           }
           card.appendChild(list);
@@ -190,6 +229,10 @@
     closeButton.addEventListener("click", close);
     backdrop.addEventListener("click", close);
     extrasToggle.addEventListener("change", render);
+    findButton.addEventListener("click", () => {
+      close();
+      if (typeof hooks.onFind === "function") hooks.onFind();
+    });
     exportHtmlButton.addEventListener("click", exportHtml);
     printPdfButton.addEventListener("click", printPdf);
     document.addEventListener("keydown", (event) => {

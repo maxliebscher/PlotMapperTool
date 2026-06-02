@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlotMapper v1.3.0 - Minimap Routen und Button-Kanten</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: rgba(10, 27, 46, 0.86);
+      --panel-strong: #0d2033;
+      --surface: #173150;
+      --surface-2: #1f3c60;
+      --text: #e8f1ff;
+      --muted: #a7c0dc;
+      --border: #37688f;
+      --accent: #5cc2ff;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: #111;
+      color: var(--text);
+    }
+
+    main {
+      width: min(840px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .toolbar,
+    .minimap {
+      border: 1px solid color-mix(in srgb, var(--border) 86%, var(--text) 8%);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    button {
+      min-height: 32px;
+      padding: 6px 12px;
+      border: 1px solid color-mix(in srgb, var(--border) 82%, var(--text) 10%);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 750;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+    }
+
+    button.active {
+      border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+      background: color-mix(in srgb, var(--surface-2) 78%, var(--accent) 14%);
+    }
+
+    .minimap {
+      width: 420px;
+      overflow: hidden;
+    }
+
+    .minimap header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .actions {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .actions button {
+      min-width: 26px;
+      min-height: 24px;
+      padding: 0 6px;
+      border-radius: 7px;
+      font-size: 11px;
+    }
+
+    .map {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background:
+        linear-gradient(rgba(3, 7, 9, 0.1), rgba(3, 7, 9, 0.1)),
+        repeating-linear-gradient(35deg, #657e74 0 18px, #cbbf92 18px 34px, #9c5d57 34px 42px);
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.72));
+    }
+
+    .without-routes svg {
+      display: none;
+    }
+
+    footer {
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="toolbar" aria-label="Deep theme button outline preview">
+      <button>Projekt</button>
+      <button>Finder</button>
+      <button class="active">Optionen</button>
+      <button>Regler</button>
+    </section>
+    <section class="minimap" aria-label="Minimap route toggle preview">
+      <header>
+        <span>Minimap</span>
+        <span>Fixiert</span>
+        <span class="actions">
+          <button class="active">A</button>
+          <button>P</button>
+          <button class="active">R</button>
+          <button>x</button>
+        </span>
+      </header>
+      <div class="map">
+        <svg viewBox="0 0 100 56" aria-hidden="true">
+          <path d="M5 45 L22 15 L42 28 L65 8 L94 38" stroke="#19b887" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M12 18 L36 38 L58 32 L84 48" stroke="#5cc2ff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <footer>R blendet nur die Routen in der Minimap aus.</footer>
+    </section>
+  </main>
+</body>
+</html>

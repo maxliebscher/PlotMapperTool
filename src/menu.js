@@ -1,7 +1,8 @@
 (function menuModule(PM) {
   "use strict";
 
-  function createMenuController(layer, store) {
+  function createMenuController(layer, store, options) {
+    const hooks = options || {};
     let menu = null;
     let editor = null;
 
@@ -23,10 +24,16 @@
       element.style.top = `${Math.min(y, innerHeight - rect.height - pad)}px`;
     }
 
-    function addButton(parent, label, action) {
+    function addButton(parent, label, action, icon) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = label;
+      if (icon) {
+        button.innerHTML = "<span class=\"context-menu-icon\" aria-hidden=\"true\"></span><span></span>";
+        button.querySelector(".context-menu-icon").textContent = icon;
+        button.querySelector("span:last-child").textContent = label;
+      } else {
+        button.textContent = label;
+      }
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         action();
@@ -126,6 +133,12 @@
       menu.className = "context-menu";
       menu.setAttribute("role", "menu");
 
+      if (typeof hooks.onInspect === "function") {
+        addButton(menu, PM.I18n.t(locale, "inspectPoint"), () => {
+          close();
+          hooks.onInspect(pointId, { x, y });
+        }, "\u25A3");
+      }
       addButton(menu, PM.I18n.t(locale, point.type === "route" ? "editChapter" : "editLabel"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, point.type === "route" ? "editChapter" : "editLabel"),
@@ -133,7 +146,7 @@
           value: point.label,
           onSave: (value) => store.patchPoint(pointId, { label: value })
         });
-      });
+      }, "\u270E");
       addButton(menu, PM.I18n.t(locale, "setLocation"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "setLocation"),
@@ -141,12 +154,12 @@
           value: point.location,
           onSave: (value) => store.patchPoint(pointId, { location: value.trim() })
         });
-      });
+      }, "\uD83D\uDCCD");
       addButton(menu, PM.I18n.t(locale, locationVisible ? "hideLocation" : "showLocation"), () => {
         if (PM.setPointFieldHidden) PM.setPointFieldHidden(pointId, "location", locationVisible);
         else if (PM.togglePointField) PM.togglePointField(pointId, "location");
         close();
-      });
+      }, "\uD83D\uDC41");
       addButton(menu, PM.I18n.t(locale, "editNote"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "editNote"),
@@ -155,33 +168,33 @@
           multiline: true,
           onSave: (value) => store.patchPoint(pointId, { note: value })
         });
-      });
+      }, "\u270D");
       addButton(menu, PM.I18n.t(locale, noteVisible ? "hideNote" : "showNote"), () => {
         if (PM.setPointFieldHidden) PM.setPointFieldHidden(pointId, "note", noteVisible);
         else if (PM.togglePointField) PM.togglePointField(pointId, "note");
         close();
-      });
+      }, "\uD83D\uDCAC");
       if (point.type === "route") {
         addButton(menu, PM.I18n.t(locale, point.helper ? "helperOff" : "helperOn"), () => {
           store.patchPoint(pointId, { helper: !point.helper });
           close();
-        });
+        }, "\u25CC");
       }
       addButton(menu, PM.I18n.t(locale, "changeType"), () => {
         showTypeMenu(x, y, (type) => store.patchPoint(pointId, { type, helper: type === "route" ? point.helper : false }));
-      });
-      addButton(menu, `⏳ ${PM.I18n.t(locale, "setDuration")}`, () => {
+      }, "\uD83D\uDD00");
+      addButton(menu, PM.I18n.t(locale, "setDuration"), () => {
         showTextEditor({
           title: PM.I18n.t(locale, "setDuration"),
           label: PM.I18n.t(locale, "duration"),
           value: point.duration,
           onSave: (value) => store.patchPoint(pointId, { duration: value.trim() })
         });
-      });
+      }, "\u23F3");
       addButton(menu, PM.I18n.t(locale, "deletePoint"), () => {
         if (confirm(PM.I18n.t(locale, "deleteConfirm"))) store.deletePoint(pointId);
         close();
-      });
+      }, "\uD83D\uDDD1");
 
       layer.appendChild(menu);
       place(menu, x, y);

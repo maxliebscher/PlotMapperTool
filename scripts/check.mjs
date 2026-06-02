@@ -42,34 +42,73 @@ assert(!/\b(?:Export MD|Import MD|markdownInput)\b/.test(html), "Legacy Markdown
 ].forEach(([pattern, message]) => assert(!pattern.test(html), message));
 assert(html.includes("\\uD83D\\uDCD6 ${PM.I18n.t(locale, \"reader\")}"), "Reader toolbar button should include the book icon prefix.");
 assert(html.includes("PM.createPresentationController"), "App should create the presentation controller.");
+assert(html.includes("PM.presentation = PM.createPresentationController"), "Presentation controller should be exposed for QA and focused UI checks.");
 assert(html.includes("getPresentationReveal"), "Point UI should receive presentation reveal state.");
+assert(html.includes("pmPresentationViewV1"), "Presentation view choice should persist locally.");
 assert(html.includes("ArrowRight") && html.includes("PageDown") && html.includes("ArrowLeft") && html.includes("PageUp"), "Presentation keyboard navigation should be wired.");
 assert(html.includes("Home") && html.includes("End") && html.includes("Escape"), "Presentation reset, show-all, and exit shortcuts should be wired.");
-requireHtml("helpTitle", "Tutorial modal title");
-requireHtml("Tutorial", "Tutorial copy");
+requireHtml("helpTitle", "Help modal title");
+assert(/help:\s*"Hilfe"/.test(html), "German help toolbar label should be Hilfe.");
+assert(!html.includes('id="focusMode"'), "Focus mode should not be exposed as a primary toolbar control.");
+assert(!html.includes('action:"focus"') && !html.includes("action:focus"), "Focus mode should not be exposed as a command palette action.");
 requireHtml("Schlie", "Localized tutorial close label");
 requireHtml("saveProject", "Project save control");
 requireHtml("loadProject", "Project load control");
 requireHtml("projectInput", "Project input control");
+assert(html.includes('\\uD83C\\uDF10 ${PM.I18n.t(locale, "loadMap")}'), "Load map project-menu action should include the globe icon prefix.");
 requireHtml("exportPng", "PNG export control");
+requireHtml("exportReaderHtml", "Project menu Reader HTML export control");
+requireHtml("printReaderPdf", "Project menu Reader PDF print control");
+requireHtml("projectMenu", "Grouped project action menu");
+requireHtml("optionsMenu", "Grouped options menu");
+assert(html.includes("closeOpenToolbarMenus"), "Toolbar menus should close when clicking outside.");
+assert(html.includes("color-popover-primary"), "Route color OK action should be visually promoted.");
+requireHtml("saveStatus", "Save status metadata label");
+requireHtml("sliderPanelToggle", "Display slider collapse control");
+requireHtml("sliderPanel", "Collapsible display slider panel");
+assert(!html.includes("showChapterControlsPref"), "Chapter numbering row should not be duplicated in the options menu.");
+assert(!html.includes("id=\"chapterMode\"") && !html.includes("id=\"chapterStart\""), "Legacy global chapter numbering controls should be removed from the main menu.");
+requireHtml("showRouteControlsPref", "Route settings visibility preference");
+requireHtml("showVisibilityControlsPref", "Visibility row preference");
+requireHtml("showTypeControlsPref", "Point type row preference");
+requireHtml("showViewControlsPref", "View preset row preference");
+assert(html.indexOf("id=\"undoButton\"") < html.indexOf("id=\"finderButton\""), "Undo/redo controls should sit before the map-work buttons.");
+assert(html.indexOf("id=\"helpButton\"") > html.indexOf("id=\"optionsMenu\""), "Help should live inside the options menu.");
+assert(html.indexOf("id=\"themeToggle\"") > html.indexOf("id=\"optionsMenu\""), "Theme switcher should live inside the options menu.");
+assert(html.indexOf("id=\"exportPng\"") > html.indexOf("id=\"projectMenu\""), "PNG export should live inside the project menu.");
 requireHtml("readerModal", "Reader modal");
+requireHtml("readerFind", "Reader finder handoff control");
 requireHtml("readerExportHtml", "Reader HTML export control");
 requireHtml("presentationButton", "Presentation mode toolbar button");
 requireHtml("presentationDock", "Presentation dock");
+requireHtml("presentationViewModes", "Presentation view mode selector");
+requireHtml("presentationFocusCard", "Presentation focus card");
+requireHtml("presentationProgressRail", "Presentation progress rail");
 requireHtml("presentationRoutes", "Presentation route progress controls");
 requireHtml("presentationPrev", "Presentation previous control");
 requireHtml("presentationNext", "Presentation next control");
 requireHtml("presentationShowAll", "Presentation show-all control");
 requireHtml("presentationReset", "Presentation reset control");
+requireHtml("presentationExportPng", "Presentation PNG export control");
 requireHtml("presentationExit", "Presentation exit control");
 requireHtml("presentationFogToggle", "Presentation fog settings toggle");
 requireHtml("presentationFogPanel", "Presentation fog settings panel");
+requireHtml("presentationRevealLabel", "Presentation visibility section label");
+requireHtml("presentationThemePrev", "Presentation fog panel previous theme control");
+requireHtml("presentationThemeToggle", "Presentation fog panel theme control");
+requireHtml("presentationThemeNext", "Presentation fog panel next theme control");
 requireHtml("presentationFogMode", "Presentation fog mode control");
+requireHtml("presentationFogStyle", "Presentation fog edge style control");
 requireHtml("presentationFogOutside", "Presentation fog outside visibility control");
 requireHtml("presentationFogFocus", "Presentation fog focus radius control");
 requireHtml("presentationFogTrail", "Presentation fog trail width control");
 requireHtml("presentationFogSoftness", "Presentation fog edge softness control");
 requireHtml("presentationFogMemory", "Presentation fog trail memory control");
+assert(html.includes("presentationViewShortC"), "Presentation mode buttons should show a short active label.");
+assert(html.includes("blur(${edgeBlur * 1.25}px)") && html.includes("blur(${edgeBlur * 0.58}px)"), "Presentation fog reveal should use layered blurred mask edges.");
+assert(html.includes('fogSettings.edgeStyle === "game"'), "Presentation fog should support a game-style blurred reveal.");
+assert(html.includes("drawPresentationFog(outCtx") && html.includes("targetCtx.drawImage(overlay, 0, 0)"), "Presentation PNG export should render the visibility overlay into the export canvas.");
+assert(html.includes("routePointSets(state, revealInfo)") && html.includes("drawPngOverlay(targetCtx, state, rect, revealInfo)"), "Presentation PNG export should respect revealed route lines and points.");
 requireHtml("routePanelToggle", "Collapsible route panel toggle");
 requireHtml("routePanel", "Collapsible route management panel");
 requireHtml("routeRows", "Route management rows");
@@ -85,6 +124,58 @@ assert(!html.includes("midpointSizeControl"), "Edit midpoint sizing should not b
 requireHtml("toolbarOpacityControl", "Menu opacity control");
 requireHtml("toolbarCollapse", "Normal-mode menu collapse control");
 requireHtml("toolbarRestore", "Collapsed menu restore control");
+requireHtml("minimapToggle", "Minimap toolbar toggle");
+assert(html.includes('\\uD83D\\uDDFA\\uFE0F ${PM.I18n.t(locale, "minimap")}'), "Minimap toolbar button should include the map icon and label.");
+requireHtml("minimapPanel", "Optional viewport minimap panel");
+requireHtml("minimapCanvas", "Minimap overview canvas");
+requireHtml("minimapViewport", "Minimap viewport marker");
+requireHtml("minimapResize", "Minimap resize handle");
+requireHtml("minimapRoutes", "Minimap route visibility toggle");
+requireHtml("minimap-routes-action", "Readable minimap route visibility label");
+requireHtml("wheelZoomControl", "Optional mouse wheel zoom control");
+requireHtml("wheelZoomMenuControl", "Options menu mouse wheel zoom control");
+requireHtml("showWheelZoomControlPref", "Mouse wheel toolbar visibility preference");
+requireHtml("showSliderControlsPref", "Display slider visibility preference");
+requireHtml("langSelect", "Language select control");
+requireHtml("themePrev", "Previous theme control");
+requireHtml("themeNext", "Next theme control");
+requireHtml("pointInspector", "Optional point inspector panel");
+requireHtml("pointInspectorMode", "Point inspector dock/floating mode toggle");
+requireHtml("pointInspectorSave", "Point inspector apply button");
+requireHtml("commandPalette", "Command palette dialog");
+requireHtml("commandInput", "Command palette search input");
+requireHtml("commandResults", "Command palette results");
+requireHtml("finderButton", "Finder toolbar button");
+requireHtml("finderDrawer", "Finder drawer dialog");
+requireHtml("finderInput", "Finder search input");
+requireHtml("finderResults", "Finder result list");
+requireHtml("finderLimit", "Finder result limit note");
+requireHtml("finderActionHint", "Finder jump affordance hint");
+requireHtml("viewPresetRow", "Compact view preset row");
+requireHtml("viewPresetButtons", "View preset buttons");
+assert(html.includes("flashPoint"), "Point UI should expose a visible point jump highlight helper.");
+assert(html.includes("commandAction"), "Command palette should label point results with explicit jump actions.");
+assert(html.includes("reader-jump"), "Reader should expose explicit jump-to-map controls.");
+assert(html.includes("PM.createMinimap"), "App should create the optional viewport minimap controller.");
+assert(html.includes('class="minimap-action minimap-close-action"'), "Minimap close should be visually separated from Auto/Pin mode buttons.");
+assert(/mode:\s*\["auto",\s*"pin",\s*"off"\]\.includes\(raw\.mode\)\s*\?\s*raw\.mode\s*:\s*"auto"/.test(html), "Minimap should default to Auto mode when no UI preference is stored.");
+assert(/viewport\.addEventListener\("pointerdown"/.test(html), "Minimap viewport rectangle should be draggable.");
+assert(/wheelZoomEnabled/.test(html) && /wheelZoomMenuControl/.test(html), "Mouse wheel zoom should be available as an options-menu opt-in UI preference.");
+assert(/showWheelZoomControl/.test(html), "Mouse wheel zoom toolbar visibility should be a saved UI preference.");
+assert(/sliderPanelCollapsed/.test(html) && /showSliderControlsPref/.test(html), "Display sliders should be controllable from the options menu.");
+assert(html.includes("PM.createPointInspector"), "App should create the optional point inspector controller.");
+assert(html.includes("PM.createFinderDrawer"), "App should create the optional large-project finder drawer.");
+assert(html.includes("finderIssues"), "Finder should expose a scale-oriented issue filter.");
+assert(html.includes("reader-inspect"), "Reader should expose an inspect entry for point details.");
+assert(html.includes('store.setFilter("route", true)'), "Route jumps should reveal hidden route points before opening route context.");
+assert(html.includes("minimapAuto") && html.includes("minimapPin") && html.includes("minimapRoutes") && html.includes("minimapClose"), "Minimap should expose local Auto/Pin/Routes/Close controls.");
+assert(html.includes("showRoutes: raw.showRoutes !== false"), "Minimap route visibility should persist as a local preference.");
+assert(html.includes("Ctrl</kbd> + <kbd>K") || html.includes("Ctrl+K"), "Tutorial should mention command palette shortcut.");
+const helpBlock = html.match(/helpHtml:[\s\S]*?(?=\r?\n\s*},?\r?\n|,\r?\n\s*\w+:)/)?.[0] || "";
+assert(/PageDown|PageUp|Bild/.test(helpBlock), "Tutorial copy should mention paged Finder navigation.");
+assert(/Home|End|Pos1|Ende/.test(helpBlock), "Tutorial copy should mention Finder start/end navigation.");
+assert(/Ctrl<\/kbd>\+<kbd>Enter|Ctrl\+Enter|Ctrl<\/kbd> \+ <kbd>Enter/.test(helpBlock) && /Inspector/.test(helpBlock), "Tutorial copy should mention the Finder inspector shortcut.");
+assert(!/Focus Mode|Fokus-Modus/.test(helpBlock), "Help copy should not document the removed toolbar focus mode.");
 requireHtml("routeLineStyle", "Route line style i18n key");
 requireHtml("routePoint", "Route point story picker i18n key");
 requireHtml("routePointFor", "Route point active route i18n key");
@@ -93,7 +184,7 @@ requireHtml("type-menu-route", "Story picker active route pill");
 requireHtml("type-menu-option-label", "Story picker readable option labels");
 requireHtml("present:", "Presentation i18n key");
 requireHtml("Präsentieren", "German presentation label");
-assert(!/Export MD|Import MD|Markdown/.test(html.match(/helpHtml:[\s\S]*?(?=\n\s*}\n|,\n\s*\w+:)/)?.[0] || ""), "Tutorial copy must not advertise Markdown project import/export.");
+assert(!/Export MD|Import MD|Markdown/.test(helpBlock), "Tutorial copy must not advertise Markdown project import/export.");
 assert(!/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s+end\s*;/i.test(html), "Empty hint must not be pinned to the right edge.");
 assert(/\.empty-hint\s*\{[\s\S]*?place-items:\s*center\s*;/i.test(html), "Empty hint should be centered in the viewport.");
 assert(/\.brand-logo\s*\{[\s\S]*?overflow:\s*visible\s*;/i.test(html), "Splash logo must allow the route stroke to render without clipping.");
@@ -113,6 +204,9 @@ const coreFiles = [
   "src/utils.js",
   "src/state.js",
   "src/presentation.js",
+  "src/command-palette.js",
+  "src/finder.js",
+  "src/view-presets.js",
   "src/serialization.js",
   "src/exporters.js"
 ];
@@ -130,6 +224,116 @@ for (const file of coreFiles) {
 }
 
 const PM = context.PM;
+assert(typeof PM.buildCommandPaletteEntries === "function", "Command palette search builder should be registered.");
+assert(typeof PM.filterCommandPaletteEntries === "function", "Command palette filtering helper should be registered.");
+assert(typeof PM.countCommandPaletteMatches === "function", "Command palette should expose overflow match counts.");
+assert(typeof PM.createFinderDrawer === "function", "Finder drawer module should be registered.");
+assert(typeof PM.finderIssueForPoint === "function", "Finder should expose project hint classification.");
+assert(typeof PM.finderIssueLabel === "function", "Finder should expose localized project hint labels.");
+assert(typeof PM.finderFilterCounts === "function", "Finder should expose scale-oriented filter counts.");
+assert(typeof PM.finderLimitText === "function", "Finder should expose a human-readable result cap message.");
+assert(Array.isArray(PM.VIEW_PRESETS) && PM.VIEW_PRESETS.length >= 4, "Built-in view presets should be registered.");
+assert(typeof PM.getViewPresetPatch === "function", "View preset patches should be exposed for tests and UI.");
+assert(typeof PM.viewPresetMatchesState === "function", "View preset active-state matcher should be registered.");
+
+const paletteProject = PM.createEmptyProject({ locale: "de" });
+paletteProject.routes.push(PM.normalizeRoute({
+  id: "route-two",
+  name: "Nebenpfad",
+  color: "#22bbbb"
+}, PM.DEFAULT_ROUTE, new Set([PM.DEFAULT_ROUTE_ID])));
+paletteProject.points.push(
+  PM.normalizePoint({ id: "route-start", x: 0.1, y: 0.2, type: "route", label: "Torwache", note: "Start an der Mauer", routeId: PM.DEFAULT_ROUTE_ID }),
+  PM.normalizePoint({ id: "helper-curve", x: 0.2, y: 0.3, type: "route", helper: true, routeId: PM.DEFAULT_ROUTE_ID }),
+  PM.normalizePoint({ id: "market", x: 0.4, y: 0.5, type: "place", label: "Alter Markt", location: "Nordviertel", note: "Kontakt bei Sonnenuntergang" }),
+  PM.normalizePoint({ id: "npc", x: 0.6, y: 0.7, type: "char", label: "Mira", duration: "3 Tage" })
+);
+const paletteEntries = PM.buildCommandPaletteEntries(paletteProject, "de");
+assert(paletteEntries.some((entry) => entry.id === "action:reader" && entry.kind === "action"), "Command palette should include app actions.");
+assert(paletteEntries.some((entry) => entry.id === "action:finder-issues" && entry.action === "finder-issues"), "Command palette should include direct project hints action.");
+assert(paletteEntries.some((entry) => entry.id === "action:finder-view" && entry.action === "finder-view"), "Command palette should include a current-view Finder action.");
+assert(paletteEntries.some((entry) => entry.id === "action:view-notes" && entry.action === "view:notes"), "Command palette should include view preset actions.");
+assert(paletteEntries.some((entry) => entry.id === "point:market" && entry.kind === "point"), "Command palette should include points.");
+assert(paletteEntries.some((entry) => entry.id === "route:route-two" && entry.kind === "route"), "Command palette should include routes.");
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "sonnenuntergang")[0].id,
+  "point:market",
+  "Command palette should search point notes."
+);
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "neben")[0].id,
+  "route:route-two",
+  "Command palette should search route names."
+);
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "notizen")[0].id,
+  "action:view-notes",
+  "Command palette should search localized view presets."
+);
+assertEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "ausschnitt")[0].id,
+  "action:finder-view",
+  "Command palette should search the localized current-view Finder action."
+);
+assertDeepEqual(
+  PM.filterCommandPaletteEntries(paletteEntries, "   ").slice(0, 3).map((entry) => entry.kind),
+  ["action", "action", "action"],
+  "Empty command palette query should prioritize actions."
+);
+assertEqual(
+  PM.countCommandPaletteMatches(paletteEntries, "route"),
+  PM.filterCommandPaletteEntries(paletteEntries, "route", 999).length,
+  "Command palette should count all matches before its visible cap."
+);
+
+const routeView = PM.getViewPresetPatch("route");
+assert(routeView && routeView.filters.route === true, "Route view should keep route points visible.");
+assertEqual(routeView.filters.place, false, "Route view should hide places.");
+assertEqual(routeView.showLines, true, "Route view should keep lines visible.");
+const notesView = PM.getViewPresetPatch("notes");
+assert(notesView && notesView.showNotes === true && notesView.showDuration === true, "Notes view should show note and duration context.");
+assertEqual(PM.finderIssueForPoint({ type: "place", label: "", note: "" }), "missingLabel", "Finder hints should flag unlabeled context points.");
+assertEqual(PM.finderIssueForPoint({ type: "route", helper: true, label: "" }), "unnamedHelper", "Finder hints should flag unnamed helper route points.");
+assertEqual(PM.finderIssueForPoint({ type: "event", label: "Long", note: "x".repeat(181) }), "longNote", "Finder hints should flag long notes.");
+assertEqual(PM.finderIssueLabel("missingLabel", "en"), "Missing label", "Finder hint labels should be localized in English.");
+assertEqual(PM.finderIssueLabel("missingLabel", "de"), "Fehlendes Label", "Finder hint labels should be localized in German.");
+const finderCountProject = PM.normalizeProject({
+  ...PM.createEmptyProject(),
+  routes: [
+    { ...PM.DEFAULT_ROUTE, id: "route-a", name: "A" },
+    { ...PM.DEFAULT_ROUTE, id: "route-b", name: "B" }
+  ],
+  points: [
+    { id: "p-route", type: "route", routeId: "route-a", x: 0.1, y: 0.1, label: "Route A" },
+    { id: "p-place", type: "place", x: 0.2, y: 0.2, label: "Place", note: "short" },
+    { id: "p-char", type: "char", x: 0.3, y: 0.3, label: "Character" },
+    { id: "p-event", type: "event", x: 0.4, y: 0.4, label: "Event", note: "x".repeat(181) },
+    { id: "p-item", type: "item", x: 0.5, y: 0.5, label: "" }
+  ]
+});
+const finderCounts = PM.finderFilterCounts(PM.buildCommandPaletteEntries(finderCountProject, "en").filter((entry) => entry.kind === "point" || entry.kind === "route"), finderCountProject);
+assertEqual(finderCounts.all, 7, "Finder counts should include point and route entries.");
+assertEqual(finderCounts.route, 3, "Finder route count should include route points and route entries.");
+assertEqual(finderCounts.place, 1, "Finder should count places.");
+assertEqual(finderCounts.char, 1, "Finder should count characters.");
+assertEqual(finderCounts.event, 1, "Finder should count events.");
+assertEqual(finderCounts.item, 1, "Finder should count items.");
+assertEqual(finderCounts.note, 2, "Finder should count entries with note-like context.");
+assertEqual(finderCounts.issue, 2, "Finder should count project hints.");
+const viewFinderCounts = PM.finderFilterCounts(
+  PM.buildCommandPaletteEntries(finderCountProject, "en").filter((entry) => entry.kind === "point" || entry.kind === "route"),
+  finderCountProject,
+  { left: 0, top: 0, width: 0.25, height: 0.25 }
+);
+assertEqual(viewFinderCounts.view, 3, "Finder view filter should count entries inside the current map viewport.");
+assertEqual(PM.finderLimitText(72, 48, "en"), "24 more hidden - narrow search.", "Finder should explain hidden overflow results in English.");
+assertEqual(PM.finderLimitText(72, 48, "de"), "Weitere 24 ausgeblendet - Suche eingrenzen.", "Finder should explain hidden overflow results in German.");
+assertEqual(PM.finderLimitText(12, 12, "en"), "Max. 48 results shown; everything remains searchable.", "Finder should keep the normal cap note when nothing is hidden.");
+const viewProject = PM.createEmptyProject({ locale: "de" });
+viewProject.settings = PM.normalizeSettings({ ...viewProject.settings, ...routeView });
+assert(PM.viewPresetMatchesState(viewProject, "route"), "Preset matcher should recognize an active route view.");
+assert(!PM.viewPresetMatchesState(viewProject, "all"), "Preset matcher should not mark unrelated views active.");
+
 const fixturesDir = join(root, "testdata", "fixtures");
 const fixtureNames = (await readdir(fixturesDir)).filter((name) => name.endsWith(".plotmap.json")).sort();
 
@@ -342,7 +546,11 @@ assert(activeRouteReveal.visibleIds.has("timmy-2"), "Presentation should reveal 
 
 const defaultFog = PM.normalizePresentationFogSettings();
 assertEqual(defaultFog.mode, "focus", "Focus fog should be the default presentation fog mode.");
-assertEqual(defaultFog.outsideVisibility, 0.22, "Default focus fog should keep only a little outside map visibility.");
+assertEqual(defaultFog.edgeStyle, "game", "Guide/game fog edge style should be the default presentation fog style.");
+assertEqual(defaultFog.outsideVisibility, 0.04, "Default focus fog should start close to the low-visibility game-like setting.");
+assertEqual(defaultFog.focusRadius, 0.08, "Default focus radius should start compact.");
+assertEqual(defaultFog.trailRadius, 0.06, "Default trail width should start near the preferred guide path width.");
+assertEqual(defaultFog.edgeSoftness, 0.01, "Default edge softness should start crisp within the guide path style.");
 assertEqual(defaultFog.trailMemory, true, "Default focus fog should keep the old trail subtler than the current point.");
 const clampedFog = PM.normalizePresentationFogSettings({
   mode: "missing",
@@ -350,13 +558,15 @@ const clampedFog = PM.normalizePresentationFogSettings({
   trailRadius: -5,
   focusRadius: 999,
   edgeSoftness: "x",
+  edgeStyle: "missing",
   trailMemory: false
 });
 assertEqual(clampedFog.mode, "focus", "Invalid fog mode should clamp to focus.");
 assertEqual(clampedFog.outsideVisibility, 0.45, "Outside visibility should clamp to maximum.");
 assertEqual(clampedFog.trailRadius, 0.03, "Trail radius should clamp to minimum.");
 assertEqual(clampedFog.focusRadius, 0.28, "Focus radius should clamp to maximum.");
-assertEqual(clampedFog.edgeSoftness, 0.06, "Invalid edge softness should fall back to default.");
+assertEqual(clampedFog.edgeSoftness, 0.01, "Invalid edge softness should fall back to default.");
+assertEqual(clampedFog.edgeStyle, "game", "Invalid edge style should fall back to default.");
 assertEqual(clampedFog.trailMemory, false, "Trail memory should preserve explicit false.");
 
 const json = PM.Serialization.projectToJson(project);

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-version="1.2.0" data-theme="deep">
+<html lang="en" data-version="1.3.0" data-theme="deep">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,7 +28,7 @@
       <h1><strong>Plot</strong> Mapper</h1>
       <p class="splash-by">by Maximilian Georg Liebscher</p>
       <p>Story Path Mapping Tool</p>
-      <small id="splashVersion">v1.2.0</small>
+      <small id="splashVersion">v1.3.0</small>
     </div>
   </div>
 
@@ -39,27 +39,62 @@
 
   <section id="toolbar" class="toolbar" aria-label="PlotMapper controls">
     <header class="toolbar-head">
-      <div class="head-left">
-        <label class="file-button" for="imageInput" role="button" tabindex="0"><span>Load map</span></label>
-        <input id="imageInput" type="file" accept="image/*" aria-hidden="true" tabindex="-1">
-        <div id="fileName" class="file-name">No project loaded</div>
-      </div>
       <div class="head-actions">
+        <details id="projectMenu" class="toolbar-menu project-menu">
+          <summary id="projectMenuSummary" class="btn save-button">Project</summary>
+          <div class="toolbar-menu-popover">
+            <label class="file-button" for="imageInput" role="button" tabindex="0"><span>Load map</span></label>
+            <button id="saveProject" class="btn" type="button">Save project</button>
+            <button id="loadProject" class="btn" type="button">Load project</button>
+            <div id="projectExportLabel" class="menu-section-label">Export</div>
+            <button id="exportPng" class="btn" type="button">PNG</button>
+            <button id="exportReaderHtml" class="btn" type="button">HTML</button>
+            <button id="printReaderPdf" class="btn" type="button">PDF</button>
+            <button id="clearAll" class="btn danger" type="button">Clear</button>
+          </div>
+        </details>
+        <div class="action-cluster undo-redo-cluster">
+          <button id="undoButton" class="btn icon" type="button">↶</button>
+          <button id="redoButton" class="btn icon" type="button">↷</button>
+        </div>
+        <button id="finderButton" class="btn" type="button">Finder</button>
+        <button id="minimapToggle" class="btn" type="button" title="Minimap" aria-label="Minimap">&#128506;&#65039; MiniMap</button>
         <button id="readerButton" class="btn" type="button">Reader</button>
         <button id="presentationButton" class="btn" type="button">Present</button>
-        <label class="btn toggle-button"><input id="focusMode" type="checkbox"><span>Focus</span></label>
-        <button id="helpButton" class="btn" type="button">Help</button>
-        <button id="langToggle" class="btn small" type="button">DE</button>
-        <button id="themeToggle" class="btn icon" type="button" title="Theme">&#127912;</button>
+        <details id="optionsMenu" class="toolbar-menu options-menu">
+          <summary id="optionsMenuSummary" class="btn">Options</summary>
+          <div class="toolbar-menu-popover wide">
+            <button id="helpButton" class="btn" type="button">Help</button>
+            <label class="setting-line language-line"><span id="languagePrefLabel">Language</span><select id="langSelect"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+            <div class="theme-switch" role="group" aria-label="Theme">
+              <button id="themePrev" class="btn icon" type="button">&#9664;</button>
+              <button id="themeToggle" class="btn theme-label" type="button" title="Theme">&#127912;</button>
+              <button id="themeNext" class="btn icon" type="button">&#9654;</button>
+            </div>
+            <div class="option-divider" aria-hidden="true"></div>
+            <label class="setting-line"><span id="wheelZoomPrefLabel">Wheel zoom</span><input id="wheelZoomMenuControl" type="checkbox"></label>
+            <label class="setting-line"><span id="showWheelZoomControlPrefLabel">Show wheel zoom in toolbar</span><input id="showWheelZoomControlPref" type="checkbox"></label>
+            <label class="setting-line"><span id="showRouteControlsPrefLabel">Show route settings</span><input id="showRouteControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showSliderControlsPrefLabel">Show sliders</span><input id="showSliderControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="tooltipsPrefLabel">Tooltips</span><input id="tooltipsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showVisibilityControlsPrefLabel">Visibility filters</span><input id="showVisibilityControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showTypeControlsPrefLabel">Point type filters</span><input id="showTypeControlsPref" type="checkbox" checked></label>
+            <label class="setting-line"><span id="showViewControlsPrefLabel">View filters</span><input id="showViewControlsPref" type="checkbox" checked></label>
+          </div>
+        </details>
         <button id="toolbarCollapse" class="btn icon" type="button" aria-label="Collapse menu">&#9652;</button>
       </div>
     </header>
 
+    <input id="imageInput" type="file" accept="image/*" aria-hidden="true" tabindex="-1">
     <input id="projectInput" type="file" accept=".plotmap.json,application/json" aria-hidden="true" tabindex="-1">
+    <div class="toolbar-meta">
+      <span id="saveStatus">Saved</span>
+      <span class="toolbar-meta-separator" aria-hidden="true">·</span>
+      <span id="fileName" class="file-name">No project loaded</span>
+    </div>
 
-    <div class="control-row chapter-controls">
-      <label><input id="chapterMode" type="checkbox"><span>Chapter start</span></label>
-      <input id="chapterStart" type="number" min="1" step="1" value="1" aria-label="Chapter start number">
+    <div class="control-row route-controls">
       <button id="routePanelToggle" class="btn route-panel-toggle" type="button" aria-expanded="false" aria-controls="routePanel">
         <span class="active-route-swatch" aria-hidden="true"></span>
         <span id="activeRouteLabel">Route</span>
@@ -107,25 +142,25 @@
       <label><input id="filter-item" type="checkbox" checked><span>Item</span></label>
     </div>
 
-    <div class="control-row slider-row">
-      <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
-      <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
-      <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
+    <div id="viewPresetRow" class="control-row view-presets">
+      <span id="viewPresetLabel" class="inline-caption">Views</span>
+      <div id="viewPresetButtons" class="view-preset-buttons" role="group" aria-label="View presets"></div>
+      <label class="wheel-zoom-toggle"><input id="wheelZoomControl" type="checkbox"><span>Wheel zoom</span></label>
+      <button id="sliderPanelToggle" class="btn small" type="button" aria-expanded="true" aria-controls="sliderPanel">&#9652; Sliders</button>
     </div>
 
-    <div class="control-row slider-row">
-      <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
-      <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
-      <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
-    </div>
+    <div id="sliderPanel" class="slider-panel">
+      <div class="control-row slider-row">
+        <label class="control-field"><span class="control-field-label">Zoom</span><input id="zoomControl" type="range" min="1" max="5" step="0.01" value="1"></label>
+        <label class="control-field"><span class="control-field-label">Font</span><input id="fontScale" type="range" min="0.75" max="1.6" step="0.05" value="1"></label>
+        <label class="control-field"><span class="control-field-label">Opacity</span><input id="opacityControl" type="range" min="0.1" max="1" step="0.01" value="1"></label>
+      </div>
 
-    <div class="toolbar-grid commands">
-      <button id="undoButton" class="btn" type="button">Undo</button>
-      <button id="redoButton" class="btn" type="button">Redo</button>
-      <button id="saveProject" class="btn" type="button">Save project</button>
-      <button id="loadProject" class="btn" type="button">Load project</button>
-      <button id="exportPng" class="btn" type="button">PNG</button>
-      <button id="clearAll" class="btn danger" type="button">Clear</button>
+      <div class="control-row slider-row">
+        <label class="control-field"><span class="control-field-label">Point</span><input id="pointSizeControl" type="range" min="22" max="48" step="2" value="32"></label>
+        <label class="control-field"><span class="control-field-label">Helper</span><input id="helperPointSizeControl" type="range" min="12" max="32" step="1" value="24"></label>
+        <label class="control-field"><span class="control-field-label">Menu</span><input id="toolbarOpacityControl" type="range" min="55" max="100" step="1" value="86"></label>
+      </div>
     </div>
   </section>
 
@@ -135,12 +170,86 @@
     <span aria-hidden="true">&#9662;</span>
   </button>
 
+  <section id="minimapPanel" class="minimap-panel" aria-label="Minimap" hidden>
+    <header id="minimapDrag" class="minimap-drag">
+      <span id="minimapTitle">Minimap</span>
+      <span id="minimapHint">Auto</span>
+      <span class="minimap-actions">
+        <button id="minimapAuto" class="minimap-action" type="button" title="Auto">A</button>
+        <button id="minimapPin" class="minimap-action" type="button" title="Pin">P</button>
+        <button id="minimapRoutes" class="minimap-action minimap-routes-action" type="button" title="Routes">Routes</button>
+        <button id="minimapClose" class="minimap-action minimap-close-action" type="button" title="Close">x</button>
+      </span>
+    </header>
+    <div id="minimapCanvas" class="minimap-canvas" role="button" tabindex="0" aria-label="Jump on the map">
+      <svg id="minimapSvg" class="minimap-svg" viewBox="0 0 1000 562.5" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <span id="minimapViewport" class="minimap-viewport"></span>
+    </div>
+    <footer class="minimap-footer">
+      <span>Viewport</span>
+      <strong id="minimapMetric">-</strong>
+    </footer>
+    <button id="minimapResize" class="minimap-resize" type="button" aria-label="Resize minimap"></button>
+  </section>
+
+  <aside id="pointInspector" class="point-inspector" aria-label="Point inspector" hidden>
+    <header id="pointInspectorDrag" class="point-inspector-head">
+      <div class="point-inspector-titleblock">
+        <strong id="pointInspectorTitle">Point</strong>
+        <span id="pointInspectorSub">Inspector</span>
+      </div>
+      <span id="pointInspectorRoute" class="point-inspector-route" hidden>
+        <span id="pointInspectorRouteSwatch" aria-hidden="true"></span>
+        <span id="pointInspectorRouteName"></span>
+      </span>
+      <div class="point-inspector-actions">
+        <button id="pointInspectorMode" class="mini-action" type="button">Dock</button>
+        <button id="pointInspectorClose" class="mini-action" type="button" aria-label="Close">x</button>
+      </div>
+    </header>
+    <div class="point-inspector-body">
+      <label class="inspector-field">
+        <span id="pointInspectorTypeLabel">Type</span>
+        <select id="pointInspectorType"></select>
+      </label>
+      <label id="pointInspectorRouteField" class="inspector-field">
+        <span id="pointInspectorRouteLabel">Route</span>
+        <select id="pointInspectorRouteSelect"></select>
+      </label>
+      <label id="pointInspectorHelperField" class="inspector-check">
+        <input id="pointInspectorHelper" type="checkbox">
+        <span id="pointInspectorHelperLabel">Helper point</span>
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLabelLabel">Label</span>
+        <input id="pointInspectorLabel" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorLocationLabel">Location</span>
+        <input id="pointInspectorLocation" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorDurationLabel">Duration</span>
+        <input id="pointInspectorDuration" type="text">
+      </label>
+      <label class="inspector-field">
+        <span id="pointInspectorNoteLabel">Note</span>
+        <textarea id="pointInspectorNote" rows="5"></textarea>
+      </label>
+    </div>
+    <footer class="point-inspector-footer">
+      <button id="pointInspectorJump" class="btn small" type="button">Jump</button>
+      <button id="pointInspectorSave" class="btn small" type="button">Save</button>
+      <button id="pointInspectorDelete" class="btn small danger" type="button">Delete</button>
+    </footer>
+  </aside>
+
   <section id="routeColorPopover" class="color-popover" aria-label="Route color" hidden>
     <div class="color-popover-header">
       <span id="routeColorPopoverLabel">Color</span>
       <div class="color-popover-actions">
-        <button id="routeColorOk" class="btn small" type="button">OK</button>
-        <button id="routeColorCancel" class="btn small" type="button">Cancel</button>
+        <button id="routeColorOk" class="btn small color-popover-primary" type="button">OK</button>
+        <button id="routeColorCancel" class="btn small color-popover-secondary" type="button">Cancel</button>
       </div>
     </div>
     <input id="routeColorPicker" type="color" value="#cc3333" aria-label="Route color">
@@ -171,28 +280,102 @@
 
   <div id="infoBadge" class="info-badge">
     <strong>PlotMapper Tool</strong>
-    <span id="badgeVersion">v1.2.0</span>
+    <span id="badgeVersion">v1.3.0</span>
     <button id="infoButton" class="info-dot" type="button" title="Info">i</button>
   </div>
 
   <div id="menuLayer" class="menu-layer" aria-live="polite"></div>
 
+  <div id="commandBackdrop" class="command-backdrop" hidden></div>
+  <section id="commandPalette" class="command-palette" role="dialog" aria-modal="true" aria-labelledby="commandTitle" hidden>
+    <header class="command-head">
+      <div>
+        <strong id="commandTitle">Search</strong>
+        <span id="commandHint">Ctrl+K</span>
+      </div>
+      <button id="commandClose" class="close" type="button">x</button>
+    </header>
+    <label class="command-input-wrap">
+      <span id="commandSearchLabel">Search commands, points, routes</span>
+      <input id="commandInput" type="search" autocomplete="off" spellcheck="false">
+    </label>
+    <div id="commandResults" class="command-results" role="listbox"></div>
+    <p id="commandEmpty" class="command-empty" hidden>No results.</p>
+  </section>
+
+  <section id="finderDrawer" class="finder-drawer" role="dialog" aria-modal="false" aria-labelledby="finderTitle" hidden>
+    <header class="finder-drawer-head">
+      <div>
+        <h2 id="finderTitle">Finder</h2>
+        <p id="finderHint">Find points and jump to the map.</p>
+      </div>
+      <button id="finderClose" class="close" type="button">x</button>
+    </header>
+    <div class="finder-search-wrap">
+      <input id="finderInput" type="search" autocomplete="off" spellcheck="false" aria-label="Search points">
+      <div class="finder-filters" aria-label="Finder filters">
+        <button class="finder-filter is-active" data-filter="all" type="button" aria-pressed="true">All</button>
+        <button class="finder-filter" data-filter="view" type="button" aria-pressed="false">View</button>
+        <button class="finder-filter" data-filter="issue" type="button" aria-pressed="false">Hints</button>
+        <button class="finder-filter" data-filter="route" type="button" aria-pressed="false">Route</button>
+        <button class="finder-filter" data-filter="place" type="button" aria-pressed="false">Places</button>
+        <button class="finder-filter" data-filter="char" type="button" aria-pressed="false">Characters</button>
+        <button class="finder-filter" data-filter="event" type="button" aria-pressed="false">Events</button>
+        <button class="finder-filter" data-filter="item" type="button" aria-pressed="false">Items</button>
+        <button class="finder-filter" data-filter="note" type="button" aria-pressed="false">Notes</button>
+      </div>
+    </div>
+    <div class="finder-summary">
+      <span id="finderSummary">0 results</span>
+      <span id="finderActionHint" class="finder-action-hint"><kbd>↑↓</kbd> <kbd>Enter</kbd></span>
+    </div>
+    <div id="finderResults" class="finder-results" role="listbox"></div>
+    <p id="finderEmpty" class="finder-empty" hidden>No results.</p>
+    <footer class="finder-footer">
+      <span id="finderLimit">Max. 48 results shown.</span>
+      <span>Esc</span>
+    </footer>
+  </section>
+
   <section id="presentationDock" class="presentation-dock" aria-label="Presentation controls" hidden>
+    <div id="presentationViewModes" class="presentation-view-modes" role="group" aria-label="Presentation view">
+      <button class="presentation-view-mode is-active" data-view="a" type="button">A</button>
+      <button class="presentation-view-mode" data-view="b" type="button">B</button>
+      <button class="presentation-view-mode" data-view="c" type="button">C</button>
+      <button class="presentation-view-mode" data-view="d" type="button">D</button>
+    </div>
     <div id="presentationRoutes" class="presentation-routes" aria-label="Routes"></div>
     <button id="presentationPrev" class="btn icon" type="button" aria-label="Previous step">&larr;</button>
     <output id="presentationStep" class="presentation-step" aria-live="polite">0 / 0</output>
     <button id="presentationNext" class="btn icon" type="button" aria-label="Next step">&rarr;</button>
     <button id="presentationShowAll" class="btn small" type="button">All</button>
     <button id="presentationReset" class="btn small" type="button">Reset</button>
-    <button id="presentationFogToggle" class="btn icon" type="button" aria-label="Fog settings">&#9881;</button>
+    <button id="presentationFogToggle" class="btn icon" type="button" aria-label="Presentation settings">&#9881;</button>
+    <button id="presentationExportPng" class="btn small" type="button">PNG</button>
     <button id="presentationExit" class="btn small" type="button">Exit</button>
   </section>
 
-  <section id="presentationFogPanel" class="presentation-fog-panel" aria-label="Fog settings" hidden>
+  <section id="presentationFocusCard" class="presentation-focus-card" aria-live="polite" hidden>
+    <strong id="presentationFocusTitle">Current step</strong>
+    <span id="presentationFocusBody"></span>
+  </section>
+
+  <section id="presentationProgressRail" class="presentation-progress-rail" aria-label="Presentation progress" hidden></section>
+
+  <section id="presentationFogPanel" class="presentation-fog-panel" aria-label="Presentation settings" hidden>
     <header>
-      <strong id="presentationFogTitle">Fog</strong>
+      <strong id="presentationFogTitle">Presentation</strong>
       <button id="presentationFogClose" class="btn icon" type="button" aria-label="Close">x</button>
     </header>
+    <div class="presentation-theme-row" role="group" aria-label="Theme">
+      <span id="presentationThemeLabel">Theme</span>
+      <div class="presentation-theme-actions">
+        <button id="presentationThemePrev" class="btn icon" type="button" aria-label="Previous theme">&larr;</button>
+        <button id="presentationThemeToggle" class="btn small theme-label" type="button" aria-label="Theme">&#127912;</button>
+        <button id="presentationThemeNext" class="btn icon" type="button" aria-label="Next theme">&rarr;</button>
+      </div>
+    </div>
+    <div id="presentationRevealLabel" class="presentation-section-label">Reveal</div>
     <label class="fog-field">
       <span id="presentationFogModeLabel">Mode</span>
       <select id="presentationFogMode">
@@ -202,20 +385,28 @@
       </select>
     </label>
     <label class="fog-field">
+      <span id="presentationFogStyleLabel">Edge style</span>
+      <select id="presentationFogStyle">
+        <option value="clear">Clear</option>
+        <option value="soft">Soft</option>
+        <option value="game">Guide</option>
+      </select>
+    </label>
+    <label class="fog-field">
       <span id="presentationFogOutsideLabel">Surroundings</span>
-      <input id="presentationFogOutside" type="range" min="0.02" max="0.45" step="0.01" value="0.22">
+      <input id="presentationFogOutside" type="range" min="0.02" max="0.45" step="0.01" value="0.04">
     </label>
     <label class="fog-field">
       <span id="presentationFogFocusLabel">Current radius</span>
-      <input id="presentationFogFocus" type="range" min="0.08" max="0.28" step="0.01" value="0.18">
+      <input id="presentationFogFocus" type="range" min="0.08" max="0.28" step="0.01" value="0.08">
     </label>
     <label class="fog-field">
       <span id="presentationFogTrailLabel">Path width</span>
-      <input id="presentationFogTrail" type="range" min="0.03" max="0.18" step="0.01" value="0.07">
+      <input id="presentationFogTrail" type="range" min="0.03" max="0.18" step="0.01" value="0.06">
     </label>
     <label class="fog-field">
       <span id="presentationFogSoftnessLabel">Soft edge</span>
-      <input id="presentationFogSoftness" type="range" min="0.01" max="0.14" step="0.01" value="0.06">
+      <input id="presentationFogSoftness" type="range" min="0.01" max="0.14" step="0.01" value="0.01">
     </label>
     <label class="fog-check">
       <input id="presentationFogMemory" type="checkbox" checked>
@@ -238,6 +429,7 @@
       </div>
       <div class="reader-actions">
         <label><input id="readerExtras" type="checkbox" checked><span>Context points</span></label>
+        <button id="readerFind" class="btn small" type="button">Finder</button>
         <button id="readerExportHtml" class="btn small" type="button">HTML</button>
         <button id="readerPrintPdf" class="btn small" type="button">PDF</button>
         <button id="readerClose" class="close" type="button">x</button>

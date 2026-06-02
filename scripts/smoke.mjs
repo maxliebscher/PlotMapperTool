@@ -102,21 +102,210 @@ async function loadProject(page, fixturePath) {
   await waitForImage(page);
 }
 
+async function exerciseCommandPalette(page) {
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.waitForFunction(() => document.querySelectorAll(".command-result").length >= 3, null, { timeout: 5000 });
+  const pointSearch = await page.evaluate(() => {
+    const point = PM.store.getLiveState().points.find((entry) => entry.type === "route");
+    return { query: String(point.note || point.label).split(/\s+/)[0], label: point.label };
+  });
+  await page.locator("#commandInput").fill(pointSearch.query);
+  await page.waitForFunction((label) => document.querySelector(".command-result strong")?.textContent === label, pointSearch.label, { timeout: 5000 });
+  await page.waitForFunction(() => /Jump|Zur Karte/.test(document.querySelector(".command-result .command-action")?.textContent || ""), null, { timeout: 5000 });
+  const before = await page.evaluate(() => ({
+    zoom: PM.store.getLiveState().settings.zoom,
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector(".point.is-jump-target");
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.zoom > prev.zoom || settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, before, { timeout: 5000 });
+
+  await page.keyboard.press("Control+K");
+  await page.locator("#commandInput").fill("routes");
+  await page.waitForFunction(() => document.querySelector(".command-result strong")?.textContent?.match(/Routes|Routen/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#routePanel:not([hidden])");
+  await page.click("#routePanelToggle");
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("notes");
+  await page.waitForFunction(() => document.querySelector(".command-result strong")?.textContent?.match(/Notes|Notizen/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForFunction(() => PM.viewPresetMatchesState(PM.store.getLiveState(), "notes"), null, { timeout: 5000 });
+  await page.evaluate(() => PM.applyViewPreset(PM.store, "all"));
+  await page.waitForFunction(() => PM.store.getLiveState().settings.showEdit === true, null, { timeout: 5000 });
+}
+
+async function exerciseMinimap(page) {
+  await page.waitForFunction(() => PM.minimap.getPrefs().mode === "auto", null, { timeout: 5000 });
+  await setInputValue(page, "#zoomControl", "2");
+  await page.waitForSelector("#minimapPanel:not([hidden])");
+  await page.waitForFunction(() => {
+    const panel = document.querySelector("#minimapPanel");
+    const canvas = document.querySelector("#minimapCanvas");
+    const viewport = document.querySelector("#minimapViewport");
+    return panel
+      && canvas
+      && viewport
+      && canvas.getBoundingClientRect().width > 120
+      && viewport.getBoundingClientRect().width > 10
+      && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+  }, null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector("#minimapAuto")?.classList.contains("is-active"), null, { timeout: 5000 });
+
+  const closeOffset = await page.evaluate(() => {
+    const routes = document.querySelector("#minimapRoutes").getBoundingClientRect();
+    const close = document.querySelector("#minimapClose").getBoundingClientRect();
+    return close.left - routes.right;
+  });
+  assert(closeOffset >= 8, `Minimap close action should be separated from mode buttons, got ${closeOffset}px.`);
+  await page.waitForFunction(() => document.querySelector("#minimapRoutes")?.classList.contains("is-active"), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length > 0, null, { timeout: 5000 });
+  await page.click("#minimapRoutes");
+  await page.waitForFunction(() => {
+    return !document.querySelector("#minimapRoutes")?.classList.contains("is-active")
+      && document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length === 0
+      && PM.minimap.getPrefs().showRoutes === false;
+  }, null, { timeout: 5000 });
+  await page.click("#minimapRoutes");
+  await page.waitForFunction(() => {
+    return document.querySelector("#minimapRoutes")?.classList.contains("is-active")
+      && document.querySelectorAll("#minimapSvg path, #minimapSvg circle").length > 0
+      && PM.minimap.getPrefs().showRoutes === true;
+  }, null, { timeout: 5000 });
+
+  const beforeDrag = await page.locator("#minimapPanel").boundingBox();
+  const dragHandle = await page.locator("#minimapDrag").boundingBox();
+  assert(beforeDrag && dragHandle, "Minimap drag handle should be measurable.");
+  await page.mouse.move(dragHandle.x + dragHandle.width / 2, dragHandle.y + dragHandle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(dragHandle.x + dragHandle.width / 2 - 36, dragHandle.y + dragHandle.height / 2 - 28, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForFunction((left) => Math.abs(document.querySelector("#minimapPanel").getBoundingClientRect().left - left) > 8, beforeDrag.x, { timeout: 5000 });
+
+  const beforeResize = await page.locator("#minimapPanel").boundingBox();
+  const resize = await page.locator("#minimapResize").boundingBox();
+  assert(beforeResize && resize, "Minimap resize handle should be measurable.");
+  await page.mouse.move(resize.x + resize.width / 2, resize.y + resize.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(resize.x + resize.width / 2 + 52, resize.y + resize.height / 2, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForFunction((width) => document.querySelector("#minimapPanel").getBoundingClientRect().width > width + 20, beforeResize.width, { timeout: 5000 });
+
+  const beforeViewportDrag = await page.evaluate(() => ({
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  const viewportBox = await page.locator("#minimapViewport").boundingBox();
+  assert(viewportBox, "Minimap viewport rectangle should be measurable.");
+  await page.mouse.move(viewportBox.x + viewportBox.width / 2, viewportBox.y + viewportBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(viewportBox.x + viewportBox.width / 2 - 38, viewportBox.y + viewportBox.height / 2 - 22, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, beforeViewportDrag, { timeout: 5000 });
+
+  const beforeJump = await page.evaluate(() => ({
+    panX: PM.store.getLiveState().settings.panX,
+    panY: PM.store.getLiveState().settings.panY
+  }));
+  const mini = await page.locator("#minimapCanvas").boundingBox();
+  assert(mini, "Minimap click target should be measurable.");
+  await page.mouse.click(mini.x + mini.width * 0.82, mini.y + mini.height * 0.72);
+  await page.waitForFunction((prev) => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.panX !== prev.panX || settings.panY !== prev.panY;
+  }, beforeJump, { timeout: 5000 });
+
+  await page.click("#minimapClose");
+  await page.waitForSelector("#minimapPanel", { state: "hidden" });
+  await page.click("#minimapToggle");
+  await page.waitForSelector("#minimapPanel:not([hidden])");
+  await page.click("#minimapClose");
+  await page.waitForSelector("#minimapPanel", { state: "hidden" });
+}
+
+async function exerciseWheelZoom(page) {
+  await page.evaluate(() => PM.store.setSettings({ zoom: 1, panX: 0, panY: 0 }));
+  await page.waitForFunction(() => PM.store.getLiveState().settings.zoom === 1, null, { timeout: 5000 });
+  const point = await canvasPoint(page, 0.82, 0.82);
+  await page.mouse.wheel(0, -500);
+  await page.waitForTimeout(80);
+  const disabledZoom = await page.evaluate(() => PM.store.getLiveState().settings.zoom);
+  assert(disabledZoom === 1, `Wheel zoom should be opt-in, got zoom ${disabledZoom}.`);
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#wheelZoomMenuControl", true);
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("pmUiPrefsV1") || "{}").wheelZoomEnabled === true, null, { timeout: 5000 });
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.wheel(0, -500);
+  await page.waitForFunction(() => PM.store.getLiveState().settings.zoom > 1, null, { timeout: 5000 });
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#wheelZoomMenuControl", false);
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
+}
+
+async function openDetails(page, selector) {
+  await page.evaluate((detailsSelector) => {
+    const details = document.querySelector(detailsSelector);
+    if (details) details.open = true;
+  }, selector);
+}
+
+async function exerciseToolbarMenus(page) {
+  await openDetails(page, "#projectMenu");
+  await page.waitForFunction(() => document.querySelector("#projectMenu")?.open === true, null, { timeout: 5000 });
+  const viewport = page.viewportSize() || { width: 1280, height: 720 };
+  await page.mouse.click(Math.max(10, viewport.width - 24), Math.max(10, viewport.height - 24));
+  await page.waitForFunction(() => document.querySelector("#projectMenu")?.open === false, null, { timeout: 5000 });
+
+  await openDetails(page, "#optionsMenu");
+  await page.waitForFunction(() => document.querySelector("#optionsMenu")?.open === true, null, { timeout: 5000 });
+  await page.mouse.click(Math.max(10, viewport.width - 24), Math.max(10, viewport.height - 24));
+  await page.waitForFunction(() => document.querySelector("#optionsMenu")?.open === false, null, { timeout: 5000 });
+
+  if (viewport.width >= 1000) {
+    await page.waitForFunction(() => {
+      const project = document.querySelector("#projectMenuSummary")?.getBoundingClientRect();
+      const collapse = document.querySelector("#toolbarCollapse")?.getBoundingClientRect();
+      return project && collapse && Math.abs(project.top - collapse.top) <= 6;
+    }, null, { timeout: 5000 });
+  }
+}
+
 async function addRoutePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  const wasFocused = await page.locator("#focusMode").isChecked();
-  if (!wasFocused) await setCheckbox(page, "#focusMode", true);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.62, 0.7), force: true });
   await page.waitForSelector(".context-menu .route-type-choice");
   await page.locator(".context-menu .route-type-choice").click();
   await waitForPointCount(page, before + 1);
-  if (!wasFocused) await setCheckbox(page, "#focusMode", false);
 }
 
 async function addPlacePoint(page) {
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  const isFocused = await page.locator("#focusMode").isChecked();
-  if (isFocused) await setCheckbox(page, "#focusMode", false);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.36, 0.82), force: true });
   await page.locator(".context-menu button", { hasText: "Place" }).click();
   await waitForPointCount(page, before + 1);
@@ -163,6 +352,17 @@ async function exerciseRouteManagement(page) {
   await setInputValue(page, `${activeRow} .route-name-input`, "Smoke Route");
   await page.locator(`${activeRow} .route-color-button`).click();
   await page.waitForSelector("#routeColorPopover:not([hidden])");
+  await page.waitForFunction(() => {
+    const ok = document.querySelector("#routeColorOk");
+    const cancel = document.querySelector("#routeColorCancel");
+    if (!ok || !cancel) return false;
+    const okStyle = getComputedStyle(ok);
+    const cancelStyle = getComputedStyle(cancel);
+    return ok.textContent.trim().match(/^OK$/)
+      && cancel.textContent.trim().match(/Cancel|Abbrechen/)
+      && ok.getBoundingClientRect().height >= 34
+      && okStyle.backgroundColor !== cancelStyle.backgroundColor;
+  }, null, { timeout: 5000 });
   await setInputValueLiveOnly(page, "#routeColorPicker", "#8844cc");
   await page.click("#routeColorCancel");
   await page.waitForSelector("#routeColorPopover", { state: "hidden" });
@@ -206,7 +406,6 @@ async function exerciseRouteManagement(page) {
   }, activeRouteId, { timeout: 5000 });
 
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  await setCheckbox(page, "#focusMode", false);
   await page.dblclick("#mapCanvas", { position: await canvasPoint(page, 0.74, 0.72), force: true });
   await page.locator(".context-menu .route-type-choice").click();
   await waitForPointCount(page, before + 1);
@@ -229,15 +428,233 @@ async function exerciseRouteManagement(page) {
 
 async function editFirstPointLabel(page) {
   await page.locator(".point-menu-button").last().click({ force: true });
-  await page.locator(".context-menu button").first().click();
+  await page.locator(".context-menu button").nth(1).click();
   await page.locator(".point-editor input[name='value']").fill("Smoke Label");
   await page.locator(".point-editor button[type='submit']").click();
   await page.waitForFunction(() => globalThis.PM.store.getLiveState().points.some((point) => point.label === "Smoke Label"), null, { timeout: 5000 });
 }
 
+async function exercisePointInspector(page) {
+  const pointId = await page.evaluate(() => PM.store.getLiveState().points.find((point) => point.type === "route")?.id);
+  assert(pointId, "Point inspector smoke needs a route point.");
+  await page.locator(`.point[data-id="${pointId}"] .point-menu-button`).evaluate((button) => button.click());
+  await page.waitForSelector(".context-menu");
+  const menuText = await page.locator(".context-menu").textContent();
+  assert(/Inspect|Inspector/.test(menuText || ""), `Point menu should expose Inspector, got: ${menuText}`);
+  await page.locator(".context-menu button", { hasText: /Inspect|Inspector/ }).click();
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#pointInspector")?.dataset.mode === "float", null, { timeout: 5000 });
+  await page.click("#pointInspectorMode");
+  await page.waitForFunction(() => document.querySelector("#pointInspector")?.dataset.mode === "dock", null, { timeout: 5000 });
+  await page.fill("#pointInspectorLabel", "Inspector Label");
+  await page.fill("#pointInspectorLocation", "Inspector Location");
+  await page.fill("#pointInspectorDuration", "4 Tage");
+  await page.fill("#pointInspectorNote", "Inspector smoke note");
+  await setCheckbox(page, "#pointInspectorHelper", true);
+  await page.click("#pointInspectorSave");
+  await page.waitForFunction((id) => {
+    const point = PM.store.getLiveState().points.find((entry) => entry.id === id);
+    return point
+      && point.label === "Inspector Label"
+      && point.location === "Inspector Location"
+      && point.duration === "4 Tage"
+      && point.note === "Inspector smoke note"
+      && point.helper === true;
+  }, pointId, { timeout: 5000 });
+  const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
+  await page.click("#filter-route");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === false, null, { timeout: 5000 });
+  await page.click("#pointInspectorJump");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === true, null, { timeout: 5000 });
+  await page.waitForSelector(".point.is-jump-target");
+  await page.waitForFunction((before) => PM.store.getLiveState().settings.panX !== before || PM.store.getLiveState().settings.zoom > 1, panBefore, { timeout: 5000 });
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
+}
+
+async function exerciseFinderDrawer(page) {
+  await page.evaluate(() => {
+    const types = ["place", "char", "event", "item"];
+    for (let index = 0; index < 72; index += 1) {
+      PM.store.addPoint({
+        x: 0.12 + ((index * 17) % 72) / 100,
+        y: 0.16 + ((index * 23) % 68) / 100,
+        type: types[index % types.length],
+        label: index % 17 === 0 ? "" : `Finder Target ${index}`,
+        location: index % 5 === 0 ? "Finder District" : "",
+        note: index % 9 === 0
+          ? "finder scale note with deliberately longer text so the issue filter has a useful signal in a large project"
+          : `finder scale note ${index}`
+      });
+    }
+  });
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("finder");
+  await page.waitForSelector(".command-more-results");
+  const commandOptionCount = await page.locator(".command-result[role='option']").count();
+  for (let index = 1; index < commandOptionCount; index += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await page.waitForFunction(() => document.querySelector(".command-more-results")?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#finderInput")?.value === "finder" && PM.finder.resultCount() > 48, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("finder");
+  await page.waitForSelector(".command-more-results");
+  await page.click(".command-more-results");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector("#finderInput")?.value === "finder" && PM.finder.resultCount() > 48, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => {
+    const allFilter = document.querySelector(".finder-filter[data-filter='all']");
+    return document.querySelector("#finderInput")?.value === ""
+      && allFilter?.classList.contains("is-active");
+  }, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("ausschnitt");
+  await page.waitForFunction(() => document.querySelector(".command-result")?.textContent?.match(/Ausschnitt|View/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => {
+    const viewFilter = document.querySelector(".finder-filter[data-filter='view']");
+    return viewFilter?.classList.contains("is-active") && PM.finder.resultCount() > 0 && PM.finder.resultCount() < 72;
+  }, null, { timeout: 5000 });
+  await page.waitForFunction(() => /Ausschnitt|View/.test(document.querySelector("#finderSummary")?.textContent || ""), null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.waitForFunction(() => PM.finder.resultCount() > 48 && document.querySelectorAll(".finder-result").length === 48, null, { timeout: 5000 });
+  await page.waitForFunction(() => /more hidden|Weitere \d+ ausgeblendet/.test(document.querySelector("#finderLimit")?.textContent || ""), null, { timeout: 5000 });
+  await page.waitForFunction(() => {
+    const filters = Array.from(document.querySelectorAll(".finder-filter"));
+    return filters.some((button) => button.dataset.filter === "event" && /\d+/.test(button.textContent || ""))
+      && filters.some((button) => button.dataset.filter === "item" && /\d+/.test(button.textContent || ""));
+  }, null, { timeout: 5000 });
+  await page.waitForFunction(() => /Enter|Klick|Click/.test(document.querySelector("#finderActionHint")?.textContent || ""), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Ctrl.*Enter.*Inspector/.test(document.querySelector("#finderActionHint")?.textContent || ""), null, { timeout: 5000 });
+  await page.evaluate(() => PM.store.setSettings({ zoom: 2.35, panX: 0, panY: 0 }));
+  await page.locator(".finder-filter[data-filter='view']").click();
+  await page.waitForFunction(() => {
+    const viewFilter = document.querySelector(".finder-filter[data-filter='view']");
+    return viewFilter?.classList.contains("is-active") && PM.finder.resultCount() > 0 && PM.finder.resultCount() < 72;
+  }, null, { timeout: 5000 });
+  await page.waitForFunction(() => /Ausschnitt|View/.test(document.querySelector("#finderSummary")?.textContent || ""), null, { timeout: 5000 });
+  await page.locator(".finder-filter[data-filter='all']").click();
+  await page.locator(".finder-result").nth(2).hover();
+  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
+  await page.waitForFunction(() => {
+    const drawer = document.querySelector("#finderDrawer");
+    return drawer && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+  }, null, { timeout: 5000 });
+  await page.locator(".finder-result").first().evaluate((node) => {
+    node.dataset.stableProbe = "kept";
+  });
+  await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.querySelector(".finder-result")?.dataset.stableProbe === "kept", null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll(".point.is-finder-preview").length === 1, null, { timeout: 5000 });
+  await page.keyboard.press("PageDown");
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result")[11]?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("PageUp");
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result")[3]?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("End");
+  await page.waitForFunction(() => {
+    const results = Array.from(document.querySelectorAll(".finder-result"));
+    return results.length > 0 && results[results.length - 1].classList.contains("is-selected");
+  }, null, { timeout: 5000 });
+  await page.keyboard.press("Home");
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result")[0]?.classList.contains("is-selected"), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForSelector(".point.is-jump-target");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#filter-route");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === false, null, { timeout: 5000 });
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("Smoke Route");
+  await page.locator(".finder-filter[data-filter='route']").click();
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result").length >= 1, null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForFunction(() => PM.store.getLiveState().settings.filters.route === true, null, { timeout: 5000 });
+  await page.waitForSelector(".point.is-jump-target");
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.locator(".finder-filter[data-filter='issue']").click();
+  await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Missing label|Fehlendes Label|Long note|Lange Notiz/.test(document.querySelector("#finderResults")?.textContent || ""), null, { timeout: 5000 });
+  await page.keyboard.press("Control+Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("finder");
+  await page.locator(".finder-filter[data-filter='issue']").click();
+  await page.waitForFunction(() => PM.finder.resultCount() > 0 && document.querySelector(".finder-result-inspect"), null, { timeout: 5000 });
+  await page.locator(".finder-result-inspect").first().click();
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#pointInspector:not([hidden])");
+  await page.click("#pointInspectorClose");
+  await page.waitForSelector("#pointInspector", { state: "hidden" });
+
+  await page.keyboard.press("Control+K");
+  await page.waitForSelector("#commandPalette:not([hidden])");
+  await page.locator("#commandInput").fill("hints");
+  await page.waitForFunction(() => document.querySelector(".command-result")?.textContent?.match(/Hints|Hinweise/), null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#commandPalette", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector(".finder-filter[data-filter='issue']")?.classList.contains("is-active"), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Missing label|Fehlendes Label|Long note|Lange Notiz/.test(document.querySelector("#finderResults")?.textContent || ""), null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => document.querySelector(".finder-filter[data-filter='all']")?.classList.contains("is-active"), null, { timeout: 5000 });
+  await page.locator("#finderInput").fill("Smoke Route");
+  await page.locator(".finder-filter[data-filter='route']").click();
+  await page.waitForFunction(() => document.querySelectorAll(".finder-result").length >= 1, null, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+  await page.waitForSelector("#routePanel:not([hidden])");
+  await page.click("#routePanelToggle");
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+}
+
 async function insertMidpointAndUndoRedo(page) {
+  await page.evaluate(() => PM.store.setSettings({ zoom: 1, panX: 0, panY: 0 }));
+  await page.waitForFunction(() => document.querySelectorAll(".midpoint").length > 0, null, { timeout: 5000 });
   const before = await page.evaluate(() => PM.store.getLiveState().points.length);
-  await page.locator(".midpoint").last().click({ force: true });
+  await page.locator(".midpoint").last().evaluate((button) => button.click());
   await waitForPointCount(page, before + 1);
   await page.click("#undoButton");
   await waitForPointCount(page, before);
@@ -247,11 +664,71 @@ async function insertMidpointAndUndoRedo(page) {
 
 async function toggleControls(page) {
   const initialTheme = await page.evaluate(() => document.documentElement.dataset.theme);
-  await page.click("#themeToggle");
+  await openDetails(page, "#optionsMenu");
+  async function activateThemeButton(selector) {
+    await page.evaluate((id) => {
+      const button = document.querySelector(id);
+      const rect = button.getBoundingClientRect();
+      if (rect.right < 0 || rect.left > innerWidth || rect.bottom < 0 || rect.top > innerHeight) {
+        const popover = document.querySelector(".options-menu .toolbar-menu-popover")?.getBoundingClientRect();
+        const toolbar = document.querySelector("#toolbar")?.getBoundingClientRect();
+        throw new Error(`${id} outside viewport: ${JSON.stringify({
+          rect: rect.toJSON ? rect.toJSON() : rect,
+          popover: popover && (popover.toJSON ? popover.toJSON() : popover),
+          toolbar: toolbar && (toolbar.toJSON ? toolbar.toJSON() : toolbar),
+          theme: document.documentElement.dataset.theme,
+          open: document.querySelector("#optionsMenu")?.open,
+          innerWidth,
+          innerHeight,
+          scrollX,
+          scrollY
+        })}`);
+      }
+      button.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2
+      }));
+    }, selector);
+  }
+  await activateThemeButton("#themeNext");
   await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  const nextTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+  await activateThemeButton("#themePrev");
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme === theme, initialTheme, { timeout: 5000 });
+  await activateThemeButton("#themePrev");
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, initialTheme, { timeout: 5000 });
+  await page.waitForFunction((theme) => document.documentElement.dataset.theme !== theme, nextTheme, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("en");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "en" && document.documentElement.lang === "en", null, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("de");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "de" && document.documentElement.lang === "de", null, { timeout: 5000 });
+  await page.locator("#langSelect").selectOption("en");
+  await page.waitForFunction(() => PM.store.getLiveState().settings.locale === "en" && document.documentElement.lang === "en", null, { timeout: 5000 });
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
+  await page.locator(".view-preset", { hasText: /Route/ }).click();
+  await page.waitForFunction(() => {
+    const settings = PM.store.getLiveState().settings;
+    return settings.filters.route === true
+      && settings.filters.place === false
+      && settings.filters.char === false
+      && settings.showLines === true
+      && settings.showNotes === false
+      && document.querySelector(".view-preset.is-active")?.textContent?.match(/Route/);
+  }, null, { timeout: 5000 });
+  await page.locator(".view-preset", { hasText: /All|Alles/ }).click();
+  await page.waitForFunction(() => {
+    const settings = PM.store.getLiveState().settings;
+    return Object.values(settings.filters).every(Boolean)
+      && settings.showNotes === true
+      && settings.showEdit === true;
+  }, null, { timeout: 5000 });
   await setInputValue(page, "#pointSizeControl", "40");
   await page.waitForFunction(() => {
-    const point = document.querySelector(".point");
+    const point = document.querySelector(".point:not(.helper)");
     return PM.store.getLiveState().settings.pointSizePx === 40
       && getComputedStyle(document.documentElement).getPropertyValue("--point-size").trim() === "40px"
       && point
@@ -274,6 +751,30 @@ async function toggleControls(page) {
   }, null, { timeout: 5000 });
   await setInputValue(page, "#toolbarOpacityControl", "72");
   await page.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue("--toolbar-opacity").trim() === "0.72", null, { timeout: 5000 });
+  await page.click("#sliderPanelToggle");
+  await page.waitForSelector("#sliderPanel", { state: "hidden" });
+  await page.click("#sliderPanelToggle");
+  await page.waitForSelector("#sliderPanel:not([hidden])");
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showSliderControlsPref", false);
+  await page.waitForSelector("#sliderPanel", { state: "hidden" });
+  await setCheckbox(page, "#showSliderControlsPref", true);
+  await page.waitForSelector("#sliderPanel:not([hidden])");
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showRouteControlsPref", false);
+  await page.waitForSelector(".route-controls", { state: "hidden" });
+  await page.waitForSelector("#routePanel", { state: "hidden" });
+  await setCheckbox(page, "#showRouteControlsPref", true);
+  await page.waitForSelector(".route-controls:not([hidden])");
+  await openDetails(page, "#optionsMenu");
+  await setCheckbox(page, "#showVisibilityControlsPref", false);
+  await page.waitForSelector(".toggles", { state: "hidden" });
+  await setCheckbox(page, "#showVisibilityControlsPref", true);
+  await page.waitForSelector(".toggles:not([hidden])");
+  await page.evaluate(() => {
+    const details = document.querySelector("#optionsMenu");
+    if (details) details.open = false;
+  });
   await page.click("#toolbarCollapse");
   await page.waitForFunction(() => document.documentElement.classList.contains("toolbar-collapsed"), null, { timeout: 5000 });
   assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide when collapsed.");
@@ -281,12 +782,9 @@ async function toggleControls(page) {
   await page.click("#toolbarRestore");
   await page.waitForFunction(() => !document.documentElement.classList.contains("toolbar-collapsed"), null, { timeout: 5000 });
   await page.waitForSelector("#toolbar");
-  await setCheckbox(page, "#focusMode", true);
-  await page.waitForFunction(() => document.documentElement.classList.contains("focus-mode"), null, { timeout: 5000 });
   await setCheckbox(page, "#filter-place", false);
   await page.waitForFunction(() => PM.store.getLiveState().settings.filters.place === false, null, { timeout: 5000 });
   await setCheckbox(page, "#filter-place", true);
-  await setCheckbox(page, "#focusMode", false);
 }
 
 async function visiblePointCount(page) {
@@ -302,6 +800,29 @@ async function canvasPixel(page, xRatio, yRatio) {
   }, { x: xRatio, y: yRatio });
 }
 
+async function exportedPngAverageLuma(page) {
+  return page.evaluate(async () => {
+    const blob = await PM.renderer.exportPng();
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0);
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let total = 0;
+    let count = 0;
+    for (let y = 0; y < canvas.height; y += 8) {
+      for (let x = 0; x < canvas.width; x += 8) {
+        const index = (y * canvas.width + x) * 4;
+        total += data[index] * 0.2126 + data[index + 1] * 0.7152 + data[index + 2] * 0.0722;
+        count += 1;
+      }
+    }
+    return total / Math.max(1, count);
+  });
+}
+
 function pixelDistance(left, right) {
   return Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2]) + Math.abs(left[3] - right[3]);
 }
@@ -311,9 +832,36 @@ async function exercisePresentation(page) {
   await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
   await page.waitForSelector("#presentationDock:not([hidden])");
   await page.waitForSelector(".presentation-route-pill");
+  await page.waitForFunction(() => document.querySelector(".presentation-view-mode.is-active")?.textContent?.trim().length > 1, null, { timeout: 5000 });
   assert(!(await page.locator("#toolbar").isVisible()), "Toolbar should hide in presentation mode.");
   const routePills = await page.locator(".presentation-route-pill").count();
   assert(routePills >= 1, "Presentation should expose at least one route progress pill.");
+  await page.locator(".presentation-view-mode[data-view='b']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "b"
+      && !document.querySelector("#presentationFocusCard").hidden
+      && document.querySelector("#presentationFocusTitle")?.textContent?.trim().length > 0
+      && PM.presentation.getViewMode() === "b";
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='c']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "c"
+      && !document.querySelector("#presentationProgressRail").hidden
+      && document.querySelectorAll(".presentation-rail-step").length >= 1
+      && document.querySelector(".presentation-view-mode.is-active")?.textContent?.trim().includes(" ");
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='d']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "d"
+      && getComputedStyle(document.querySelector("#presentationRoutes")).display === "none";
+  }, null, { timeout: 5000 });
+  await page.locator(".presentation-view-mode[data-view='a']").click();
+  await page.waitForFunction(() => {
+    return document.documentElement.dataset.presentationView === "a"
+      && document.querySelector("#presentationFocusCard").hidden
+      && document.querySelector("#presentationProgressRail").hidden
+      && PM.presentation.getViewMode() === "a";
+  }, null, { timeout: 5000 });
   if (routePills > 1) {
     const secondRouteId = await page.locator(".presentation-route-pill").nth(1).evaluate((button) => button.textContent);
     await page.locator(".presentation-route-pill").nth(1).click();
@@ -323,6 +871,11 @@ async function exercisePresentation(page) {
   const fogPixel = await canvasPixel(page, 0.5, 0.5);
   await page.click("#presentationFogToggle");
   await page.waitForSelector("#presentationFogPanel:not([hidden])");
+  const themeBefore = await page.evaluate(() => PM.store.getLiveState().settings.theme);
+  await page.click("#presentationThemeNext");
+  await page.waitForFunction((previous) => PM.store.getLiveState().settings.theme !== previous, themeBefore, { timeout: 5000 });
+  await page.click("#presentationThemePrev");
+  await page.waitForFunction((previous) => PM.store.getLiveState().settings.theme === previous, themeBefore, { timeout: 5000 });
   await page.selectOption("#presentationFogMode", "off");
   await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "off", null, { timeout: 5000 });
   const clearPixel = await canvasPixel(page, 0.5, 0.5);
@@ -330,6 +883,7 @@ async function exercisePresentation(page) {
   await page.selectOption("#presentationFogMode", "all");
   await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "all", null, { timeout: 5000 });
   await page.selectOption("#presentationFogMode", "focus");
+  await page.selectOption("#presentationFogStyle", "game");
   await setInputValue(page, "#presentationFogOutside", "0.12");
   await setInputValue(page, "#presentationFogFocus", "0.22");
   await setInputValue(page, "#presentationFogTrail", "0.05");
@@ -337,7 +891,7 @@ async function exercisePresentation(page) {
   await setCheckbox(page, "#presentationFogMemory", false);
   await page.waitForFunction(() => {
     const fog = PM.getPresentationFogSettings();
-    return fog.mode === "focus" && fog.outsideVisibility === 0.12 && fog.focusRadius === 0.22 && fog.trailRadius === 0.05 && fog.edgeSoftness === 0.08 && fog.trailMemory === false;
+    return fog.mode === "focus" && fog.edgeStyle === "game" && fog.outsideVisibility === 0.12 && fog.focusRadius === 0.22 && fog.trailRadius === 0.05 && fog.edgeSoftness === 0.08 && fog.trailMemory === false;
   }, null, { timeout: 5000 });
   await page.click("#presentationFogClose");
   await page.waitForSelector("#presentationFogPanel", { state: "hidden" });
@@ -373,6 +927,38 @@ async function exercisePresentation(page) {
     return reveal.routeReveals.every((entry) => entry.step <= 1)
       && document.querySelectorAll(".point:not(.hidden)").length === reveal.visibleIds.size;
   }, null, { timeout: 5000 });
+  const fogExportLuma = await exportedPngAverageLuma(page);
+  await page.locator("#presentationFogMode").evaluate((select) => {
+    select.value = "off";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "off", null, { timeout: 5000 });
+  const clearExportLuma = await exportedPngAverageLuma(page);
+  assert(fogExportLuma < clearExportLuma - 5, `Presentation PNG export should include the visibility overlay, got fog ${fogExportLuma.toFixed(1)} vs clear ${clearExportLuma.toFixed(1)}.`);
+  await page.locator("#presentationFogMode").evaluate((select) => {
+    select.value = "focus";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "focus", null, { timeout: 5000 });
+
+  await page.evaluate(() => {
+    if (globalThis.__pmDownloadCaptureInstalled) return;
+    globalThis.__pmDownloadCaptureInstalled = true;
+    globalThis.__pmDownloads = [];
+    const originalClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function capturedDownloadClick() {
+      if (this.download) {
+        globalThis.__pmDownloads.push({
+          download: this.download,
+          href: this.href
+        });
+      }
+      return originalClick.call(this);
+    };
+  });
+  await page.click("#presentationExportPng");
+  await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".png")), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.documentElement.classList.contains("presentation-mode"), null, { timeout: 5000 });
 
   await page.keyboard.press("End");
   await page.waitForFunction((count) => document.querySelectorAll(".point:not(.hidden)").length === count, presentationShowAllCount, { timeout: 5000 });
@@ -383,10 +969,32 @@ async function exercisePresentation(page) {
 }
 
 async function exerciseReader(page) {
+  await page.click("#finderButton");
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.locator("#finderInput").fill("reader stale query");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
   await page.click("#readerButton");
   await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
+  await page.click("#readerFind");
+  await page.waitForSelector("#readerModal", { state: "hidden" });
+  await page.waitForSelector("#finderDrawer:not([hidden])");
+  await page.waitForFunction(() => {
+    const allFilter = document.querySelector(".finder-filter[data-filter='all']");
+    return document.querySelector("#finderInput")?.value === ""
+      && allFilter?.classList.contains("is-active");
+  }, null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#finderDrawer", { state: "hidden" });
+
+  await page.click("#readerButton");
+  await page.waitForSelector("#readerModal:not([hidden]) .reader-card");
+  await page.waitForSelector(".reader-jump");
   const panBefore = await page.evaluate(() => PM.store.getLiveState().settings.panX);
-  await page.locator(".reader-num").first().click();
+  await page.locator(".reader-jump").first().click();
+  await page.waitForSelector("#readerModal", { state: "hidden" });
+  await page.waitForSelector(".point.is-jump-target");
   await page.waitForFunction((before) => PM.store.getLiveState().settings.panX !== before || PM.store.getLiveState().settings.zoom > 1, panBefore, { timeout: 5000 });
 }
 
@@ -407,9 +1015,15 @@ async function exerciseDownloads(page) {
     };
   });
 
+  await openDetails(page, "#projectMenu");
   await page.click("#exportPng");
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".png")), null, { timeout: 5000 });
 
+  await openDetails(page, "#projectMenu");
+  await page.click("#exportReaderHtml");
+  await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".html")), null, { timeout: 5000 });
+
+  await openDetails(page, "#projectMenu");
   await page.click("#saveProject");
   await page.waitForFunction(() => globalThis.__pmDownloads.some((entry) => entry.download.endsWith(".plotmap.json")), null, { timeout: 5000 });
 }
@@ -430,10 +1044,16 @@ async function runViewport(browser, baseUrl, viewport, fixturePath) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.click("#pmSplash");
   await loadProject(page, fixturePath);
+  await exerciseToolbarMenus(page);
+  await exerciseMinimap(page);
+  await exerciseWheelZoom(page);
+  await exerciseCommandPalette(page);
   await addRoutePoint(page);
   await addPlacePoint(page);
   await exerciseRouteManagement(page);
   await editFirstPointLabel(page);
+  await exercisePointInspector(page);
+  await exerciseFinderDrawer(page);
   await insertMidpointAndUndoRedo(page);
   await toggleControls(page);
   await exercisePresentation(page);

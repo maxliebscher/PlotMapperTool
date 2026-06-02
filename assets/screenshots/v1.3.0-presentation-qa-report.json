@@ -1,0 +1,60 @@
+{
+  "appUrl": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/PlotMapper_v1.3.0-onboarding-ui.html",
+  "demoUrl": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/variants/v1.3.0-fog-edge-smoothing-demo.html",
+  "themeBefore": "bright",
+  "themeAfter": "contrast",
+  "metrics": {
+    "title": "PlotMapper - Story Path Mapping Tool",
+    "url": "file:///C:/Users/nimdas/Desktop/FILES/GitHub/PlotMapperTool/versions/PlotMapper_v1.3.0-onboarding-ui.html",
+    "theme": "bright",
+    "points": 151,
+    "routes": 1,
+    "presentation": true,
+    "view": "c",
+    "activeModeText": "C Liste",
+    "viewButtonTexts": [
+      "A",
+      "B",
+      "C Liste",
+      "D"
+    ],
+    "fogPanelVisible": true,
+    "railHidden": false,
+    "railBackground": "color(srgb 1 1 1 / 0.92)",
+    "dockRect": {
+      "x": 332.6640625,
+      "y": 912,
+      "width": 774.671875,
+      "height": 50,
+      "top": 912,
+      "right": 1107.3359375,
+      "bottom": 962,
+      "left": 332.6640625
+    },
+    "panelRect": {
+      "x": 1130,
+      "y": 499,
+      "width": 292,
+      "height": 403,
+      "top": 499,
+      "right": 1422,
+      "bottom": 902,
+      "left": 1130
+    }
+  },
+  "demoMetrics": {
+    "title": "PlotMapper Fog Edge Varianten",
+    "canvases": 3,
+    "figures": 3
+  },
+  "consoleItems": [],
+  "shots": {
+    "a": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-a.png",
+    "b": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-b.png",
+    "c": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-c.png",
+    "d": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-d.png",
+    "themedShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-c-theme-panel.png",
+    "fogSoftShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-presentation-qa-soft-fog.png",
+    "demoShot": "C:\\Users\\nimdas\\Desktop\\FILES\\GitHub\\PlotMapperTool\\assets\\screenshots\\v1.3.0-fog-edge-smoothing-demo.png"
+  }
+}

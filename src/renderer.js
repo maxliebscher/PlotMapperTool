@@ -83,6 +83,22 @@
       };
     }
 
+    function visibleMapBounds() {
+      const rect = getImageRect();
+      const size = getViewportSize();
+      if (!rect.w || !rect.h) return { left: 0, top: 0, width: 1, height: 1 };
+      const left = PM.clamp((0 - rect.x) / rect.w, 0, 1);
+      const top = PM.clamp((0 - rect.y) / rect.h, 0, 1);
+      const right = PM.clamp((size.width - rect.x) / rect.w, 0, 1);
+      const bottom = PM.clamp((size.height - rect.y) / rect.h, 0, 1);
+      return {
+        left,
+        top,
+        width: Math.max(0, right - left),
+        height: Math.max(0, bottom - top)
+      };
+    }
+
     function centerOnPoint(point, targetZoom) {
       if (!point) return;
       const size = getViewportSize();
@@ -100,6 +116,29 @@
       });
     }
 
+    function zoomAtClient(clientX, clientY, targetZoom) {
+      const size = getViewportSize();
+      const imgWidth = imageReady ? image.naturalWidth : latestState.map.width;
+      const imgHeight = imageReady ? image.naturalHeight : latestState.map.height;
+      if (!imgWidth || !imgHeight) return;
+      const canvasRect = canvas.getBoundingClientRect();
+      const currentRect = getImageRect(size.width, size.height, latestState);
+      if (!currentRect.w || !currentRect.h) return;
+      const localX = clientX - canvasRect.left;
+      const localY = clientY - canvasRect.top;
+      const mapX = PM.clamp((localX - currentRect.x) / currentRect.w, 0, 1);
+      const mapY = PM.clamp((localY - currentRect.y) / currentRect.h, 0, 1);
+      const zoom = PM.clamp(Number(targetZoom) || latestState.settings.zoom, 1, 5);
+      const scale = Math.min(size.width / imgWidth, size.height / imgHeight) * zoom;
+      const w = imgWidth * scale;
+      const h = imgHeight * scale;
+      store.setSettings({
+        zoom,
+        panX: localX - (size.width - w) / 2 - mapX * w,
+        panY: localY - (size.height - h) / 2 - mapY * h
+      });
+    }
+
     function dashForRoute(route) {
       if (!route) return [];
       if (route.lineStyle === "dashed") return [14, 10];
@@ -107,7 +146,12 @@
       return [];
     }
 
-    function routePointSets(state) {
+    function routePointSets(state, revealInfo) {
+      if (revealInfo && revealInfo.active) {
+        return (revealInfo.routeReveals || [{ route: revealInfo.activeRoute || PM.getActiveRoute(state.settings, state.routes), points: revealInfo.routePoints }])
+          .map((entry) => ({ route: entry.route, points: entry.routePoints || entry.points || [] }))
+          .filter((set) => set.route && set.points.length >= 2);
+      }
       return state.routes
         .filter((route) => route.visible)
         .map((route) => ({
@@ -211,12 +255,12 @@
       targetCtx.restore();
     }
 
-    function drawLineSet(targetCtx, state, rect) {
+    function drawLineSet(targetCtx, state, rect, revealInfo) {
       if (!state.settings.showLines) return;
       targetCtx.save();
       targetCtx.lineCap = "round";
       targetCtx.lineJoin = "round";
-      routePointSets(state).forEach(({ route, points }) => {
+      routePointSets(state, revealInfo).forEach(({ route, points }) => {
         targetCtx.setLineDash([]);
         targetCtx.lineWidth = route.width + 2;
         targetCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
@@ -234,47 +278,77 @@
       const scale = Math.max(1, Math.min(rect.w, rect.h));
       const trailWidth = Math.max(16, fogSettings.trailRadius * scale * (fogSettings.trailMemory ? 0.72 : 1));
       const focusRadius = Math.max(28, fogSettings.focusRadius * scale);
-      const edgeBlur = Math.max(2, fogSettings.edgeSoftness * scale);
+      const edgeBlur = PM.clamp(fogSettings.edgeSoftness * scale, 3, 56);
+      const mask = document.createElement("canvas");
+      mask.width = targetCtx.canvas.width;
+      mask.height = targetCtx.canvas.height;
+      const maskCtx = mask.getContext("2d");
+      function traceReveal(width, radius) {
+        maskCtx.lineCap = "round";
+        maskCtx.lineJoin = "round";
+        maskCtx.strokeStyle = "#000";
+        maskCtx.fillStyle = "#000";
+        maskCtx.lineWidth = width;
+        if (routePoints.length) {
+          maskCtx.beginPath();
+          routePoints.forEach((point, index) => {
+            const px = rect.x + point.x * rect.w;
+            const py = rect.y + point.y * rect.h;
+            if (index) maskCtx.lineTo(px, py);
+            else maskCtx.moveTo(px, py);
+          });
+          maskCtx.stroke();
+        }
+        if (currentPoint) {
+          const px = rect.x + currentPoint.x * rect.w;
+          const py = rect.y + currentPoint.y * rect.h;
+          maskCtx.beginPath();
+          maskCtx.arc(px, py, radius, 0, Math.PI * 2);
+          maskCtx.fill();
+        }
+      }
+      maskCtx.save();
+      if (fogSettings.edgeStyle === "game") {
+        maskCtx.filter = `blur(${edgeBlur * 1.15}px)`;
+        maskCtx.globalAlpha = 0.96;
+        traceReveal(trailWidth + edgeBlur * 1.95, focusRadius + edgeBlur * 0.9);
+        maskCtx.restore();
+      } else if (fogSettings.edgeStyle === "clear") {
+        maskCtx.filter = `blur(${edgeBlur * 0.62}px)`;
+        maskCtx.globalAlpha = 0.62;
+        traceReveal(trailWidth + edgeBlur * 0.92, focusRadius + edgeBlur * 0.36);
+        maskCtx.restore();
+        traceReveal(trailWidth, focusRadius);
+      } else {
+        maskCtx.filter = `blur(${edgeBlur * 1.25}px)`;
+        maskCtx.globalAlpha = 0.38;
+        traceReveal(trailWidth + edgeBlur * 2.35, focusRadius + edgeBlur * 1.08);
+        maskCtx.restore();
+        maskCtx.save();
+        maskCtx.filter = `blur(${edgeBlur * 0.58}px)`;
+        maskCtx.globalAlpha = 0.58;
+        traceReveal(trailWidth + edgeBlur * 1.08, focusRadius + edgeBlur * 0.48);
+        maskCtx.restore();
+        traceReveal(trailWidth, focusRadius);
+      }
       targetCtx.save();
       targetCtx.globalCompositeOperation = "destination-out";
-      targetCtx.shadowColor = "#000";
-      targetCtx.shadowBlur = edgeBlur;
-      targetCtx.lineCap = "round";
-      targetCtx.lineJoin = "round";
-      targetCtx.strokeStyle = "#000";
-      targetCtx.fillStyle = "#000";
-      if (routePoints.length) {
-        targetCtx.lineWidth = trailWidth;
-        targetCtx.beginPath();
-        routePoints.forEach((point, index) => {
-          const px = rect.x + point.x * rect.w;
-          const py = rect.y + point.y * rect.h;
-          if (index) targetCtx.lineTo(px, py);
-          else targetCtx.moveTo(px, py);
-        });
-        targetCtx.stroke();
-      }
-      if (currentPoint) {
-        const px = rect.x + currentPoint.x * rect.w;
-        const py = rect.y + currentPoint.y * rect.h;
-        targetCtx.beginPath();
-        targetCtx.arc(px, py, focusRadius, 0, Math.PI * 2);
-        targetCtx.fill();
-      }
+      targetCtx.drawImage(mask, 0, 0);
       targetCtx.restore();
     }
 
-    function drawPresentationFog(size, rect) {
+    function drawPresentationFog(targetCtx, size, rect, state) {
       if (!PM.getPresentationReveal || !PM.getPresentationFogSettings) return;
       const revealInfo = PM.getPresentationReveal();
       const fogSettings = PM.getPresentationFogSettings();
       if (!revealInfo || !revealInfo.active || fogSettings.mode === "off") return;
+      const renderState = state || latestState;
       const routeReveals = fogSettings.mode === "all"
-        ? latestState.routes
+        ? renderState.routes
           .filter((route) => route.visible)
           .map((route) => {
-            const routeInfo = PM.computeRouteInfo(latestState.points, latestState.settings, route);
-            const routePoints = latestState.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, latestState.settings, latestState.routes));
+            const routeInfo = PM.computeRouteInfo(renderState.points, renderState.settings, route);
+            const routePoints = renderState.points.filter((point) => point.type === "route" && point.routeId === route.id && PM.isPointVisible(point, renderState.settings, renderState.routes));
             return { routePoints, currentPoint: routeInfo.numberedRoutes.at(-1) || routePoints.at(-1) || null };
           })
         : (revealInfo.routeReveals || [{ routePoints: revealInfo.routePoints, currentPoint: revealInfo.routeInfo.numberedRoutes[Math.max(0, revealInfo.step - 1)] || revealInfo.routePoints[revealInfo.routePoints.length - 1] }]);
@@ -295,7 +369,7 @@
       routeReveals.forEach((entry) => {
         if (entry.routePoints && entry.routePoints.length) drawFogRevealShape(overlayCtx, rect, entry.routePoints, entry.currentPoint, fogSettings);
       });
-      ctx.drawImage(overlay, 0, 0);
+      targetCtx.drawImage(overlay, 0, 0);
     }
 
     function draw() {
@@ -309,7 +383,7 @@
       ctx.globalAlpha = latestState.settings.opacity;
       ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
       ctx.restore();
-      drawPresentationFog(size, rect);
+      drawPresentationFog(ctx, size, rect, latestState);
     }
 
     function wrapTextLines(targetCtx, text, maxWidth) {
@@ -386,12 +460,15 @@
       return Math.max(11, Math.min(24, (parseInt(settings.pointSizePx, 10) || 32) / 2));
     }
 
-    function drawPngOverlay(targetCtx, state, rect) {
-      const routeInfo = PM.computeRoutesInfo ? PM.computeRoutesInfo(state.points, state.settings, state.routes) : PM.computeRouteInfo(state.points, state.settings);
+    function drawPngOverlay(targetCtx, state, rect, revealInfo) {
+      const routeInfo = revealInfo && revealInfo.active && revealInfo.routeInfo
+        ? revealInfo.routeInfo
+        : (PM.computeRoutesInfo ? PM.computeRoutesInfo(state.points, state.settings, state.routes) : PM.computeRouteInfo(state.points, state.settings));
       targetCtx.textAlign = "center";
       targetCtx.textBaseline = "middle";
       for (const point of state.points) {
         if (!PM.isPointVisible(point, state.settings, state.routes)) continue;
+        if (revealInfo && revealInfo.active && !PM.isPointRevealed(point, state.points, state.settings, revealInfo, state.routes)) continue;
         const route = PM.routeForPoint ? PM.routeForPoint(point, state.routes) : null;
         const px = rect.x + point.x * rect.w;
         const py = rect.y + point.y * rect.h;
@@ -463,8 +540,10 @@
       outCtx.globalAlpha = latestState.settings.opacity;
       outCtx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
       outCtx.restore();
-      drawLineSet(outCtx, latestState, rect);
-      drawPngOverlay(outCtx, latestState, rect);
+      const revealInfo = PM.getPresentationReveal ? PM.getPresentationReveal() : null;
+      drawPresentationFog(outCtx, { width: out.width, height: out.height }, rect, latestState);
+      drawLineSet(outCtx, latestState, rect, revealInfo);
+      drawPngOverlay(outCtx, latestState, rect, revealInfo);
       return new Promise((resolve, reject) => {
         out.toBlob((blob) => blob ? resolve(blob) : reject(new Error("PNG export failed")), "image/png");
       });
@@ -485,7 +564,9 @@
       mapToClient,
       clientToMap,
       centerOnPoint,
+      zoomAtClient,
       getImageRect,
+      visibleMapBounds,
       exportPng,
       hasImage() {
         return imageReady;
