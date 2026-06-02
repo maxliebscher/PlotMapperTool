@@ -140,25 +140,25 @@ Indie devs and small studios may use and adapt this freely. Commercial use by la
 
 ### Was ist PlotMapper?
 
-PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrenden und allen mit kartenbasierten Projekten, einen Handlungsweg direkt auf einer Karte zu strukturieren. Du setzt Routenpunkte, Hilfspunkte, Kontextpunkte, Notizen, Handlungsorte, Labels und Dauerangaben und kannst die Route im Reader linear prÃ¼fen.
+PlotMapper hilft Autorinnen und Autoren, Spielleitungen, Worldbuildern, Lehrenden und allen mit kartenbasierten Projekten, einen Handlungsweg direkt auf einer Karte zu strukturieren. Du setzt Routenpunkte, Hilfspunkte, Kontextpunkte, Notizen, Handlungsorte, Labels und Dauerangaben und kannst die Route im Reader linear prüfen.
 
 ### Funktionen
 
 - Beliebige Karte oder Bilddatei als Hintergrund laden.
 - Routen-, Orts-, Charakter-, Ereignis- und Item-Punkte setzen.
-- Eine oder mehrere Routenlinien mit einstellbarer Farbe, StÃ¤rke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
+- Eine oder mehrere Routenlinien mit einstellbarer Farbe, Stärke, Strich-Art, Nummerierung, Sichtbarkeit und Pfeilen zeichnen.
 - Hilfspunkte nutzen, um Linien zu formen oder Abzweigungen ohne Nummerierung zu bauen.
-- Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und LÃ¶schen Ã¼ber das PunktmenÃ¼ bearbeiten.
+- Labels, Handlungsorte, Notizen, Dauer, Hilfspunkt-Status, Typ und Löschen über das Punktmenü bearbeiten.
 - Filter, Labels, Handlungsorte, Notizen, Dauer, Edit-Buttons, Pfad-Einstellungen und Fokus-Modus umschalten.
 - Multi-Routen-Steuerung eingeklappt lassen, bis alternative Pfade verwaltet werden sollen.
-- PunktgrÃ¶ÃŸe, HilfspunktgrÃ¶ÃŸe, Karten-Deckkraft, SchriftgrÃ¶ÃŸe und MenÃ¼deckkraft direkt im HauptmenÃ¼ einstellen.
-- Sichtbare Routen im PrÃ¤sentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive vier kompakter Ansichtsmodi, Tastatursteuerung und konfigurierbarem Sichtfeld.
-- Undo/Redo fÃ¼r Punkt- und Bearbeitungsschritte.
+- Punktgröße, Hilfspunktgröße, Karten-Deckkraft, Schriftgröße und Menüdeckkraft direkt im Hauptmenü einstellen.
+- Sichtbare Routen im Präsentationsmodus mit eigenem Fortschritt je Pfad zeigen, inklusive vier kompakter Ansichtsmodi, Tastatursteuerung und konfigurierbarem Sichtfeld.
+- Undo/Redo für Punkt- und Bearbeitungsschritte.
 - Themes und Sprache live zwischen Deutsch und Englisch wechseln.
 - Projekte als versionierte `.plotmap.json` Dateien speichern/laden.
 - Aktuelle Ansicht als PNG exportieren.
-- Aus der generierten Standalone-`index.html` ohne Runtime-CDN-AbhÃ¤ngigkeiten laufen lassen.
-- Reader-Modal fÃ¼r lineare Routenansicht, Bearbeitung, Sprung zur Karte, HTML-Export und PDF-Druck nutzen.
+- Aus der generierten Standalone-`index.html` ohne Runtime-CDN-Abhängigkeiten laufen lassen.
+- Reader-Modal für lineare Routenansicht, Bearbeitung, Sprung zur Karte, HTML-Export und PDF-Druck nutzen.
 
 ### Projektformat
 
@@ -175,18 +175,18 @@ Das kanonische App-Format ist `.plotmap.json`. Es speichert Kartenbild, Einstell
 }
 ```
 
-Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App. Alte Projekte kÃ¶nnen spÃ¤ter mit einem separaten Converter Ã¼bertragen werden.
+Legacy-Markdown/alte JSON-Importe sind absichtlich nicht mehr Teil der Haupt-App. Alte Projekte können später mit einem separaten Converter übertragen werden.
 
 ### Nutzung
 
-1. `index.html` oder die GitHub-Pages-Version Ã¶ffnen.
+1. `index.html` oder die GitHub-Pages-Version öffnen.
 2. Karte laden.
 3. Mit Doppelklick Punkte setzen.
-4. Punkte Ã¼ber das PunktmenÃ¼ `(=)` bearbeiten.
+4. Punkte über das Punktmenü `(=)` bearbeiten.
 5. Arbeit als `.plotmap.json` speichern.
 6. Bei Bedarf PNG oder Reader HTML/PDF exportieren.
 
-Der PrÃ¤sentationsmodus kann mehrere sichtbare Routen Schritt fÃ¼r Schritt freilegen. Jeder Pfad behÃ¤lt eigenen Fortschritt, nahe Kontextpunkte kÃ¶nnen entlang des aufgedeckten Bereichs erscheinen, und Sichtfeld hÃ¤lt unerforschte Bereiche lesbar, aber visuell zurÃ¼ckgenommen.
+Der Präsentationsmodus kann mehrere sichtbare Routen Schritt für Schritt freilegen. Jeder Pfad behält eigenen Fortschritt, nahe Kontextpunkte können entlang des aufgedeckten Bereichs erscheinen, und Sichtfeld hält unerforschte Bereiche lesbar, aber visuell zurückgenommen.
 
 ### Entwicklung
 
@@ -201,7 +201,7 @@ Release-Notizen, Asset-Reihenfolge, Tagging, Branch-Cleanup und GitHub-Pages-Che
 
 ### Lizenz
 
-Indie-Entwickler, Studierende und kleine Studios dÃ¼rfen PlotMapper frei verwenden und anpassen. Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeitern nur mit Genehmigung. Siehe [LICENSE.md](LICENSE.md).
+Indie-Entwickler, Studierende und kleine Studios dürfen PlotMapper frei verwenden und anpassen. Kommerzielle Nutzung durch Unternehmen mit mehr als 10 Mitarbeitern nur mit Genehmigung. Siehe [LICENSE.md](LICENSE.md).
 
 ---
 
