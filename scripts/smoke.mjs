@@ -800,6 +800,29 @@ async function canvasPixel(page, xRatio, yRatio) {
   }, { x: xRatio, y: yRatio });
 }
 
+async function exportedPngAverageLuma(page) {
+  return page.evaluate(async () => {
+    const blob = await PM.renderer.exportPng();
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0);
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let total = 0;
+    let count = 0;
+    for (let y = 0; y < canvas.height; y += 8) {
+      for (let x = 0; x < canvas.width; x += 8) {
+        const index = (y * canvas.width + x) * 4;
+        total += data[index] * 0.2126 + data[index + 1] * 0.7152 + data[index + 2] * 0.0722;
+        count += 1;
+      }
+    }
+    return total / Math.max(1, count);
+  });
+}
+
 function pixelDistance(left, right) {
   return Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2]) + Math.abs(left[3] - right[3]);
 }
@@ -904,6 +927,19 @@ async function exercisePresentation(page) {
     return reveal.routeReveals.every((entry) => entry.step <= 1)
       && document.querySelectorAll(".point:not(.hidden)").length === reveal.visibleIds.size;
   }, null, { timeout: 5000 });
+  const fogExportLuma = await exportedPngAverageLuma(page);
+  await page.locator("#presentationFogMode").evaluate((select) => {
+    select.value = "off";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "off", null, { timeout: 5000 });
+  const clearExportLuma = await exportedPngAverageLuma(page);
+  assert(fogExportLuma < clearExportLuma - 5, `Presentation PNG export should include the visibility overlay, got fog ${fogExportLuma.toFixed(1)} vs clear ${clearExportLuma.toFixed(1)}.`);
+  await page.locator("#presentationFogMode").evaluate((select) => {
+    select.value = "focus";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => PM.getPresentationFogSettings().mode === "focus", null, { timeout: 5000 });
 
   await page.evaluate(() => {
     if (globalThis.__pmDownloadCaptureInstalled) return;

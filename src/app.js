@@ -799,7 +799,7 @@
       const locale = store.getLiveState().settings.locale;
       controls.fileName.textContent = store.getLiveState().map.name || PM.I18n.t(locale, "noProject");
       controls.saveStatus.textContent = store.isDirty() ? PM.I18n.t(locale, "unsavedStatus") : PM.I18n.t(locale, "savedStatus");
-      controls.imageLoadLabel.querySelector("span").textContent = PM.I18n.t(locale, "loadMap");
+      controls.imageLoadLabel.querySelector("span").textContent = `\uD83C\uDF10 ${PM.I18n.t(locale, "loadMap")}`;
       controls.projectMenuSummary.textContent = PM.I18n.t(locale, "projectMenu");
       controls.optionsMenuSummary.textContent = PM.I18n.t(locale, "optionsMenu");
       controls.saveProject.textContent = `\uD83D\uDCBE ${PM.I18n.t(locale, "saveProject")}`;

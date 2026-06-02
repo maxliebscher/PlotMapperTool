@@ -39,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Theme controls now use dedicated previous/next buttons, including narrow viewport positioning so both arrows remain clickable.
 - Project and Options popovers are more opaque for better readability over the toolbar.
 - Open Project/Options menus now close when clicking outside them.
+- Static help-copy checks now tolerate CRLF-generated Windows builds.
+- Presentation PNG export now applies the active Sichtfeld overlay and only exports revealed route segments and visible points.
+- The Project menu's map-load action now has the same lightweight icon treatment as the other project actions.
 
 ## [1.2.0] - 2026-05-20
 ### Added
